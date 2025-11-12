@@ -1,0 +1,84 @@
+services:
+  backend:
+    build: .
+    container_name: backend-api
+    restart: unless-stopped
+    environment:
+      - ENV=production
+    networks:
+      - frontend
+    labels:
+      # Enable Traefik
+      - "traefik.enable=true"
+      - "traefik.docker.network=frontend"
+      
+      # HTTP Router Configuration
+      - "traefik.http.routers.backend.rule=Host(`api.sibilytics-ai.in`)"
+      - "traefik.http.routers.backend.entrypoints=websecure"
+      - "traefik.http.routers.backend.tls.certresolver=cloudflare"
+      
+      # Service Configuration - Port and Protocol
+      - "traefik.http.services.backend.loadbalancer.server.port=8000"
+      - "traefik.http.services.backend.loadbalancer.server.scheme=http"
+
+      # Timeout Configuration - Critical for large file uploads (58MB files)
+      - "traefik.http.services.backend.loadbalancer.healthcheck.timeout=10s"
+
+      # Buffering Configuration for Large Data Transfers
+      - "traefik.http.services.backend.loadbalancer.responseforwarding.flushinterval=1ms"
+      - "traefik.http.services.backend.loadbalancer.passhostheader=true"
+      
+      # Compression Middleware - Optimized for large transfers
+      - "traefik.http.middlewares.backend-compress.compress=true"
+      - "traefik.http.middlewares.backend-compress.compress.excludedcontenttypes=video/*,audio/*,image/*,application/octet-stream,multipart/form-data"
+      - "traefik.http.middlewares.backend-compress.compress.minresponsebodybytes=1024"
+      
+      # Buffering Middleware - DISABLED for file uploads (causes slowness)
+      # For large file uploads, we want streaming, not buffering
+      # - "traefik.http.middlewares.backend-buffer.buffering.maxrequestbodybytes=0"
+      # - "traefik.http.middlewares.backend-buffer.buffering.memrequestbodybytes=2097152"
+      # - "traefik.http.middlewares.backend-buffer.buffering.maxresponsebodybytes=0"
+      # - "traefik.http.middlewares.backend-buffer.buffering.memresponsebodybytes=2097152"
+      # - "traefik.http.middlewares.backend-buffer.buffering.retryexpression=IsNetworkError() && Attempts() < 3"
+      
+      # Request Size Limit - Allow large file uploads (100MB max)
+      # Note: maxRequestBodyBytes=0 means unlimited (better for large files)
+      - "traefik.http.middlewares.backend-sizelimit.buffering.maxRequestBodyBytes=0"
+      - "traefik.http.middlewares.backend-sizelimit.buffering.memRequestBodyBytes=10485760"
+      - "traefik.http.middlewares.backend-sizelimit.buffering.retryExpression=IsNetworkError() && Attempts() < 2"
+
+      # Rate Limiting - Relaxed for file uploads (was too aggressive)
+      - "traefik.http.middlewares.backend-ratelimit.ratelimit.average=100"
+      - "traefik.http.middlewares.backend-ratelimit.ratelimit.burst=500"
+      - "traefik.http.middlewares.backend-ratelimit.ratelimit.period=1s"
+      
+      # CORS Headers - Optimized for API access
+      - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowmethods=GET,OPTIONS,PUT,POST,DELETE,PATCH"
+      - "traefik.http.middlewares.backend-cors.headers.accesscontrolalloworiginlist=http://localhost:3000,http://localhost:3001,https://sibilytics-ai.in,https://www.sibilytics-ai.in,https://app.sibilytics-ai.in"
+      - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowheaders=*"
+      - "traefik.http.middlewares.backend-cors.headers.accesscontrolexposeheaders=Content-Length,Content-Range"
+      - "traefik.http.middlewares.backend-cors.headers.accesscontrolmaxage=100"
+      - "traefik.http.middlewares.backend-cors.headers.addvaryheader=true"
+      - "traefik.http.middlewares.backend-cors.headers.accesscontrolallowcredentials=true"
+      
+      # Security Headers
+      - "traefik.http.middlewares.backend-headers.headers.customresponseheaders.X-Robots-Tag=none,noarchive,nosnippet,notranslate,noimageindex"
+      - "traefik.http.middlewares.backend-headers.headers.sslredirect=true"
+      - "traefik.http.middlewares.backend-headers.headers.stsSeconds=31536000"
+      - "traefik.http.middlewares.backend-headers.headers.stsIncludeSubdomains=true"
+      - "traefik.http.middlewares.backend-headers.headers.stsPreload=true"
+      - "traefik.http.middlewares.backend-headers.headers.frameDeny=true"
+      - "traefik.http.middlewares.backend-headers.headers.contentTypeNosniff=true"
+      - "traefik.http.middlewares.backend-headers.headers.browserXssFilter=true"
+      - "traefik.http.middlewares.backend-headers.headers.referrerPolicy=strict-origin-when-cross-origin"
+      
+      # Streaming Support Headers
+      - "traefik.http.middlewares.backend-streaming.headers.customresponseheaders.X-Accel-Buffering=no"
+      - "traefik.http.middlewares.backend-streaming.headers.customresponseheaders.Cache-Control=no-cache, no-store, must-revalidate"
+      
+      # Chain all middlewares together (removed sizelimit to fix OPTIONS preflight)
+      - "traefik.http.routers.backend.middlewares=backend-cors,backend-headers,backend-streaming,backend-ratelimit"
+
+networks:
+  frontend:
+    external: true

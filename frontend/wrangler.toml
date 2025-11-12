@@ -1,0 +1,14 @@
+name = "feature-extraction-frontend"
+main = ".open-next/worker.js"
+compatibility_date = "2025-06-01"
+compatibility_flags = ["nodejs_compat_v2"]
+
+# Asset bindings for static files
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+# Environment variables
+[vars]
+# RESEND_API_KEY = "your-key-here" # Set via: wrangler secret put RESEND_API_KEY
+
