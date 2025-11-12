@@ -44,3 +44,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /Users/sharathchenna/Developer/personal-projects/Feature-Extraction/frontend/.open-next
+/frontend/.open-next/
