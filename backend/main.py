@@ -384,10 +384,10 @@ async def upload_file_with_progress(file: UploadFile = File(...)):
         cache_path.write_bytes(contents)
         print(f"[UPLOAD] Cached file as: {file_id}")
 
-        # Parse as CSV with tab delimiter
+        # Parse file based on extension
         parse_start = time.time()
-        df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
-        print(f"[UPLOAD] Parsed CSV in {time.time() - parse_start:.2f}s")
+        df = parse_file_content(contents, file.filename)
+        print(f"[UPLOAD] Parsed {file.filename} in {time.time() - parse_start:.2f}s")
 
         # Prepare response with compression stats
         response_data = {
@@ -438,19 +438,22 @@ async def process_signal(
     start_time = time.time()
     try:
         # Use cached file if file_id provided, otherwise read uploaded file
+        filename = None
         if file_id:
             cache_path = CACHE_DIR / file_id
             if not cache_path.exists():
                 raise HTTPException(status_code=404, detail=f"Cached file not found: {file_id}")
             contents = cache_path.read_bytes()
+            filename = file_id.split('_', 1)[1] if '_' in file_id else file_id
             print(f"[PROCESS] Using cached file: {file_id}")
         elif file:
             contents = await file.read()
+            filename = file.filename
             print(f"[PROCESS] Processing uploaded file: {file.filename}")
         else:
             raise HTTPException(status_code=400, detail="Either 'file' or 'file_id' must be provided")
 
-        df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
+        df = parse_file_content(contents, filename)
 
         # Extract time and signal columns
         time_data = df.iloc[:, time_column].values
@@ -525,19 +528,22 @@ async def process_signal_raw(
     start_time = time.time()
     try:
         # Use cached file if file_id provided, otherwise read uploaded file
+        filename = None
         if file_id:
             cache_path = CACHE_DIR / file_id
             if not cache_path.exists():
                 raise HTTPException(status_code=404, detail=f"Cached file not found: {file_id}")
             contents = cache_path.read_bytes()
+            filename = file_id.split('_', 1)[1] if '_' in file_id else file_id
             print(f"[PROCESS-RAW] Using cached file: {file_id}")
         elif file:
             contents = await file.read()
+            filename = file.filename
             print(f"[PROCESS-RAW] Processing uploaded file: {file.filename}")
         else:
             raise HTTPException(status_code=400, detail="Either 'file' or 'file_id' must be provided")
 
-        df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
+        df = parse_file_content(contents, filename)
 
         # Extract time and signal columns
         time_data = df.iloc[:, time_column].values
@@ -992,19 +998,22 @@ async def generate_all_plots(
         batch_start = time.time()
 
         # Use cached file if file_id provided, otherwise read uploaded file
+        filename = None
         if file_id:
             cache_path = CACHE_DIR / file_id
             if not cache_path.exists():
                 raise HTTPException(status_code=404, detail=f"Cached file not found: {file_id}")
             contents = cache_path.read_bytes()
+            filename = file_id.split('_', 1)[1] if '_' in file_id else file_id
             print(f"[BATCH] Using cached file: {file_id}")
         elif file:
             contents = await file.read()
+            filename = file.filename
             print(f"[BATCH] Processing uploaded file: {file.filename}")
         else:
             raise HTTPException(status_code=400, detail="Either 'file' or 'file_id' must be provided")
 
-        df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
+        df = parse_file_content(contents, filename)
         
         # Extract data
         time_data = df.iloc[:, time_column].values
