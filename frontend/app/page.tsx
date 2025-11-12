@@ -167,12 +167,13 @@ export default function Home() {
             <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight animate-fade-in">
               Sibilytics AI<br className="hidden md:block" />
               <span className="bg-gradient-to-r from-yellow-200 to-yellow-400 bg-clip-text text-transparent">
-                Feature Extraction Platform
+              Feature Extraction and ML-based Prediction Platform
               </span>
             </h1>
             <p className="text-lg md:text-2xl mb-8 text-blue-50 font-light leading-relaxed max-w-3xl mx-auto animate-fade-in" style={{animationDelay: '0.2s'}}>
-              Advanced wavelet-based signal processing for sensor data analysis and feature extraction
-            </p>
+            Advanced signal processing for sensor data analysis, feature
+            extraction, feature optimization, and machine learning-based
+            prediction.            </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{animationDelay: '0.4s'}}>
               <a href="#signal-processing"
                  className="bg-white text-emerald-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 hover:scale-105 shadow-xl transition-all">
@@ -202,9 +203,9 @@ export default function Home() {
 
           <div className="bg-white rounded-2xl shadow-xl p-8 md:p-10 border border-gray-100">
             <p className="text-gray-700 text-lg leading-relaxed mb-6">
-              <strong className="text-emerald-600">Sibilytics AI</strong> is an advanced web-based platform designed for <strong>wavelet-based feature extraction</strong> from sensor signals.
-              Users can upload signal data in <span className="font-semibold">.txt</span> or <span className="font-semibold">.lvm</span> formats, which is then processed using the powerful <strong>Biorthogonal (bior) wavelet</strong>.
-              The app allows dynamic control over the wavelet decomposition level (1–20) to suit different analysis needs.
+              <strong className="text-emerald-600">Sibilytics AI</strong> is an advanced web-based platform designed for <strong>feature extraction</strong> from sensor and denoised signals, which can subsequently be used for <strong>machine learning-based analyses</strong> such as classification, clustering, and prediction.
+              Users can upload signal data in <span className="font-semibold">.txt</span>, <span className="font-semibold">.csv</span>, <span className="font-semibold">.xlsx</span>, or <span className="font-semibold">.lvm</span> formats, which can then be processed using the powerful <strong>Biorthogonal (bior) wavelet</strong>.
+              The application offers dynamic control over the wavelet decomposition level (1–20), providing flexibility to accommodate diverse analysis requirements.
             </p>
 
             <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6 mb-6">

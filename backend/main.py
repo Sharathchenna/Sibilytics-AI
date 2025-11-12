@@ -18,10 +18,50 @@ import hashlib
 import os
 from pathlib import Path
 import gzip
+import openpyxl
 
 # File cache directory
 CACHE_DIR = Path("/tmp/upload_cache")
 CACHE_DIR.mkdir(exist_ok=True)
+
+def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
+    """
+    Parse file content based on file extension.
+    Supports: .txt, .lvm (tab-delimited), .csv (comma-delimited), .xlsx (Excel)
+    """
+    file_ext = filename.lower().split('.')[-1]
+
+    try:
+        if file_ext in ['txt', 'lvm']:
+            # Tab-delimited files
+            df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
+        elif file_ext == 'csv':
+            # CSV files - try to auto-detect delimiter
+            content_str = contents.decode('utf-8')
+            # Try comma first, then tab, then semicolon
+            for delimiter in [',', '\t', ';']:
+                try:
+                    df = pd.read_csv(StringIO(content_str), delimiter=delimiter, header=None)
+                    # Check if we got more than 1 column
+                    if df.shape[1] > 1:
+                        break
+                except:
+                    continue
+            else:
+                # If all fail, default to comma
+                df = pd.read_csv(StringIO(content_str), delimiter=',', header=None)
+        elif file_ext == 'xlsx':
+            # Excel files
+            df = pd.read_excel(BytesIO(contents), header=None, engine='openpyxl')
+        else:
+            raise ValueError(f"Unsupported file format: {file_ext}")
+
+        # Remove any completely empty rows/columns
+        df = df.dropna(how='all', axis=0).dropna(how='all', axis=1)
+
+        return df
+    except Exception as e:
+        raise ValueError(f"Error parsing {file_ext} file: {str(e)}")
 
 def json_encoder(obj):
     """Custom JSON encoder to handle inf and nan"""

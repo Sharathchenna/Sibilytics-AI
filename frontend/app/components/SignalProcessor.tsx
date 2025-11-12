@@ -11,10 +11,17 @@ interface FileStatistics {
   [key: string]: number | string;
 }
 
+// Type for uploaded file info
+interface UploadedFileInfo {
+  file: File;
+  uploadResponse: UploadResponse;
+}
+
 export default function SignalProcessor() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileInfo[]>([]);
+  const [selectedFileForVisualization, setSelectedFileForVisualization] = useState<number>(0);
   const [uploadStatus, setUploadStatus] = useState<string>('');
-  const [uploadResponse, setUploadResponse] = useState<UploadResponse | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
@@ -34,12 +41,17 @@ export default function SignalProcessor() {
   const [waveletType, setWaveletType] = useState<string>('bior1.3');
   const [nLevels, setNLevels] = useState<number>(7);
 
-  // Results
-  const [processData, setProcessData] = useState<ProcessResponse | null>(null);
-  const [plotsData, setPlotsData] = useState<BatchPlotsResponse | null>(null);
+  // Results - store for each file
+  const [processData, setProcessData] = useState<Map<number, ProcessResponse>>(new Map());
+  const [plotsData, setPlotsData] = useState<Map<number, BatchPlotsResponse>>(new Map());
   const [error, setError] = useState<string>('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Get current file upload response
+  const currentUploadResponse = uploadedFiles[selectedFileForVisualization]?.uploadResponse || null;
+  const currentProcessData = processData.get(selectedFileForVisualization) || null;
+  const currentPlotsData = plotsData.get(selectedFileForVisualization) || null;
 
   const waveletOptions = [
     'bior1.3', 'bior1.5', 'bior2.2', 'bior2.4', 
@@ -49,18 +61,34 @@ export default function SignalProcessor() {
   ];
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const fileExtension = file.name.split('.').pop()?.toLowerCase();
-      if (fileExtension === 'txt' || fileExtension === 'lvm') {
-        setSelectedFile(file);
-        setUploadStatus(`File selected: ${file.name}`);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      const validFiles: File[] = [];
+      const invalidFiles: string[] = [];
+
+      Array.from(files).forEach(file => {
+        const fileExtension = file.name.split('.').pop()?.toLowerCase();
+        if (fileExtension === 'txt' || fileExtension === 'lvm' || fileExtension === 'csv' || fileExtension === 'xlsx') {
+          validFiles.push(file);
+        } else {
+          invalidFiles.push(file.name);
+        }
+      });
+
+      if (validFiles.length > 0) {
+        setSelectedFiles(validFiles);
+        setUploadStatus(`${validFiles.length} file(s) selected`);
         setError('');
         setShowConfig(false);
         setShowResults(false);
+
+        if (invalidFiles.length > 0) {
+          setError(`Skipped ${invalidFiles.length} invalid file(s). Only .txt, .lvm, .csv, and .xlsx files are allowed.`);
+        }
       } else {
-        setSelectedFile(null);
-        setUploadStatus('Please select a .txt or .lvm file');
+        setSelectedFiles([]);
+        setUploadStatus('Please select valid files (.txt, .lvm, .csv, .xlsx)');
+        setError('No valid files selected');
         if (fileInputRef.current) {
           fileInputRef.current.value = '';
         }
@@ -69,30 +97,43 @@ export default function SignalProcessor() {
   };
 
   const handleFileUpload = async () => {
-    if (!selectedFile) return;
+    if (selectedFiles.length === 0) return;
 
     setIsUploading(true);
     setError('');
     setUploadProgress(null);
 
     try {
-      const response = await uploadFile(selectedFile, (progress) => {
-        setUploadProgress(progress);
-        
-        // Update status message based on progress status
-        if (progress.status === 'compressing') {
-          setUploadStatus('Compressing file...');
-        } else if (progress.status === 'uploading') {
-          setUploadStatus(`Uploading: ${progress.percentage}% (${progress.uploadedMB.toFixed(2)} MB / ${progress.totalMB.toFixed(2)} MB)`);
-        } else if (progress.status === 'complete') {
-          setUploadStatus('Upload complete!');
-        }
-      });
+      const newUploadedFiles: UploadedFileInfo[] = [];
 
-      setUploadResponse(response);
-      setColumns(response.columns);
-      setUploadStatus(`File uploaded successfully! (${response.rows.toLocaleString()} data points)`);
+      for (let i = 0; i < selectedFiles.length; i++) {
+        const file = selectedFiles[i];
+        setUploadStatus(`Uploading file ${i + 1}/${selectedFiles.length}: ${file.name}`);
+
+        const response = await uploadFile(file, (progress) => {
+          setUploadProgress(progress);
+
+          // Update status message based on progress status
+          if (progress.status === 'compressing') {
+            setUploadStatus(`File ${i + 1}/${selectedFiles.length}: Compressing ${file.name}...`);
+          } else if (progress.status === 'uploading') {
+            setUploadStatus(`File ${i + 1}/${selectedFiles.length}: Uploading ${file.name}: ${progress.percentage}%`);
+          } else if (progress.status === 'complete') {
+            setUploadStatus(`File ${i + 1}/${selectedFiles.length}: Upload complete!`);
+          }
+        });
+
+        newUploadedFiles.push({ file, uploadResponse: response });
+      }
+
+      setUploadedFiles(newUploadedFiles);
+      setSelectedFileForVisualization(0);
+      if (newUploadedFiles.length > 0) {
+        setColumns(newUploadedFiles[0].uploadResponse.columns);
+      }
+      setUploadStatus(`${newUploadedFiles.length} file(s) uploaded successfully!`);
       setShowConfig(true);
+      setUploadProgress(null);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Upload failed';
       setError(errorMsg);
@@ -104,66 +145,75 @@ export default function SignalProcessor() {
   };
 
   const handleProcess = async () => {
-    if (!uploadResponse) return;
+    if (uploadedFiles.length === 0) return;
 
     setIsProcessing(true);
     setError('');
-    setUploadStatus('Processing signal...');
 
     try {
-      // Process DENOISED signal to get statistics
-      const processResponse = await processSignal(
-        uploadResponse.file_id,
-        timeColumn,
-        signalColumn,
-        waveletType,
-        nLevels
-      );
-      setProcessData(processResponse);
+      const newProcessData = new Map(processData);
+      const newPlotsData = new Map(plotsData);
 
-      // Add denoised statistics
-      const newStatsDenoised: FileStatistics = {
-        filename: processResponse.filename,
-        ...processResponse.statistics,
-      };
+      for (let i = 0; i < uploadedFiles.length; i++) {
+        const { uploadResponse } = uploadedFiles[i];
+        setUploadStatus(`Processing file ${i + 1}/${uploadedFiles.length}: ${uploadResponse.filename}...`);
 
-      // Remove existing entry for this file and add new one
-      setAllStatsDenoised((prevStats) => {
-        const filtered = prevStats.filter((s) => s.filename !== processResponse.filename);
-        return [...filtered, newStatsDenoised];
-      });
+        // Process DENOISED signal to get statistics
+        const processResponse = await processSignal(
+          uploadResponse.file_id,
+          timeColumn,
+          signalColumn,
+          waveletType,
+          nLevels
+        );
+        newProcessData.set(i, processResponse);
 
-      // Process RAW signal to get statistics (without denoising)
-      setUploadStatus('Processing raw signal...');
-      const processRawResponse = await processSignalRaw(
-        uploadResponse.file_id,
-        timeColumn,
-        signalColumn
-      );
+        // Add denoised statistics
+        const newStatsDenoised: FileStatistics = {
+          filename: processResponse.filename,
+          ...processResponse.statistics,
+        };
 
-      // Add raw statistics
-      const newStatsRaw: FileStatistics = {
-        filename: processRawResponse.filename,
-        ...processRawResponse.statistics,
-      };
+        // Remove existing entry for this file and add new one
+        setAllStatsDenoised((prevStats) => {
+          const filtered = prevStats.filter((s) => s.filename !== processResponse.filename);
+          return [...filtered, newStatsDenoised];
+        });
 
-      setAllStatsRaw((prevStats) => {
-        const filtered = prevStats.filter((s) => s.filename !== processRawResponse.filename);
-        return [...filtered, newStatsRaw];
-      });
+        // Process RAW signal to get statistics (without denoising)
+        setUploadStatus(`Processing raw signal for file ${i + 1}/${uploadedFiles.length}...`);
+        const processRawResponse = await processSignalRaw(
+          uploadResponse.file_id,
+          timeColumn,
+          signalColumn
+        );
 
-      // Generate all plots
-      setUploadStatus('Generating visualizations...');
-      const plotsResponse = await generateAllPlots(
-        uploadResponse.file_id,
-        timeColumn,
-        signalColumn,
-        waveletType,
-        nLevels
-      );
-      setPlotsData(plotsResponse);
+        // Add raw statistics
+        const newStatsRaw: FileStatistics = {
+          filename: processRawResponse.filename,
+          ...processRawResponse.statistics,
+        };
 
-      setUploadStatus('Processing complete!');
+        setAllStatsRaw((prevStats) => {
+          const filtered = prevStats.filter((s) => s.filename !== processRawResponse.filename);
+          return [...filtered, newStatsRaw];
+        });
+
+        // Generate all plots
+        setUploadStatus(`Generating visualizations for file ${i + 1}/${uploadedFiles.length}...`);
+        const plotsResponse = await generateAllPlots(
+          uploadResponse.file_id,
+          timeColumn,
+          signalColumn,
+          waveletType,
+          nLevels
+        );
+        newPlotsData.set(i, plotsResponse);
+      }
+
+      setProcessData(newProcessData);
+      setPlotsData(newPlotsData);
+      setUploadStatus(`Processing complete for ${uploadedFiles.length} file(s)!`);
       setShowResults(true);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Processing failed';
@@ -217,13 +267,14 @@ export default function SignalProcessor() {
   };
 
   const resetForm = () => {
-    setSelectedFile(null);
+    setSelectedFiles([]);
+    setUploadedFiles([]);
+    setSelectedFileForVisualization(0);
     setUploadStatus('');
-    setUploadResponse(null);
     setShowConfig(false);
     setShowResults(false);
-    setProcessData(null);
-    setPlotsData(null);
+    setProcessData(new Map());
+    setPlotsData(new Map());
     setError('');
     setUploadProgress(null);
     if (fileInputRef.current) {
@@ -255,10 +306,12 @@ export default function SignalProcessor() {
               </div>
               <h3 className="text-2xl font-bold text-gray-800">Upload Signal Data</h3>
             </div>
-            <p className="text-gray-600 text-sm flex items-center justify-center gap-2">
+            <p className="text-gray-600 text-sm flex flex-wrap items-center justify-center gap-2">
               <span className="px-3 py-1 bg-gray-100 rounded-md text-xs font-medium">.txt</span>
               <span className="px-3 py-1 bg-gray-100 rounded-md text-xs font-medium">.lvm</span>
-              <span className="text-gray-500">Tab-delimited files</span>
+              <span className="px-3 py-1 bg-gray-100 rounded-md text-xs font-medium">.csv</span>
+              <span className="px-3 py-1 bg-gray-100 rounded-md text-xs font-medium">.xlsx</span>
+              <span className="text-gray-500">Supported formats</span>
             </p>
           </div>
 
@@ -268,24 +321,29 @@ export default function SignalProcessor() {
             </div>
             <label htmlFor="file-upload" className="cursor-pointer">
               <span className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-lg font-bold hover:from-emerald-700 hover:to-teal-700 hover:scale-105 transition-all inline-block shadow-lg hover:shadow-xl">
-                {selectedFile ? '✓ Change File' : '📁 Select File'}
+                {selectedFiles.length > 0 ? '✓ Change Files' : '📁 Select Files'}
               </span>
               <input
                 ref={fileInputRef}
                 id="file-upload"
                 type="file"
-                accept=".txt,.lvm"
+                accept=".txt,.lvm,.csv,.xlsx"
+                multiple
                 onChange={handleFileChange}
                 className="hidden"
               />
             </label>
             <p className="mt-4 text-sm text-gray-500">
-              or drag and drop your file here
+              or drag and drop your files here (multiple files supported)
             </p>
-            {selectedFile && (
-              <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-medium">
-                <FileText className="w-4 h-4" />
-                {selectedFile.name}
+            {selectedFiles.length > 0 && (
+              <div className="mt-4 flex flex-wrap gap-2 justify-center">
+                {selectedFiles.map((file, idx) => (
+                  <div key={idx} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-lg font-medium">
+                    <FileText className="w-4 h-4" />
+                    {file.name}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -364,7 +422,7 @@ export default function SignalProcessor() {
           )}
 
           {/* Upload Button */}
-          {selectedFile && !uploadResponse && (
+          {selectedFiles.length > 0 && uploadedFiles.length === 0 && (
             <button
               onClick={handleFileUpload}
               disabled={isUploading}
@@ -378,7 +436,7 @@ export default function SignalProcessor() {
               ) : (
                 <>
                   <Upload className="w-5 h-5" />
-                  Upload & Configure
+                  Upload {selectedFiles.length} File{selectedFiles.length > 1 ? 's' : ''}
                 </>
               )}
             </button>
@@ -386,12 +444,35 @@ export default function SignalProcessor() {
         </div>
 
         {/* Configuration Section */}
-        {showConfig && uploadResponse && (
+        {showConfig && uploadedFiles.length > 0 && (
           <div className="bg-white p-8 rounded-lg shadow-xl mb-6">
             <div className="flex items-center gap-2 mb-6">
               <Settings className="w-6 h-6 text-green-600" />
               <h3 className="text-2xl font-bold text-gray-800">Processing Configuration</h3>
             </div>
+
+            {/* File Selection Dropdown */}
+            {uploadedFiles.length > 1 && (
+              <div className="mb-6 bg-gradient-to-br from-blue-50 to-emerald-50 p-4 rounded-lg border-2 border-emerald-200">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Select File to Visualize
+                </label>
+                <select
+                  value={selectedFileForVisualization}
+                  onChange={(e) => setSelectedFileForVisualization(Number(e.target.value))}
+                  className="w-full px-4 py-3 border border-gray-300 rounded focus:outline-none focus:border-emerald-600 bg-white"
+                >
+                  {uploadedFiles.map((fileInfo, idx) => (
+                    <option key={idx} value={idx}>
+                      {fileInfo.file.name} ({fileInfo.uploadResponse.rows.toLocaleString()} points)
+                    </option>
+                  ))}
+                </select>
+                {/* <p className="mt-2 text-sm text-gray-600">
+                  All files will be processed, but you can choose which one to display visualizations for
+                </p> */}
+              </div>
+            )}
 
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               {/* Column Selection */}
@@ -483,7 +564,7 @@ export default function SignalProcessor() {
         )}
 
         {/* Results Section - Expandable */}
-        {showResults && processData && plotsData && (
+        {showResults && currentProcessData && currentPlotsData && (
           <div className="bg-white rounded-lg shadow-xl overflow-hidden">
             <button
               onClick={() => setShowResults(!showResults)}
@@ -495,12 +576,30 @@ export default function SignalProcessor() {
 
             {showResults && (
               <div className="p-8">
+                {/* Current File Display */}
+                {/* {uploadedFiles.length > 1 && (
+                  <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <p className="text-sm font-semibold text-blue-800">
+                      Currently viewing: {uploadedFiles[selectedFileForVisualization].file.name}
+                    </p>
+                    <p className="text-xs text-blue-600 mt-1">
+                      Use the dropdown in Configuration section to switch between files
+                    </p>
+                  </div>
+                )} */}
+
                 {/* Plots Section */}
-                <PlotDisplay plotsData={plotsData} />
+                <PlotDisplay plotsData={currentPlotsData} />
 
                 {/* Download Features Section */}
                 <div className="mt-12 bg-gradient-to-br from-blue-50 to-emerald-50 p-8 rounded-xl border-2 border-emerald-200">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-6 text-center">Download Features</h3>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">Download Features</h3>
+
+                  {uploadedFiles.length > 1 && (
+                    <p className="text-center text-gray-700 mb-6 bg-white/50 py-3 px-4 rounded-lg">
+                      <span className="font-semibold">Consolidated Download:</span> Features from all {uploadedFiles.length} files will be combined into a single CSV file
+                    </p>
+                  )}
 
                   <div className="flex gap-4 justify-center">
                     <button
