@@ -39,7 +39,7 @@ export default function SignalProcessor() {
   const [timeColumn, setTimeColumn] = useState<number>(0);
   const [signalColumn, setSignalColumn] = useState<number>(1);
   const [waveletType, setWaveletType] = useState<string>('bior1.3');
-  const [nLevels, setNLevels] = useState<number>(7);
+  const [nLevels, setNLevels] = useState<number>(1);
 
   // Results - store for each file
   const [processData, setProcessData] = useState<Map<number, ProcessResponse>>(new Map());

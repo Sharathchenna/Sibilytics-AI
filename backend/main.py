@@ -20,16 +20,41 @@ from pathlib import Path
 import gzip
 import openpyxl
 
+# SVM Classification imports
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for server
+import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.svm import SVC
+from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.metrics import (
+    roc_auc_score, roc_curve, accuracy_score, precision_score,
+    recall_score, f1_score, confusion_matrix
+)
+from sklearn.preprocessing import label_binarize
+import pickle
+import uuid
+
 # File cache directory
 CACHE_DIR = Path("/tmp/upload_cache")
 CACHE_DIR.mkdir(exist_ok=True)
+
+# SVM model storage directory
+MODEL_DIR = Path("/tmp/svm_models")
+MODEL_DIR.mkdir(exist_ok=True)
 
 def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
     """
     Parse file content based on file extension.
     Supports: .txt, .lvm (tab-delimited), .csv (comma-delimited), .xlsx (Excel)
+    Handles gzip-compressed files (strips .gz extension)
     """
-    file_ext = filename.lower().split('.')[-1]
+    # Remove .gz extension if present (file content is already decompressed)
+    filename_clean = filename.lower()
+    if filename_clean.endswith('.gz'):
+        filename_clean = filename_clean[:-3]  # Remove '.gz'
+
+    file_ext = filename_clean.split('.')[-1]
 
     try:
         if file_ext in ['txt', 'lvm']:
@@ -1080,7 +1105,7 @@ async def generate_all_plots(
 
         # 3a. FFT of Raw Signal (with zero-padding and normalization like Streamlit)
         NFFT = 2 ** int(np.ceil(np.log2(len(Signal))))  # Next power of 2
-        fft_raw = np.abs(np.fft.fft(Signal, NFFT)) / len(Signal)  # FFT with zero-padding & normalization
+        fft_raw = 2*np.abs(np.fft.fft(Signal, NFFT)) / len(Signal)  # FFT with zero-padding & normalization
         fft_freqs_raw = fs * np.arange(0, NFFT // 2 + 1) / NFFT  # Proper frequency array
         # Take only positive frequencies
         fft_raw = fft_raw[:len(fft_freqs_raw)]
@@ -1104,7 +1129,7 @@ async def generate_all_plots(
         }
 
         # 3b. FFT of Denoised Signal (matching Streamlit - no normalization for denoised)
-        fft_denoised = np.abs(np.fft.fft(denoised_signal))[:len(Signal) // 2]
+        fft_denoised = 2*np.abs(np.fft.fft(denoised_signal))[:len(Signal) // 2]
         fft_freqs_denoised = fs * np.arange(0, len(fft_denoised)) / len(Signal)  # Proper frequency array
         x_down_denoised, y_down_denoised = lttb_downsample(fft_freqs_denoised, fft_denoised, target_points=15000)
 
@@ -1326,6 +1351,552 @@ async def generate_all_plots(
     except Exception as e:
         print(f"Batch plot error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Batch plot generation error: {str(e)}")
+
+# ============================================================================
+# SVM CLASSIFICATION ENDPOINTS
+# ============================================================================
+
+def make_meshgrid(x, y, h=.02):
+    """Create mesh grid for decision boundary plotting"""
+    x_min, x_max = x.min() - 1, x.max() + 1
+    y_min, y_max = y.min() - 1, y.max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    return xx, yy
+
+def plot_contours(ax, clf, xx, yy, **params):
+    """Plot decision boundaries"""
+    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    out = ax.contourf(xx, yy, Z, **params)
+    return out
+
+def plot_to_base64(fig):
+    """Convert matplotlib figure to base64 string"""
+    buf = BytesIO()
+    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    buf.seek(0)
+    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    plt.close(fig)
+    return img_base64
+
+@app.options("/api/svm/upload-dataset")
+async def options_svm_upload_dataset():
+    return {}
+
+@app.post("/api/svm/upload-dataset")
+async def upload_svm_dataset(file: UploadFile = File(...)):
+    """
+    Upload xlsx or csv file for SVM classification.
+    Returns available columns for feature and target selection.
+    """
+    try:
+        print(f"[SVM UPLOAD] Received file: {file.filename}")
+
+        # Read file content
+        contents = await file.read()
+
+        # Parse based on extension (handle .gz files)
+        filename_clean = file.filename.lower()
+        if filename_clean.endswith('.gz'):
+            filename_clean = filename_clean[:-3]  # Remove '.gz'
+
+        file_ext = filename_clean.split('.')[-1]
+
+        if file_ext == 'xlsx':
+            df = pd.read_excel(BytesIO(contents))
+        elif file_ext == 'csv':
+            # Try different delimiters
+            content_str = contents.decode('utf-8')
+            for delimiter in [',', '\t', ';']:
+                try:
+                    df = pd.read_csv(StringIO(content_str), delimiter=delimiter)
+                    if df.shape[1] > 1:
+                        break
+                except:
+                    continue
+            else:
+                df = pd.read_csv(StringIO(content_str), delimiter=',')
+        else:
+            raise ValueError(f"Unsupported file format: {file_ext}")
+
+        # Generate file hash for caching
+        file_hash = hashlib.sha256(contents).hexdigest()[:16]
+        file_id = f"svm_{file_hash}_{file.filename}"
+        cache_path = CACHE_DIR / file_id
+
+        # Save to cache
+        cache_path.write_bytes(contents)
+        print(f"[SVM UPLOAD] Cached dataset: {file_id}")
+
+        # Get column names and sample data
+        columns = df.columns.tolist()
+        sample_data = df.head(5).to_dict('records')
+
+        print(f"[SVM UPLOAD] Dataset shape: {df.shape}")
+        print(f"[SVM UPLOAD] Columns: {columns}")
+
+        return {
+            "file_id": file_id,
+            "filename": file.filename,
+            "columns": columns,
+            "rows": df.shape[0],
+            "sample_data": sample_data,
+            "status": "success"
+        }
+
+    except Exception as e:
+        print(f"[SVM UPLOAD ERROR] {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
+
+@app.options("/api/svm/train")
+async def options_svm_train():
+    return {}
+
+@app.post("/api/svm/train")
+async def train_svm_model(
+    file_id: str = Form(...),
+    feature_col_1: str = Form(...),
+    feature_col_2: str = Form(...),
+    target_col: str = Form(...),
+    test_sizes: str = Form("0.2,0.3"),  # Comma-separated string
+    kernels: str = Form("poly,rbf,linear,sigmoid"),  # Comma-separated string
+    c_values: str = Form("1,2,3,4,5,6,7,8,9"),  # Comma-separated string
+    gamma_values: str = Form("0.00001,0.0001,0.001,0.01,0.1"),  # Comma-separated string
+    cv_folds: int = Form(3)
+):
+    """
+    Train SVM models with multiple kernels and test sizes.
+    Performs GridSearchCV for hyperparameter optimization.
+    Returns metrics, plots (as base64), and model information.
+    """
+    try:
+        start_time = time.time()
+        print(f"\n{'='*70}")
+        print(f"[SVM TRAIN] Starting SVM training")
+        print(f"{'='*70}")
+
+        # Parse parameters
+        test_size_list = [float(x.strip()) for x in test_sizes.split(',')]
+        kernel_list = [x.strip() for x in kernels.split(',')]
+        c_list = [float(x.strip()) for x in c_values.split(',')]
+        gamma_list = [float(x.strip()) for x in gamma_values.split(',')]
+
+        print(f"[SVM TRAIN] Test sizes: {test_size_list}")
+        print(f"[SVM TRAIN] Kernels: {kernel_list}")
+        print(f"[SVM TRAIN] C values: {c_list}")
+        print(f"[SVM TRAIN] Gamma values: {gamma_list}")
+
+        # Load cached file
+        cache_path = CACHE_DIR / file_id
+        if not cache_path.exists():
+            raise HTTPException(status_code=404, detail=f"Cached file not found: {file_id}")
+
+        contents = cache_path.read_bytes()
+
+        # Handle .gz extension in file_id
+        file_id_clean = file_id.lower()
+        if file_id_clean.endswith('.gz'):
+            file_id_clean = file_id_clean[:-3]
+
+        file_ext = file_id_clean.split('.')[-1]
+
+        if file_ext == 'xlsx':
+            df = pd.read_excel(BytesIO(contents))
+        else:
+            df = pd.read_csv(StringIO(contents.decode('utf-8')))
+
+        print(f"[SVM TRAIN] Loaded dataset: {df.shape}")
+
+        # Extract features and target
+        X = df[[feature_col_1, feature_col_2]]
+        y = df[target_col]
+
+        print(f"[SVM TRAIN] Features: {feature_col_1}, {feature_col_2}")
+        print(f"[SVM TRAIN] Target: {target_col}")
+        print(f"[SVM TRAIN] Class distribution: {y.value_counts().to_dict()}")
+
+        # Storage for results
+        all_results = {}
+        all_models = {}
+        best_overall_model = None
+        best_overall_auc = 0
+        best_overall_config = {}
+
+        # Training loop
+        for test_size in test_size_list:
+            print(f"\n[SVM TRAIN] Training with test_size={test_size}")
+
+            # Split data
+            X_train, X_test, y_train, y_test = train_test_split(
+                X, y, test_size=test_size, random_state=42
+            )
+
+            # Binarize labels for ROC calculation
+            unique_classes = sorted(y.unique())
+            y_train_bin = label_binarize(y_train, classes=unique_classes)
+            y_test_bin = label_binarize(y_test, classes=unique_classes)
+
+            # Handle binary classification (label_binarize returns 2D for binary)
+            if len(unique_classes) == 2:
+                y_train_bin = y_train_bin.ravel()
+                y_test_bin = y_test_bin.ravel()
+
+            test_size_results = {
+                'kernels': {},
+                'comparison': {
+                    'Kernel': [],
+                    'Accuracy': [],
+                    'Precision': [],
+                    'Recall': [],
+                    'F1 Score': [],
+                    'AUC Score': [],
+                    'Best C': [],
+                    'Best Gamma': []
+                },
+                'roc_data': {}
+            }
+
+            for kernel in kernel_list:
+                t1 = time.time()
+                print(f"  [SVM TRAIN] Training {kernel} kernel...")
+
+                # Setup SVM and GridSearch parameters
+                svm = SVC(kernel=kernel, probability=True, random_state=42)
+                parameters = {"C": c_list, 'gamma': gamma_list}
+
+                if kernel == "poly":
+                    parameters['degree'] = [3]
+
+                # GridSearchCV
+                searcher = GridSearchCV(
+                    svm, parameters, n_jobs=-1, cv=cv_folds,
+                    refit=True, verbose=0, scoring='roc_auc'
+                )
+                searcher.fit(X_train, y_train)
+
+                # Best model predictions
+                best_model = searcher.best_estimator_
+                y_pred = best_model.predict(X_test)
+                y_pred_proba = best_model.predict_proba(X_test)
+
+                # Handle binary vs multiclass
+                if len(unique_classes) == 2:
+                    y_pred_proba_score = y_pred_proba[:, 1]
+                else:
+                    y_pred_proba_score = y_pred_proba
+
+                # Calculate metrics
+                auc_score = roc_auc_score(y_test_bin, y_pred_proba_score)
+                accuracy = accuracy_score(y_test, y_pred)
+                precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
+                recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
+                f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+
+                # ROC curve data
+                if len(unique_classes) == 2:
+                    fpr, tpr, _ = roc_curve(y_test_bin, y_pred_proba_score)
+                else:
+                    # For multiclass, use macro average
+                    fpr, tpr = {}, {}
+                    for i in range(len(unique_classes)):
+                        fpr[i], tpr[i], _ = roc_curve(y_test_bin[:, i], y_pred_proba[:, i])
+
+                # Store results
+                test_size_results['kernels'][kernel] = {
+                    'best_params': searcher.best_params_,
+                    'auc_score': float(auc_score),
+                    'accuracy': float(accuracy),
+                    'precision': float(precision),
+                    'recall': float(recall),
+                    'f1_score': float(f1),
+                    'confusion_matrix': confusion_matrix(y_test, y_pred).tolist()
+                }
+
+                test_size_results['comparison']['Kernel'].append(kernel)
+                test_size_results['comparison']['Accuracy'].append(float(accuracy))
+                test_size_results['comparison']['Precision'].append(float(precision))
+                test_size_results['comparison']['Recall'].append(float(recall))
+                test_size_results['comparison']['F1 Score'].append(float(f1))
+                test_size_results['comparison']['AUC Score'].append(float(auc_score))
+                test_size_results['comparison']['Best C'].append(searcher.best_params_['C'])
+                test_size_results['comparison']['Best Gamma'].append(searcher.best_params_['gamma'])
+
+                # Store ROC data
+                if len(unique_classes) == 2:
+                    test_size_results['roc_data'][kernel] = {
+                        'fpr': fpr.tolist(),
+                        'tpr': tpr.tolist(),
+                        'auc': float(auc_score)
+                    }
+
+                # Track best overall model
+                if auc_score > best_overall_auc:
+                    best_overall_auc = auc_score
+                    best_overall_model = best_model
+                    best_overall_config = {
+                        'kernel': kernel,
+                        'test_size': test_size,
+                        'params': searcher.best_params_,
+                        'auc': float(auc_score),
+                        'X_train': X_train,
+                        'X_test': X_test,
+                        'y_train': y_train,
+                        'y_test': y_test,
+                        'feature_col_1': feature_col_1,
+                        'feature_col_2': feature_col_2,
+                        'searcher': searcher
+                    }
+
+                print(f"    ✓ {kernel}: AUC={auc_score:.4f}, Acc={accuracy:.4f} ({time.time()-t1:.2f}s)")
+
+            all_results[test_size] = test_size_results
+
+        # Generate plots
+        print(f"\n[SVM TRAIN] Generating plots...")
+        plots = {}
+
+        # 1. ROC Curves Comparison
+        if len(unique_classes) == 2:
+            fig, ax = plt.subplots(figsize=(10, 8))
+            for test_size, results in all_results.items():
+                for kernel, roc_data in results['roc_data'].items():
+                    ax.plot(
+                        roc_data['fpr'], roc_data['tpr'],
+                        label=f'{kernel} (TS={test_size}, AUC={roc_data["auc"]:.3f})',
+                        linewidth=2
+                    )
+            ax.plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random')
+            ax.set_xlabel('False Positive Rate', fontsize=12)
+            ax.set_ylabel('True Positive Rate', fontsize=12)
+            ax.set_title('ROC Curve Comparison Across Test Sizes and Kernels', fontsize=14)
+            ax.legend(loc='lower right', fontsize=8)
+            ax.grid(True, alpha=0.3)
+            plots['roc_comparison'] = plot_to_base64(fig)
+            print(f"  ✓ ROC comparison plot")
+
+        # 2. Metric Comparisons
+        metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'AUC Score']
+        for metric in metrics:
+            fig, ax = plt.subplots(figsize=(10, 6))
+            for kernel in kernel_list:
+                values = []
+                sizes = []
+                for test_size, results in all_results.items():
+                    comp_df = pd.DataFrame(results['comparison'])
+                    kernel_row = comp_df[comp_df['Kernel'] == kernel]
+                    if not kernel_row.empty:
+                        values.append(kernel_row[metric].values[0])
+                        sizes.append(test_size)
+                ax.plot(sizes, values, marker='o', label=kernel, linewidth=2, markersize=8)
+            ax.set_xlabel('Test Size', fontsize=12)
+            ax.set_ylabel(metric, fontsize=12)
+            ax.set_title(f'{metric} Comparison Across Test Sizes', fontsize=14)
+            ax.legend(loc='best')
+            ax.grid(True, alpha=0.3)
+            plots[f'metric_{metric.lower().replace(" ", "_")}'] = plot_to_base64(fig)
+            print(f"  ✓ {metric} comparison plot")
+
+        # 3. Confusion Matrices
+        for kernel in kernel_list:
+            fig, axes = plt.subplots(1, len(test_size_list), figsize=(6*len(test_size_list), 5))
+            if len(test_size_list) == 1:
+                axes = [axes]
+
+            for idx, test_size in enumerate(test_size_list):
+                cm = all_results[test_size]['kernels'][kernel]['confusion_matrix']
+                sns.heatmap(
+                    cm, annot=True, fmt='d', cmap='Blues',
+                    ax=axes[idx], cbar=True
+                )
+                axes[idx].set_title(f'Test Size: {test_size}')
+                axes[idx].set_xlabel('Predicted')
+                axes[idx].set_ylabel('Actual')
+
+            fig.suptitle(f'Confusion Matrices for {kernel} Kernel', fontsize=14)
+            plt.tight_layout()
+            plots[f'confusion_matrix_{kernel}'] = plot_to_base64(fig)
+            print(f"  ✓ Confusion matrix for {kernel}")
+
+        # 4. Best Model Decision Boundary
+        if best_overall_config:
+            fig, ax = plt.subplots(figsize=(10, 8))
+            X_full = df[[feature_col_1, feature_col_2]]
+            y_full = df[target_col]
+
+            xx, yy = make_meshgrid(X_full[feature_col_1], X_full[feature_col_2])
+            plot_contours(ax, best_overall_config['searcher'], xx, yy, cmap=plt.cm.coolwarm, alpha=0.3)
+
+            # Plot points
+            for class_val in unique_classes:
+                mask = y_full == class_val
+                ax.scatter(
+                    X_full.loc[mask, feature_col_1],
+                    X_full.loc[mask, feature_col_2],
+                    label=f'Class {class_val}',
+                    s=50, edgecolor='black', linewidth=0.5
+                )
+
+            ax.set_xlabel(feature_col_1, fontsize=12)
+            ax.set_ylabel(feature_col_2, fontsize=12)
+            ax.set_title(
+                f"Best Model Decision Boundary\n"
+                f"{best_overall_config['kernel']} kernel (AUC={best_overall_config['auc']:.4f})",
+                fontsize=14
+            )
+            ax.legend(loc='best')
+            ax.grid(True, alpha=0.3)
+            plots['best_model_decision_boundary'] = plot_to_base64(fig)
+            print(f"  ✓ Best model decision boundary")
+
+        # Save best model
+        job_id = str(uuid.uuid4())[:8]
+        model_path = MODEL_DIR / f"svm_model_{job_id}.pkl"
+
+        model_data = {
+            'model': best_overall_model,
+            'config': best_overall_config,
+            'feature_names': [feature_col_1, feature_col_2],
+            'target_name': target_col,
+            'unique_classes': unique_classes,
+            'all_results': all_results
+        }
+
+        with open(model_path, 'wb') as f:
+            pickle.dump(model_data, f)
+
+        print(f"[SVM TRAIN] Saved model: {model_path}")
+
+        total_time = time.time() - start_time
+        print(f"{'='*70}")
+        print(f"[SVM TRAIN] ✅ Training complete in {total_time:.2f}s")
+        print(f"[SVM TRAIN] Best model: {best_overall_config['kernel']} (AUC={best_overall_auc:.4f})")
+        print(f"{'='*70}\n")
+
+        return {
+            "job_id": job_id,
+            "results": all_results,
+            "best_model": {
+                "kernel": best_overall_config['kernel'],
+                "test_size": best_overall_config['test_size'],
+                "params": best_overall_config['params'],
+                "auc": best_overall_config['auc']
+            },
+            "plots": plots,
+            "metadata": {
+                "total_time": f"{total_time:.2f}s",
+                "num_test_sizes": len(test_size_list),
+                "num_kernels": len(kernel_list),
+                "feature_names": [feature_col_1, feature_col_2],
+                "target_name": target_col
+            }
+        }
+
+    except Exception as e:
+        print(f"[SVM TRAIN ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Training error: {str(e)}")
+
+@app.options("/api/svm/predict")
+async def options_svm_predict():
+    return {}
+
+@app.post("/api/svm/predict")
+async def predict_svm(
+    job_id: str = Form(...),
+    feature_1: float = Form(...),
+    feature_2: float = Form(...)
+):
+    """
+    Predict using trained SVM model.
+    """
+    try:
+        # Load model
+        model_path = MODEL_DIR / f"svm_model_{job_id}.pkl"
+        if not model_path.exists():
+            raise HTTPException(status_code=404, detail=f"Model not found: {job_id}")
+
+        with open(model_path, 'rb') as f:
+            model_data = pickle.load(f)
+
+        # Predict
+        X_new = np.array([[feature_1, feature_2]])
+        prediction = model_data['model'].predict(X_new)[0]
+        probabilities = model_data['model'].predict_proba(X_new)[0]
+
+        return {
+            "prediction": int(prediction),
+            "probabilities": {
+                str(cls): float(prob)
+                for cls, prob in zip(model_data['unique_classes'], probabilities)
+            },
+            "feature_names": model_data['feature_names'],
+            "model_info": {
+                "kernel": model_data['config']['kernel'],
+                "auc": model_data['config']['auc']
+            }
+        }
+
+    except Exception as e:
+        print(f"[SVM PREDICT ERROR] {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
+@app.options("/api/svm/download-results")
+async def options_svm_download_results():
+    return {}
+
+@app.post("/api/svm/download-results")
+async def download_svm_results(job_id: str = Form(...)):
+    """
+    Download SVM results as Excel file.
+    """
+    try:
+        # Load model data
+        model_path = MODEL_DIR / f"svm_model_{job_id}.pkl"
+        if not model_path.exists():
+            raise HTTPException(status_code=404, detail=f"Model not found: {job_id}")
+
+        with open(model_path, 'rb') as f:
+            model_data = pickle.load(f)
+
+        # Create Excel file
+        output = BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            # Write results for each test size
+            for test_size, results in model_data['all_results'].items():
+                # Kernel results
+                kernel_df = pd.DataFrame.from_dict(results['kernels'], orient='index')
+                kernel_df = kernel_df.drop('confusion_matrix', axis=1)
+                kernel_df.to_excel(writer, sheet_name=f'TestSize_{test_size}_Kernels')
+
+                # Comparison metrics
+                comparison_df = pd.DataFrame(results['comparison'])
+                comparison_df.to_excel(writer, sheet_name=f'TestSize_{test_size}_Metrics', index=False)
+
+            # Best model summary
+            best_df = pd.DataFrame([{
+                'Kernel': model_data['config']['kernel'],
+                'Test Size': model_data['config']['test_size'],
+                'AUC': model_data['config']['auc'],
+                'C': model_data['config']['params']['C'],
+                'Gamma': model_data['config']['params']['gamma'],
+                'Feature 1': model_data['feature_names'][0],
+                'Feature 2': model_data['feature_names'][1],
+                'Target': model_data['target_name']
+            }])
+            best_df.to_excel(writer, sheet_name='Best_Model', index=False)
+
+        output.seek(0)
+
+        return StreamingResponse(
+            output,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={"Content-Disposition": f"attachment; filename=svm_results_{job_id}.xlsx"}
+        )
+
+    except Exception as e:
+        print(f"[SVM DOWNLOAD ERROR] {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
