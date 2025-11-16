@@ -353,3 +353,180 @@ export interface BatchPlotsResponse {
   };
 }
 
+// ============================================================================
+// SVM CLASSIFICATION API FUNCTIONS
+// ============================================================================
+
+// Upload dataset for SVM classification
+export const uploadSVMDataset = async (file: File): Promise<SVMUploadResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/api/svm/upload-dataset`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Train SVM models
+export const trainSVMModel = async (
+  fileId: string,
+  featureCol1: string,
+  featureCol2: string,
+  targetCol: string,
+  testSizes?: string,
+  kernels?: string,
+  cValues?: string,
+  gammaValues?: string,
+  cvFolds?: number
+): Promise<SVMTrainResponse> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+  formData.append('feature_col_1', featureCol1);
+  formData.append('feature_col_2', featureCol2);
+  formData.append('target_col', targetCol);
+
+  if (testSizes) formData.append('test_sizes', testSizes);
+  if (kernels) formData.append('kernels', kernels);
+  if (cValues) formData.append('c_values', cValues);
+  if (gammaValues) formData.append('gamma_values', gammaValues);
+  if (cvFolds) formData.append('cv_folds', cvFolds.toString());
+
+  const response = await fetch(`${API_BASE_URL}/api/svm/train`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Training failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Predict using trained SVM model
+export const predictSVM = async (
+  jobId: string,
+  feature1: number,
+  feature2: number
+): Promise<SVMPredictResponse> => {
+  const formData = new FormData();
+  formData.append('job_id', jobId);
+  formData.append('feature_1', feature1.toString());
+  formData.append('feature_2', feature2.toString());
+
+  const response = await fetch(`${API_BASE_URL}/api/svm/predict`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Prediction failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Download SVM results as Excel
+export const downloadSVMResults = async (jobId: string): Promise<void> => {
+  const formData = new FormData();
+  formData.append('job_id', jobId);
+
+  const response = await fetch(`${API_BASE_URL}/api/svm/download-results`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.statusText}`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `svm_results_${jobId}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+// SVM Types
+export interface SVMUploadResponse {
+  file_id: string;
+  filename: string;
+  columns: string[];
+  rows: number;
+  sample_data: Record<string, any>[];
+  status: string;
+}
+
+export interface SVMTrainResponse {
+  job_id: string;
+  results: {
+    [testSize: string]: {
+      kernels: {
+        [kernel: string]: {
+          best_params: Record<string, any>;
+          auc_score: number;
+          accuracy: number;
+          precision: number;
+          recall: number;
+          f1_score: number;
+          confusion_matrix: number[][];
+        };
+      };
+      comparison: {
+        Kernel: string[];
+        Accuracy: number[];
+        Precision: number[];
+        Recall: number[];
+        'F1 Score': number[];
+        'AUC Score': number[];
+        'Best C': number[];
+        'Best Gamma': number[];
+      };
+      roc_data: {
+        [kernel: string]: {
+          fpr: number[];
+          tpr: number[];
+          auc: number;
+        };
+      };
+    };
+  };
+  best_model: {
+    kernel: string;
+    test_size: number;
+    params: Record<string, any>;
+    auc: number;
+  };
+  plots: {
+    [plotName: string]: string; // base64 encoded images
+  };
+  metadata: {
+    total_time: string;
+    num_test_sizes: number;
+    num_kernels: number;
+    feature_names: string[];
+    target_name: string;
+  };
+}
+
+export interface SVMPredictResponse {
+  prediction: number;
+  probabilities: Record<string, number>;
+  feature_names: string[];
+  model_info: {
+    kernel: string;
+    auc: number;
+  };
+}
+

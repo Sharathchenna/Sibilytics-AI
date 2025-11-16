@@ -10,5 +10,5 @@ binding = "ASSETS"
 
 # Environment variables
 [vars]
-# RESEND_API_KEY = "your-key-here" # Set via: wrangler secret put RESEND_API_KEY
+RESEND_API_KEY = "re_LRiYy5aB_HE1J9iz7yBmjUFzoqrerL3VD"
 

@@ -1,9 +1,9 @@
 globalThis.openNextDebug = false;globalThis.openNextVersion = "3.8.5";
 
-// node_modules/@opennextjs/cloudflare/dist/api/durable-objects/bucket-cache-purge.js
+// ../../../../.npm/_npx/b8f71965aba33be8/node_modules/@opennextjs/cloudflare/dist/api/durable-objects/bucket-cache-purge.js
 import { DurableObject } from "cloudflare:workers";
 
-// node_modules/@opennextjs/aws/dist/utils/error.js
+// ../../../../.npm/_npx/b8f71965aba33be8/node_modules/@opennextjs/aws/dist/utils/error.js
 function isOpenNextError(e) {
   try {
     return "__openNextInternal" in e;
@@ -12,7 +12,7 @@ function isOpenNextError(e) {
   }
 }
 
-// node_modules/@opennextjs/aws/dist/adapters/logger.js
+// ../../../../.npm/_npx/b8f71965aba33be8/node_modules/@opennextjs/aws/dist/adapters/logger.js
 function debug(...args) {
   if (globalThis.openNextDebug) {
     console.log(...args);
@@ -62,10 +62,10 @@ function getOpenNextErrorLogLevel() {
   }
 }
 
-// node_modules/@opennextjs/cloudflare/dist/api/cloudflare-context.js
+// ../../../../.npm/_npx/b8f71965aba33be8/node_modules/@opennextjs/cloudflare/dist/api/cloudflare-context.js
 var cloudflareContextSymbol = Symbol.for("__cloudflare-context__");
 
-// node_modules/@opennextjs/cloudflare/dist/api/overrides/internal.js
+// ../../../../.npm/_npx/b8f71965aba33be8/node_modules/@opennextjs/cloudflare/dist/api/overrides/internal.js
 var debugCache = (name, ...args) => {
   if (process.env.NEXT_PRIVATE_DEBUG_CACHE) {
     console.log(`[${name}] `, ...args);
@@ -110,7 +110,7 @@ async function internalPurgeCacheByTags(env, tags) {
   }
 }
 
-// node_modules/@opennextjs/cloudflare/dist/api/durable-objects/bucket-cache-purge.js
+// ../../../../.npm/_npx/b8f71965aba33be8/node_modules/@opennextjs/cloudflare/dist/api/durable-objects/bucket-cache-purge.js
 var DEFAULT_BUFFER_TIME_IN_SECONDS = 5;
 var MAX_NUMBER_OF_TAGS_PER_PURGE = 100;
 var BucketCachePurge = class extends DurableObject {

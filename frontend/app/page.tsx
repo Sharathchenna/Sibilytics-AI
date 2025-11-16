@@ -1,7 +1,8 @@
 'use client';
 import { useState } from "react";
 import SignalProcessor from "./components/SignalProcessor";
-import { Menu, X, Mail, ArrowRight, MapPin, Loader2, CheckCircle, Activity, Waves, BarChart3, Download, Image as ImageIcon, Calculator } from "lucide-react";
+import SVMClassifier from "./components/SVMClassifier";
+import { Menu, X, Mail, ArrowRight, MapPin, Loader2, CheckCircle, Activity, Waves, BarChart3, Download, Image as ImageIcon, Calculator, Brain } from "lucide-react";
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -106,6 +107,10 @@ export default function Home() {
                 Signal Processing
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 group-hover:w-full transition-all duration-300"></span>
               </a>
+              <a href="#svm-classification" className="text-gray-700 hover:text-emerald-600 font-medium relative group">
+                SVM Classification
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 group-hover:w-full transition-all duration-300"></span>
+              </a>
               <a href="#contact" className="text-gray-700 hover:text-emerald-600 font-medium relative group">
                 Contact
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 group-hover:w-full transition-all duration-300"></span>
@@ -138,6 +143,10 @@ export default function Home() {
               <a href="#signal-processing" onClick={() => setMobileMenuOpen(false)}
                  className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
                 Signal Processing
+              </a>
+              <a href="#svm-classification" onClick={() => setMobileMenuOpen(false)}
+                 className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
+                SVM Classification
               </a>
               <a href="#contact" onClick={() => setMobileMenuOpen(false)}
                  className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
@@ -371,6 +380,9 @@ export default function Home() {
       {/* Signal Processing Section */}
       <SignalProcessor />
 
+      {/* SVM Classification Section */}
+      <SVMClassifier />
+
       {/* Get in Touch Section */}
       <div id="contact" className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-4">
@@ -568,6 +580,7 @@ export default function Home() {
                 <li><a href="#" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Home</a></li>
                 <li><a href="#solutions" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Solutions</a></li>
                 <li><a href="#signal-processing" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Signal Processing</a></li>
+                <li><a href="#svm-classification" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">SVM Classification</a></li>
                 <li><a href="#contact" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Contact</a></li>
                 <li><a href="https://www.bits-pilani.ac.in/hyderabad/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">BITS Pilani</a></li>
               </ul>
