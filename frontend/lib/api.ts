@@ -458,6 +458,57 @@ export const downloadSVMResults = async (jobId: string): Promise<void> => {
   URL.revokeObjectURL(url);
 };
 
+// Download individual SVM plot as PNG
+export const downloadSVMPlot = async (jobId: string, plotName: string): Promise<void> => {
+  const formData = new FormData();
+  formData.append('job_id', jobId);
+  formData.append('plot_name', plotName);
+
+  const response = await fetch(`${API_BASE_URL}/api/svm/download-plot`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.statusText}`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${plotName.replace(/\s+/g, '_').toLowerCase()}.png`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+// Download all SVM plots as ZIP
+export const downloadAllSVMPlots = async (jobId: string): Promise<void> => {
+  const formData = new FormData();
+  formData.append('job_id', jobId);
+
+  const response = await fetch(`${API_BASE_URL}/api/svm/download-all-plots`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.statusText}`);
+  }
+
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `svm_plots_${jobId}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
 // SVM Types
 export interface SVMUploadResponse {
   file_id: string;

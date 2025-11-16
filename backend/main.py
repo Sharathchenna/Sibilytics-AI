@@ -19,6 +19,7 @@ import os
 from pathlib import Path
 import gzip
 import openpyxl
+import zipfile
 
 # SVM Classification imports
 import matplotlib
@@ -1793,7 +1794,8 @@ async def train_svm_model(
             'feature_names': [feature_col_1, feature_col_2],
             'target_name': target_col,
             'unique_classes': unique_classes,
-            'all_results': all_results
+            'all_results': all_results,
+            'plots': plots  # Save plots for later download
         }
 
         with open(model_path, 'wb') as f:
@@ -1935,6 +1937,121 @@ async def download_svm_results(job_id: str = Form(...)):
 
     except Exception as e:
         print(f"[SVM DOWNLOAD ERROR] {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
+
+@app.options("/api/svm/download-plot")
+async def options_svm_download_plot():
+    return {}
+
+@app.post("/api/svm/download-plot")
+async def download_svm_plot(
+    job_id: str = Form(...),
+    plot_name: str = Form(...)
+):
+    """
+    Download a single SVM plot as PNG file.
+    """
+    try:
+        # Load model data
+        model_path = MODEL_DIR / f"svm_model_{job_id}.pkl"
+        if not model_path.exists():
+            raise HTTPException(status_code=404, detail=f"Model not found: {job_id}")
+
+        with open(model_path, 'rb') as f:
+            model_data = pickle.load(f)
+
+        # Get the specific plot
+        # Plots are stored in the response during training, need to retrieve from all_results
+        # Search through all test_size results to find the plot
+        plot_base64 = None
+
+        # Check if plots were saved directly in model_data
+        if 'plots' in model_data:
+            plot_base64 = model_data['plots'].get(plot_name)
+
+        if not plot_base64:
+            raise HTTPException(status_code=404, detail=f"Plot not found: {plot_name}")
+
+        # Decode base64 to bytes
+        plot_bytes = base64.b64decode(plot_base64)
+
+        # Create BytesIO object
+        output = BytesIO(plot_bytes)
+        output.seek(0)
+
+        # Clean filename
+        clean_name = plot_name.replace(' ', '_').lower()
+
+        print(f"[SVM PLOT DOWNLOAD] Downloading {plot_name}")
+
+        return StreamingResponse(
+            output,
+            media_type="image/png",
+            headers={"Content-Disposition": f"attachment; filename={clean_name}.png"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[SVM PLOT DOWNLOAD ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
+
+@app.options("/api/svm/download-all-plots")
+async def options_svm_download_all_plots():
+    return {}
+
+@app.post("/api/svm/download-all-plots")
+async def download_all_svm_plots(job_id: str = Form(...)):
+    """
+    Download all SVM plots as a ZIP file.
+    """
+    try:
+        # Load model data
+        model_path = MODEL_DIR / f"svm_model_{job_id}.pkl"
+        if not model_path.exists():
+            raise HTTPException(status_code=404, detail=f"Model not found: {job_id}")
+
+        with open(model_path, 'rb') as f:
+            model_data = pickle.load(f)
+
+        # Get plots
+        plots = model_data.get('plots', {})
+
+        if not plots:
+            raise HTTPException(status_code=404, detail="No plots found for this model")
+
+        # Create ZIP file in memory
+        zip_buffer = BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            for plot_name, plot_base64 in plots.items():
+                # Decode base64 to bytes
+                plot_bytes = base64.b64decode(plot_base64)
+
+                # Clean filename
+                clean_name = plot_name.replace(' ', '_').lower()
+
+                # Add to ZIP
+                zip_file.writestr(f"{clean_name}.png", plot_bytes)
+
+        zip_buffer.seek(0)
+
+        print(f"[SVM ALL PLOTS DOWNLOAD] Created ZIP with {len(plots)} plots")
+
+        return StreamingResponse(
+            zip_buffer,
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename=svm_plots_{job_id}.zip"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[SVM ALL PLOTS DOWNLOAD ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
 
 if __name__ == "__main__":

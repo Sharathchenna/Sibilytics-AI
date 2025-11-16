@@ -2,7 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, Brain, Loader2, CheckCircle, AlertCircle, Download, Play, Target } from 'lucide-react';
-import { uploadSVMDataset, trainSVMModel, predictSVM, downloadSVMResults, type SVMUploadResponse, type SVMTrainResponse, type SVMPredictResponse } from '@/lib/api';
+import { uploadSVMDataset, trainSVMModel, predictSVM, downloadSVMResults, downloadSVMPlot, downloadAllSVMPlots, type SVMUploadResponse, type SVMTrainResponse, type SVMPredictResponse } from '@/lib/api';
 
 export default function SVMClassifier() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -501,10 +501,18 @@ export default function SVMClassifier() {
                 <div className="grid md:grid-cols-2 gap-6">
                   {Object.entries(trainResults.plots).map(([plotName, base64Image]) => (
                     <div key={plotName} className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
-                      <div className="p-4 bg-gray-50 border-b border-gray-200">
+                      <div className="p-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                         <h5 className="font-semibold text-gray-800 capitalize">
                           {plotName.replace(/_/g, ' ')}
                         </h5>
+                        <button
+                          onClick={() => downloadSVMPlot(trainResults.job_id, plotName)}
+                          className="bg-green-600 text-white px-3 py-1.5 rounded font-semibold hover:bg-green-700 transition flex items-center gap-2 text-sm"
+                          title="Download this plot"
+                        >
+                          <Download className="w-4 h-4" />
+                          PNG
+                        </button>
                       </div>
                       <div className="p-4">
                         <img
@@ -515,6 +523,17 @@ export default function SVMClassifier() {
                       </div>
                     </div>
                   ))}
+                </div>
+
+                {/* Download All Plots Button */}
+                <div className="flex justify-center mt-6">
+                  <button
+                    onClick={() => downloadAllSVMPlots(trainResults.job_id)}
+                    className="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition flex items-center gap-2 shadow-md hover:shadow-lg"
+                  >
+                    <Download className="w-5 h-5" />
+                    Download All Plots ({Object.keys(trainResults.plots).length} plots as ZIP)
+                  </button>
                 </div>
               </div>
 
