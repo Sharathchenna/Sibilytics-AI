@@ -285,14 +285,14 @@ export default function SignalProcessor() {
   return (
     <div id="signal-processing" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 max-w-3xl mx-auto">
           <div className="inline-block mb-4">
             <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">Try It Now</span>
           </div>
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             Signal Processing & Feature Extraction
           </h2>
-          <p className="text-slate-600 text-lg max-w-2xl mx-auto">
+          <p className="text-slate-600 text-lg">
             Upload your signal data and extract meaningful features using advanced wavelet decomposition techniques
           </p>
         </div>
@@ -568,10 +568,10 @@ export default function SignalProcessor() {
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <button
               onClick={() => setShowResults(!showResults)}
-              className="w-full bg-emerald-600 hover:bg-emerald-700 transition"
+              className="w-full bg-emerald-600 text-white hover:bg-emerald-700 transition p-6 flex items-center justify-between"
             >
-              <h3 className="text-2xl font-bold">Processing Results</h3>
-              <span className="text-2xl">{showResults ? '−' : '+'}</span>
+              <h3 className="text-2xl font-bold text-white">Processing Results</h3>
+              <span className="text-2xl text-white">{showResults ? '−' : '+'}</span>
             </button>
 
             {showResults && (
@@ -605,7 +605,7 @@ export default function SignalProcessor() {
                     <button
                       onClick={handleDownloadRawStats}
                       disabled={isDownloadingRaw || allStatsRaw.length === 0}
-                      className="bg-blue-600 hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-3 shadow-lg hover:shadow-md"
+                      className="bg-blue-600 text-white hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-3 shadow-lg hover:shadow-md px-6 py-3 rounded-lg font-semibold"
                     >
                       {isDownloadingRaw ? (
                         <>
@@ -623,7 +623,7 @@ export default function SignalProcessor() {
                     <button
                       onClick={handleDownloadDenoisedStats}
                       disabled={isDownloadingDenoised || allStatsDenoised.length === 0}
-                      className="bg-emerald-600 hover:bg-emerald-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-3 shadow-lg hover:shadow-md"
+                      className="bg-emerald-600 text-white hover:bg-emerald-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-3 shadow-lg hover:shadow-md px-6 py-3 rounded-lg font-semibold"
                     >
                       {isDownloadingDenoised ? (
                         <>
@@ -644,8 +644,11 @@ export default function SignalProcessor() {
                 <div className="mt-8 text-center">
                   <button
                     onClick={resetForm}
-                    className="bg-gray-600 text-white px-8 py-3 rounded font-semibold hover:bg-gray-700 transition"
+                    className="bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition shadow-lg hover:shadow-xl transform hover:scale-105 inline-flex items-center gap-2"
                   >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
                     Process Another File
                   </button>
                 </div>

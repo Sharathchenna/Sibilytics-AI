@@ -279,9 +279,46 @@ a:hover {
    ============================================================================ */
 
 * {
-  transition-property: color, background-color, border-color, opacity, box-shadow, transform;
+  transition-property: background-color, border-color, opacity, box-shadow, transform;
   transition-timing-function: var(--easing-standard);
   transition-duration: var(--duration-normal);
+}
+
+/* Force white text on all colored buttons */
+.bg-blue-600,
+.bg-blue-700,
+.bg-green-600,
+.bg-green-700,
+.bg-emerald-600,
+.bg-emerald-700,
+.bg-gray-600,
+.bg-gray-700,
+button.bg-blue-600,
+button.bg-blue-700,
+button.bg-green-600,
+button.bg-green-700,
+button.bg-emerald-600,
+button.bg-emerald-700,
+button.bg-gray-600,
+button.bg-gray-700 {
+  color: #ffffff !important;
+}
+
+/* Ensure all children of colored buttons have white text */
+.bg-blue-600 *,
+.bg-blue-700 *,
+.bg-green-600 *,
+.bg-green-700 *,
+.bg-emerald-600 *,
+.bg-emerald-700 *,
+.bg-gray-600 *,
+.bg-gray-700 * {
+  color: #ffffff !important;
+}
+
+/* Specifically target text-white class */
+.text-white {
+  color: #ffffff !important;
 }
 
 /* Prevent transition on page load */

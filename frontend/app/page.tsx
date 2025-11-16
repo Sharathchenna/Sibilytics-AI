@@ -93,8 +93,8 @@ export default function Home() {
               <Image
                 src="/logo.png"
                 alt="Sibilytics AI"
-                width={40}
-                height={40}
+                width={120 }
+                height={120}
                 className="h-10 w-auto"
               />
               <span className="text-xl font-bold text-slate-900 hidden sm:block">
@@ -276,12 +276,12 @@ export default function Home() {
       {/* Solutions Section */}
       <div id="solutions" className="py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 max-w-3xl mx-auto">
             <div className="inline-block mb-4">
               <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">Platform Features</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Comprehensive Signal Analysis Tools</h2>
-            <p className="text-slate-600 text-lg max-w-2xl mx-auto">Powerful features for time-series sensor data processing and analysis</p>
+            <p className="text-slate-600 text-lg">Powerful features for time-series sensor data processing and analysis</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -393,14 +393,14 @@ export default function Home() {
       {/* Get in Touch Section */}
       <div id="contact" className="py-20 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
+          <div className="text-center mb-16 max-w-3xl mx-auto">
             <div className="inline-block mb-4">
               <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">Contact Us</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
               Get in Touch
             </h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-600 text-lg">
               Send us an email or give us a call. We're here to help with your data science needs.
             </p>
           </div>
@@ -508,23 +508,12 @@ export default function Home() {
             {/* Contact Info */}
             <div className="space-y-8">
               <div className="bg-gradient-to-br from-emerald-600 to-teal-600 p-8 rounded-2xl text-white shadow-xl">
-                <h3 className="text-2xl font-bold mb-6">Contact Information</h3>
+                <h3 className="text-2xl text-white font-bold mb-6">Contact Information</h3>
 
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
-                    <div className="p-3 bg-white/20 rounded-lg">
-                      <MapPin className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">Sibilytics AI</h4>
-                      <p className="text-emerald-50 leading-relaxed">
-                        BITS Pilani Hyderabad Campus,<br />
-                        Jawahar Nagar, Kapra,<br />
-                        Secunderabad,<br />
-                        Telangana 500078<br />
-                        India
-                      </p>
-                    </div>
+                    
+                    
                   </div>
 
                   <div className="flex items-start gap-4">
@@ -532,8 +521,8 @@ export default function Home() {
                       <Mail className="w-6 h-6" />
                     </div>
                     <div>
-                      <h4 className="font-semibold mb-2">Email</h4>
-                      <a href="mailto:sybilyticsai@gmail.com" className="text-emerald-50 hover:text-white text-lg transition-colors">
+                      <h4 className="font-semibold mb-2 text-white">Email</h4>
+                      <a href="mailto:sybilyticsai@gmail.com" className="text-white hover:text-emerald-100 text-lg transition-colors font-medium break-all">
                         sybilyticsai@gmail.com
                       </a>
                     </div>
@@ -569,20 +558,14 @@ export default function Home() {
                   Sibilytics AI
                 </span>
               </div>
-              <p className="text-gray-400 text-sm leading-relaxed mb-6">
+              <p className="text-white text-sm leading-relaxed mb-6">
                 Advanced signal processing platform for wavelet-based feature extraction from sensor signals.
                 A powerful tool for researchers, engineers, and data analysts working with time-series data.
               </p>
               <div className="space-y-3">
-                <div className="flex items-center gap-3 text-gray-400 hover:text-emerald-400 transition-colors">
-                  <MapPin className="w-4 h-4 flex-shrink-0" />
-                  <p className="text-sm">
-                    BITS Pilani Hyderabad Campus, Secunderabad, Telangana 500078
-                  </p>
-                </div>
                 <div className="flex items-center gap-3">
                   <Mail className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                  <a href="mailto:sybilyticsai@gmail.com" className="text-gray-400 hover:text-emerald-400 transition-colors text-sm">
+                  <a href="mailto:sybilyticsai@gmail.com" className="text-white hover:text-emerald-400 transition-colors text-sm font-medium break-all">
                     sybilyticsai@gmail.com
                   </a>
                 </div>
@@ -591,14 +574,13 @@ export default function Home() {
 
             {/* Quick Links */}
             <div>
-              <h5 className="text-lg font-bold mb-4 text-emerald-400">Quick Links</h5>
-              <ul className="space-y-3 text-sm">
+              <h4 className="text-2xl font-bold mb-8 text-white">Quick Links</h4>
+              <ul className="space-y-3 text-sm mt-3">
                 <li><a href="#" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Home</a></li>
                 <li><a href="#solutions" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Solutions</a></li>
                 <li><a href="#signal-processing" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Signal Processing</a></li>
                 <li><a href="#svm-classification" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">SVM Classification</a></li>
                 <li><a href="#contact" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Contact</a></li>
-                <li><a href="https://www.bits-pilani.ac.in/hyderabad/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">BITS Pilani</a></li>
               </ul>
             </div>
 

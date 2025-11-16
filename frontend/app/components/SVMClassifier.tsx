@@ -153,7 +153,7 @@ export default function SVMClassifier() {
     <div id="svm-classification" className="py-20 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-16 max-w-3xl mx-auto">
           <div className="inline-block mb-4">
             <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">
               Machine Learning
@@ -162,7 +162,7 @@ export default function SVMClassifier() {
           <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             SVM Classification
           </h2>
-          <p className="text-slate-600 text-lg max-w-3xl mx-auto">
+          <p className="text-slate-600 text-lg">
             Upload your feature dataset (xlsx/csv), select columns, and train Support Vector Machine models with automatic hyperparameter optimization
           </p>
         </div>
