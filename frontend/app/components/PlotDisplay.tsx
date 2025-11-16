@@ -188,10 +188,12 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
           type: 'scatter',
           mode: 'lines',
           name: trace.name,
-          line: { color: trace.color },
-          hovertemplate: axisLabels.xaxis + ': %{x:.4f}<br>' +
-                         axisLabels.yaxis + ': %{y:.4f}' +
-                         '<extra></extra>',
+          line: { color: trace.color, width: 2 },
+          hovertemplate: 
+            '<b>%{fullData.name}</b><br>' +
+            axisLabels.xaxis + ': %{x:.4f}<br>' +
+            axisLabels.yaxis + ': %{y:.4f}' +
+            '<extra></extra>',
         }));
       } else {
         // Single trace (Signal)
@@ -201,10 +203,12 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
           type: 'scatter',
           mode: 'lines',
           name: data.name,
-          line: { color: data.color },
-          hovertemplate: axisLabels.xaxis + ': %{x:.4f}<br>' +
-                         axisLabels.yaxis + ': %{y:.4f}' +
-                         '<extra></extra>',
+          line: { color: data.color, width: 2 },
+          hovertemplate: 
+            '<b>%{fullData.name}</b><br>' +
+            axisLabels.xaxis + ': %{x:.6f}<br>' +
+            axisLabels.yaxis + ': %{y:.6f}' +
+            '<extra></extra>',
         }];
       }
     } else if (type === 'bar') {
@@ -214,9 +218,11 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
         type: 'bar',
         name: data.traces?.[0]?.name || data.name,
         marker: { color: data.traces?.[0]?.color || data.color },
-        hovertemplate: axisLabels.xaxis + ': %{x}<br>' +
-                       axisLabels.yaxis + ': %{y:.4f}' +
-                       '<extra></extra>',
+        hovertemplate: 
+          '<b>%{fullData.name}</b><br>' +
+          axisLabels.xaxis + ': %{x}<br>' +
+          axisLabels.yaxis + ': %{y:.4f}' +
+          '<extra></extra>',
       }];
     } else if (type === 'heatmap') {
       plotlyData = [{
@@ -225,10 +231,16 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
         z: data.z,
         type: 'heatmap',
         colorscale: data.colorscale || 'Viridis',
-        hovertemplate: axisLabels.xaxis + ': %{x:.4f}<br>' +
-                       axisLabels.yaxis + ': %{y:.4f}<br>' +
-                       'Intensity: %{z:.2f}' +
-                       '<extra></extra>',
+        hovertemplate: 
+          axisLabels.xaxis + ': %{x:.4f}<br>' +
+          axisLabels.yaxis + ': %{y:.4f}<br>' +
+          'Intensity: %{z:.4f}' +
+          '<extra></extra>',
+        colorbar: {
+          title: { text: 'Intensity', side: 'right' },
+          thickness: 20,
+          len: 0.7,
+        },
       }];
     }
 
@@ -238,53 +250,51 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
     const plotLayout = {
       ...layout,
       autosize: true,
-      font: { size: 14 },
-      paper_bgcolor: 'rgba(0,0,0,0)',
-      plot_bgcolor: 'rgba(0,0,0,0)',
       hovermode: 'closest',
       hoverlabel: {
-        bgcolor: 'white',
-        bordercolor: 'black',
-        font: { size: 14, color: 'black' },
+        bgcolor: '#ffffff',
+        font: { 
+          color: '#0f172a', 
+          size: 12, 
+          family: 'Arial, sans-serif'
+        },
+        bordercolor: '#059669',
+        align: 'left' as const,
+        namelength: -1,
       },
       xaxis: {
         ...layout.xaxis,
         title: {
           text: axisLabels.xaxis,
-          font: { size: 16, color: '#1f2937', family: 'Arial, sans-serif', weight: 'bold' },
+          font: { size: 14, color: '#1e293b' },
         },
-        showline: true,
-        linewidth: 2,
-        linecolor: 'black',
-        gridcolor: '#e5e7eb',
+        showgrid: true,
+        gridcolor: '#e2e8f0',
+        zeroline: true,
+        zerolinecolor: '#cbd5e1',
       },
       yaxis: {
         ...layout.yaxis,
         title: {
           text: axisLabels.yaxis,
-          font: { size: 16, color: '#1f2937', family: 'Arial, sans-serif', weight: 'bold' },
+          font: { size: 14, color: '#1e293b' },
         },
-        showline: true,
-        linewidth: 2,
-        linecolor: 'black',
-        gridcolor: '#e5e7eb',
+        showgrid: true,
+        gridcolor: '#e2e8f0',
+        zeroline: true,
+        zerolinecolor: '#cbd5e1',
       },
       ...(isSpectrogram && {
         yaxis2: {
           title: {
             text: axisLabels.yaxis,
-            font: { size: 16, color: '#1f2937', family: 'Arial, sans-serif', weight: 'bold' },
+            font: { size: 14, color: '#1e293b' },
           },
-          overlaying: 'y',
-          side: 'right',
-          showgrid: false,
-          showline: true,
-          linewidth: 2,
-          linecolor: 'black',
-          matches: 'y',
+          overlaying: 'y' as const,
+          side: 'right' as const,
+          matches: 'y' as const,
         },
       }),
-      margin: { l: 80, r: isSpectrogram ? 80 : 40, t: 60, b: 80 },
     };
 
     return (
@@ -293,10 +303,18 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
           data={plotlyData}
           layout={plotLayout}
           config={{
-            responsive: true,
             displayModeBar: true,
             displaylogo: false,
-            modeBarButtonsToRemove: ['pan2d', 'lasso2d', 'select2d'],
+            responsive: true,
+            modeBarButtonsToRemove: ['lasso2d', 'select2d'],
+            toImageButtonOptions: {
+              format: 'png',
+              filename: `${plotType}_plot`,
+              height: 1080,
+              width: 1920,
+              scale: 2,
+            },
+            scrollZoom: true,
           }}
           style={{ width: '100%', height: '600px' }}
         />
@@ -355,7 +373,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
             </select>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-lg">
+          <div className="bg-slate-50 p-4 rounded-lg">
             {renderPlot(`signal_${signalType}` as PlotType)}
           </div>
         </div>
@@ -403,7 +421,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
             </select>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-lg">
+          <div className="bg-slate-50 p-4 rounded-lg">
             {renderPlot(`fft_${fftType}` as PlotType)}
           </div>
         </div>
@@ -451,7 +469,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
             </select>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-lg">
+          <div className="bg-slate-50 p-4 rounded-lg">
             {renderPlot(`wavelet_${waveletType}` as PlotType)}
           </div>
         </div>
@@ -497,7 +515,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
             </select>
           </div>
 
-          <div className="bg-gradient-to-br from-gray-50 to-blue-50 p-4 rounded-lg">
+          <div className="bg-slate-50 p-4 rounded-lg">
             {renderPlot(`spectrum_${spectrumType}` as PlotType)}
           </div>
         </div>
@@ -512,7 +530,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
               setTimeout(() => downloadPlot(cat.id as PlotType), 500 * index);
             });
           }}
-          className="bg-teal-600 text-white px-8 py-3 rounded font-semibold hover:bg-teal-700 transition inline-flex items-center gap-2 shadow-lg hover:shadow-xl"
+          className="bg-emerald-600 text-white px-8 py-3 rounded font-semibold hover:bg-emerald-700 transition inline-flex items-center gap-2 shadow-lg hover:shadow-md"
         >
           <Download className="w-5 h-5" />
           Download All PNGs

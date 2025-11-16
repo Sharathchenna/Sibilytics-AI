@@ -1,5 +1,6 @@
 'use client';
 import { useState } from "react";
+import Image from "next/image";
 import SignalProcessor from "./components/SignalProcessor";
 import SVMClassifier from "./components/SVMClassifier";
 import { Menu, X, Mail, ArrowRight, MapPin, Loader2, CheckCircle, Activity, Waves, BarChart3, Download, Image as ImageIcon, Calculator, Brain } from "lucide-react";
@@ -84,36 +85,39 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="bg-white shadow-md sticky top-0 z-50 backdrop-blur-sm bg-white/95">
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 backdrop-blur-sm bg-white/95">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-between items-center h-20">
-            <div className="flex items-center">
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent hover:scale-105 transition-transform cursor-pointer">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <a href="#" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+              <Image
+                src="/logo.png"
+                alt="Sibilytics AI"
+                width={40}
+                height={40}
+                className="h-10 w-auto"
+              />
+              <span className="text-xl font-bold text-slate-900 hidden sm:block">
                 Sibilytics AI
-              </div>
-            </div>
+              </span>
+            </a>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex gap-8">
-              <a href="#" className="text-gray-700 hover:text-emerald-600 font-medium relative group">
+            <div className="hidden md:flex items-center gap-8">
+              <a href="#" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
                 Home
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 group-hover:w-full transition-all duration-300"></span>
               </a>
-              <a href="#solutions" className="text-gray-700 hover:text-emerald-600 font-medium relative group">
+              <a href="#solutions" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
                 Solutions
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 group-hover:w-full transition-all duration-300"></span>
               </a>
-              <a href="#signal-processing" className="text-gray-700 hover:text-emerald-600 font-medium relative group">
+              <a href="#signal-processing" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
                 Signal Processing
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 group-hover:w-full transition-all duration-300"></span>
               </a>
-              <a href="#svm-classification" className="text-gray-700 hover:text-emerald-600 font-medium relative group">
+              <a href="#svm-classification" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
                 SVM Classification
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 group-hover:w-full transition-all duration-300"></span>
               </a>
-              <a href="#contact" className="text-gray-700 hover:text-emerald-600 font-medium relative group">
+              <a href="#contact" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
                 Contact
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-emerald-600 group-hover:w-full transition-all duration-300"></span>
               </a>
             </div>
 
@@ -163,33 +167,36 @@ export default function Home() {
         )}
       </nav>
 
-      {/* Hero Section */}
-      <div className="relative min-h-[500px] md:h-[600px] bg-gradient-to-br from-emerald-500 via-teal-600 to-blue-700 overflow-hidden">
-        {/* Animated background pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl animate-pulse-slow"></div>
-          <div className="absolute bottom-20 right-20 w-96 h-96 bg-white rounded-full blur-3xl animate-pulse-slow" style={{animationDelay: '1.5s'}}></div>
-        </div>
+      {/* Hero Section - Modern & Clean */}
+      <div className="relative bg-gradient-to-b from-emerald-50 to-white py-20 md:py-32">
+        <div className="max-w-7xl mx-auto px-4">
+          <div className="text-center max-w-4xl mx-auto">
+            {/* Badge */}
+            <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold mb-8 animate-fade-in">
+              <Activity className="w-4 h-4" />
+              Advanced AI-Powered Signal Processing
+            </div>
 
-        <div className="absolute inset-0 flex items-center justify-center px-4">
-          <div className="text-center text-white z-10 max-w-5xl mx-auto">
-            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight animate-fade-in">
-              Sibilytics AI<br className="hidden md:block" />
-              <span className="bg-gradient-to-r from-yellow-200 to-yellow-400 bg-clip-text text-transparent">
-              Feature Extraction and ML-based Prediction Platform
-              </span>
+            {/* Heading */}
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight animate-fade-in">
+              Feature Extraction and
+              <span className="text-emerald-600"> ML-based Prediction</span> Platform
             </h1>
-            <p className="text-lg md:text-2xl mb-8 text-blue-50 font-light leading-relaxed max-w-3xl mx-auto animate-fade-in" style={{animationDelay: '0.2s'}}>
-            Advanced signal processing for sensor data analysis, feature
-            extraction, feature optimization, and machine learning-based
-            prediction.            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in" style={{animationDelay: '0.4s'}}>
+
+            {/* Description */}
+            <p className="text-lg md:text-xl text-slate-600 mb-10 leading-relaxed max-w-3xl mx-auto animate-fade-in">
+              Advanced signal processing for sensor data analysis, feature extraction, optimization, and machine learning-based prediction.
+            </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
               <a href="#signal-processing"
-                 className="bg-white text-emerald-600 px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 hover:scale-105 shadow-xl transition-all">
+                 className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-emerald-700 shadow-sm hover:shadow-md transition-all">
                 Try It Now
+                <ArrowRight className="w-5 h-5" />
               </a>
               <a href="#solutions"
-                 className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg font-bold text-lg hover:bg-white hover:text-emerald-600 hover:scale-105 shadow-xl transition-all">
+                 className="inline-flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-300 px-8 py-4 rounded-lg font-semibold text-lg hover:border-slate-400 hover:bg-slate-50 transition-all">
                 Explore Solutions
               </a>
             </div>
@@ -198,19 +205,19 @@ export default function Home() {
       </div>
 
       {/* About Section */}
-      <div className="py-20 bg-gradient-to-b from-white to-gray-50">
+      <div className="py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-block mb-4">
               <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">About Sibilytics AI</span>
             </div>
-            <h3 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6 leading-tight">
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6 leading-tight">
               Intelligent <span className="text-emerald-600">Signal Processing</span><br />
               for Research & Industry
-            </h3>
+            </h2>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-xl p-8 md:p-10 border border-gray-100">
+          <div className="bg-white rounded-xl shadow-md p-8 md:p-10 border border-slate-200">
             <p className="text-gray-700 text-lg leading-relaxed mb-6">
               <strong className="text-emerald-600">Sibilytics AI</strong> is an advanced web-based platform designed for <strong>feature extraction</strong> from sensor and denoised signals, which can subsequently be used for <strong>machine learning-based analyses</strong> such as classification, clustering, and prediction.
               Users can upload signal data in <span className="font-semibold">.txt</span>, <span className="font-semibold">.csv</span>, <span className="font-semibold">.xlsx</span>, or <span className="font-semibold">.lvm</span> formats, which can then be processed using the powerful <strong>Biorthogonal (bior) wavelet</strong>.
@@ -267,21 +274,21 @@ export default function Home() {
       </div>
 
       {/* Solutions Section */}
-      <div id="solutions" className="py-20 bg-gray-50">
+      <div id="solutions" className="py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center mb-16">
             <div className="inline-block mb-4">
               <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">Platform Features</span>
             </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">Comprehensive Signal Analysis Tools</h2>
-            <p className="text-gray-600 text-lg max-w-2xl mx-auto">Powerful features for time-series sensor data processing and analysis</p>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Comprehensive Signal Analysis Tools</h2>
+            <p className="text-slate-600 text-lg max-w-2xl mx-auto">Powerful features for time-series sensor data processing and analysis</p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {/* Feature Card 1 */}
-            <div className="bg-white p-8 rounded-xl shadow-md hover:shadow-2xl transition-all duration-300 border-2 border-transparent hover:border-emerald-500 group">
-              <div className="mb-6 inline-block p-4 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl group-hover:scale-110 transition-transform">
-                <Activity className="w-10 h-10 text-white" />
+            <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 border border-slate-200 group">
+              <div className="mb-6 inline-block p-4 bg-emerald-100 rounded-xl group-hover:bg-emerald-600 transition-colors">
+                <Activity className="w-10 h-10 text-emerald-600 group-hover:text-white transition-colors" />
               </div>
               <h4 className="text-xl font-bold mb-4 text-gray-800 group-hover:text-emerald-600 transition-colors">
                 Time-Domain Visualization
@@ -550,8 +557,17 @@ export default function Home() {
           <div className="grid md:grid-cols-3 gap-10 mb-12">
             {/* Company Info */}
             <div className="md:col-span-2">
-              <div className="text-3xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent mb-4">
-                Sibilytics AI
+              <div className="flex items-center gap-3 mb-4">
+                <Image
+                  src="/logo.png"
+                  alt="Sibilytics AI"
+                  width={40}
+                  height={40}
+                  className="h-10 w-auto brightness-200"
+                />
+                <span className="text-2xl font-bold text-white">
+                  Sibilytics AI
+                </span>
               </div>
               <p className="text-gray-400 text-sm leading-relaxed mb-6">
                 Advanced signal processing platform for wavelet-based feature extraction from sensor signals.

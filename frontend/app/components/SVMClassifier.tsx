@@ -150,30 +150,30 @@ export default function SVMClassifier() {
   };
 
   return (
-    <div id="svm-classification" className="py-20 bg-gradient-to-b from-gray-50 to-white">
+    <div id="svm-classification" className="py-20 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-16">
           <div className="inline-block mb-4">
-            <span className="bg-purple-100 text-purple-700 px-4 py-2 rounded-full text-sm font-semibold">
+            <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">
               Machine Learning
             </span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             SVM Classification
           </h2>
-          <p className="text-gray-600 text-lg max-w-3xl mx-auto">
+          <p className="text-slate-600 text-lg max-w-3xl mx-auto">
             Upload your feature dataset (xlsx/csv), select columns, and train Support Vector Machine models with automatic hyperparameter optimization
           </p>
         </div>
 
         {/* Main Content */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
+        <div className="bg-white rounded-xl shadow-md p-8 border border-slate-200">
           {/* Step 1: Upload Dataset */}
           <div className="mb-8">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
-                <span className="text-purple-700 font-bold">1</span>
+              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                <span className="text-emerald-700 font-bold">1</span>
               </div>
               <h3 className="text-2xl font-bold text-gray-800">Upload Dataset</h3>
             </div>
@@ -189,17 +189,17 @@ export default function SVMClassifier() {
               />
               <label
                 htmlFor="svm-file-upload"
-                className="flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg font-semibold cursor-pointer hover:from-purple-600 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg"
+                className="flex items-center justify-center gap-3 px-6 py-4 bg-emerald-600 text-white rounded-lg font-semibold cursor-pointer hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md"
               >
                 <FileSpreadsheet className="w-5 h-5" />
                 Choose Dataset File (.xlsx or .csv)
               </label>
 
               {selectedFile && (
-                <div className="mt-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <FileSpreadsheet className="w-5 h-5 text-purple-600" />
+                      <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
                       <span className="font-medium text-gray-800">{selectedFile.name}</span>
                       <span className="text-sm text-gray-500">
                         ({(selectedFile.size / 1024).toFixed(2)} KB)
@@ -208,7 +208,7 @@ export default function SVMClassifier() {
                     <button
                       onClick={handleUpload}
                       disabled={isUploading}
-                      className="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                      className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                     >
                       {isUploading ? (
                         <>
@@ -239,8 +239,8 @@ export default function SVMClassifier() {
           {uploadData && (
             <div className="mb-8 animate-fade-in">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center">
-                  <span className="text-indigo-700 font-bold">2</span>
+                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
+                  <span className="text-emerald-700 font-bold">2</span>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800">Select Features & Target</h3>
               </div>
@@ -253,7 +253,7 @@ export default function SVMClassifier() {
                   <select
                     value={featureCol1}
                     onChange={(e) => setFeatureCol1(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   >
                     <option value="">Select column...</option>
                     {uploadData.columns.map((col) => (
@@ -269,7 +269,7 @@ export default function SVMClassifier() {
                   <select
                     value={featureCol2}
                     onChange={(e) => setFeatureCol2(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   >
                     <option value="">Select column...</option>
                     {uploadData.columns.map((col) => (
@@ -285,7 +285,7 @@ export default function SVMClassifier() {
                   <select
                     value={targetCol}
                     onChange={(e) => setTargetCol(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                   >
                     <option value="">Select column...</option>
                     {uploadData.columns.map((col) => (
@@ -330,7 +330,7 @@ export default function SVMClassifier() {
               <div className="ml-13 mt-6">
                 <button
                   onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="text-purple-600 font-semibold hover:text-purple-700 flex items-center gap-2"
+                  className="text-emerald-600 font-semibold hover:text-emerald-700 flex items-center gap-2"
                 >
                   {showAdvanced ? '▼' : '▶'} Advanced Configuration
                 </button>
@@ -346,7 +346,7 @@ export default function SVMClassifier() {
                           type="text"
                           value={testSizes}
                           onChange={(e) => setTestSizes(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                           placeholder="0.2,0.3"
                         />
                       </div>
@@ -359,7 +359,7 @@ export default function SVMClassifier() {
                           type="text"
                           value={kernels}
                           onChange={(e) => setKernels(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                           placeholder="poly,rbf,linear,sigmoid"
                         />
                       </div>
@@ -372,7 +372,7 @@ export default function SVMClassifier() {
                           type="text"
                           value={cValues}
                           onChange={(e) => setCValues(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                           placeholder="1,2,3,4,5,6,7,8,9"
                         />
                       </div>
@@ -385,7 +385,7 @@ export default function SVMClassifier() {
                           type="text"
                           value={gammaValues}
                           onChange={(e) => setGammaValues(e.target.value)}
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                           placeholder="0.00001,0.0001,0.001,0.01,0.1"
                         />
                       </div>
@@ -400,7 +400,7 @@ export default function SVMClassifier() {
                           onChange={(e) => setCvFolds(parseInt(e.target.value))}
                           min="2"
                           max="10"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
                         />
                       </div>
                     </div>
@@ -424,7 +424,7 @@ export default function SVMClassifier() {
                 <button
                   onClick={handleTrain}
                   disabled={isTraining}
-                  className="px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg font-bold text-lg hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl flex items-center gap-3"
+                  className="px-8 py-4 bg-emerald-600 text-white rounded-lg font-bold text-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex items-center gap-3"
                 >
                   {isTraining ? (
                     <>
@@ -529,7 +529,7 @@ export default function SVMClassifier() {
                 <div className="flex justify-center mt-6">
                   <button
                     onClick={() => downloadAllSVMPlots(trainResults.job_id)}
-                    className="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 transition flex items-center gap-2 shadow-md hover:shadow-lg"
+                    className="bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition flex items-center gap-2 shadow-md hover:shadow-lg"
                   >
                     <Download className="w-5 h-5" />
                     Download All Plots ({Object.keys(trainResults.plots).length} plots as ZIP)

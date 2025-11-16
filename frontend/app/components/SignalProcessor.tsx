@@ -283,30 +283,30 @@ export default function SignalProcessor() {
   };
 
   return (
-    <div id="signal-processing" className="py-20 bg-gradient-to-br from-blue-50 via-teal-50 to-emerald-50">
+    <div id="signal-processing" className="py-20 bg-white">
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12">
           <div className="inline-block mb-4">
             <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">Try It Now</span>
           </div>
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-800 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
             Signal Processing & Feature Extraction
           </h2>
-          <p className="text-gray-600 text-lg max-w-2xl mx-auto">
+          <p className="text-slate-600 text-lg max-w-2xl mx-auto">
             Upload your signal data and extract meaningful features using advanced wavelet decomposition techniques
           </p>
         </div>
 
         {/* Upload Section */}
-        <div className="bg-white p-8 rounded-2xl shadow-xl mb-6 border border-gray-100">
+        <div className="bg-white p-8 rounded-2xl shadow-md mb-6 border border-slate-200">
           <div className="text-center mb-6">
             <div className="flex items-center justify-center gap-3 mb-3">
               <div className="p-2 bg-emerald-100 rounded-lg">
                 <Upload className="w-6 h-6 text-emerald-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-800">Upload Signal Data</h3>
+              <h3 className="text-2xl font-bold text-slate-900">Upload Signal Data</h3>
             </div>
-            <p className="text-gray-600 text-sm flex flex-wrap items-center justify-center gap-2">
+            <p className="text-slate-600 text-sm flex flex-wrap items-center justify-center gap-2">
               <span className="px-3 py-1 bg-gray-100 rounded-md text-xs font-medium">.txt</span>
               <span className="px-3 py-1 bg-gray-100 rounded-md text-xs font-medium">.lvm</span>
               <span className="px-3 py-1 bg-gray-100 rounded-md text-xs font-medium">.csv</span>
@@ -320,7 +320,7 @@ export default function SignalProcessor() {
               <FileText className="mx-auto h-16 w-16 text-gray-400 group-hover:text-emerald-600 group-hover:scale-110 transition-all" />
             </div>
             <label htmlFor="file-upload" className="cursor-pointer">
-              <span className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-lg font-bold hover:from-emerald-700 hover:to-teal-700 hover:scale-105 transition-all inline-block shadow-lg hover:shadow-xl">
+              <span className="bg-emerald-600 text-white px-8 py-4 rounded-lg font-bold hover:bg-emerald-700 transition-all inline-block shadow-sm hover:shadow-md">
                 {selectedFiles.length > 0 ? '✓ Change Files' : '📁 Select Files'}
               </span>
               <input
@@ -398,12 +398,12 @@ export default function SignalProcessor() {
                 {/* MB Progress */}
                 {uploadProgress.status === 'uploading' && (
                   <div className="mt-2 text-center">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-slate-600">
                       <span className="font-semibold text-blue-600">
                         {uploadProgress.uploadedMB.toFixed(2)} MB
                       </span>
                       {' / '}
-                      <span className="font-semibold text-gray-800">
+                      <span className="font-semibold text-slate-900">
                         {uploadProgress.totalMB.toFixed(2)} MB
                       </span>
                     </span>
@@ -445,15 +445,15 @@ export default function SignalProcessor() {
 
         {/* Configuration Section */}
         {showConfig && uploadedFiles.length > 0 && (
-          <div className="bg-white p-8 rounded-lg shadow-xl mb-6">
+          <div className="bg-white p-8 rounded-lg shadow-md mb-6">
             <div className="flex items-center gap-2 mb-6">
               <Settings className="w-6 h-6 text-green-600" />
-              <h3 className="text-2xl font-bold text-gray-800">Processing Configuration</h3>
+              <h3 className="text-2xl font-bold text-slate-900">Processing Configuration</h3>
             </div>
 
             {/* File Selection Dropdown */}
             {uploadedFiles.length > 1 && (
-              <div className="mb-6 bg-gradient-to-br from-blue-50 to-emerald-50 p-4 rounded-lg border-2 border-emerald-200">
+              <div className="mb-6 bg-emerald-50 p-4 rounded-lg border-2 border-emerald-200">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Select File to Visualize
                 </label>
@@ -468,7 +468,7 @@ export default function SignalProcessor() {
                     </option>
                   ))}
                 </select>
-                {/* <p className="mt-2 text-sm text-gray-600">
+                {/* <p className="mt-2 text-sm text-slate-600">
                   All files will be processed, but you can choose which one to display visualizations for
                 </p> */}
               </div>
@@ -565,10 +565,10 @@ export default function SignalProcessor() {
 
         {/* Results Section - Expandable */}
         {showResults && currentProcessData && currentPlotsData && (
-          <div className="bg-white rounded-lg shadow-xl overflow-hidden">
+          <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <button
               onClick={() => setShowResults(!showResults)}
-              className="w-full bg-gradient-to-r from-green-600 to-teal-600 text-white px-6 py-4 flex items-center justify-between hover:from-green-700 hover:to-teal-700 transition"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 transition"
             >
               <h3 className="text-2xl font-bold">Processing Results</h3>
               <span className="text-2xl">{showResults ? '−' : '+'}</span>
@@ -592,8 +592,8 @@ export default function SignalProcessor() {
                 <PlotDisplay plotsData={currentPlotsData} />
 
                 {/* Download Features Section */}
-                <div className="mt-12 bg-gradient-to-br from-blue-50 to-emerald-50 p-8 rounded-xl border-2 border-emerald-200">
-                  <h3 className="text-2xl font-bold text-gray-800 mb-4 text-center">Download Features</h3>
+                <div className="mt-12 bg-emerald-50 p-8 rounded-xl border-2 border-emerald-200">
+                  <h3 className="text-2xl font-bold text-slate-900 mb-4 text-center">Download Features</h3>
 
                   {uploadedFiles.length > 1 && (
                     <p className="text-center text-gray-700 mb-6 bg-white/50 py-3 px-4 rounded-lg">
@@ -605,7 +605,7 @@ export default function SignalProcessor() {
                     <button
                       onClick={handleDownloadRawStats}
                       disabled={isDownloadingRaw || allStatsRaw.length === 0}
-                      className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-blue-700 hover:to-cyan-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-3 shadow-lg hover:shadow-xl"
+                      className="bg-blue-600 hover:bg-blue-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-3 shadow-lg hover:shadow-md"
                     >
                       {isDownloadingRaw ? (
                         <>
@@ -623,7 +623,7 @@ export default function SignalProcessor() {
                     <button
                       onClick={handleDownloadDenoisedStats}
                       disabled={isDownloadingDenoised || allStatsDenoised.length === 0}
-                      className="bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-lg font-semibold hover:from-emerald-700 hover:to-teal-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-3 shadow-lg hover:shadow-xl"
+                      className="bg-emerald-600 hover:bg-emerald-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-3 shadow-lg hover:shadow-md"
                     >
                       {isDownloadingDenoised ? (
                         <>
