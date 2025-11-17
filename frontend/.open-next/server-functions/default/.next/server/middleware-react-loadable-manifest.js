@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST='{"app/components/PlotDisplay.tsx -> plotly.js-dist-min":{"id":1958,"files":["static/chunks/4ead511a.0d04d4153c5dadb0.js","static/chunks/714.66b62b98b0625db4.js"]},"app/components/PlotDisplay.tsx -> react-plotly.js":{"id":4816,"files":["static/chunks/f2d0f643.44ff93e0bac4b5d0.js","static/chunks/315.6da787cbdbd4f4fb.js"]}}';

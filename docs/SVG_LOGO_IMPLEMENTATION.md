@@ -15,7 +15,7 @@ Replaced the PNG logo images in the navigation header and footer with the SVG ve
 ```tsx
 <Image
   src="/logo.png"
-  alt="Abilytics"
+  alt="Sibilytics AI"
   width={200}
   height={67}
   className="h-12 w-auto object-contain sm:h-14"
@@ -38,7 +38,7 @@ Replaced the PNG logo images in the navigation header and footer with the SVG ve
 ```tsx
 <Image
   src="/logo.png"
-  alt="Abilytics"
+  alt="Sibilytics AI"
   width={240}
   height={80}
   className="h-16 w-auto object-contain brightness-0 invert"
@@ -65,7 +65,7 @@ Replaced the PNG logo images in the navigation header and footer with the SVG ve
    - Changed from `/logo.png` to `/logo.svg`
 
 3. **Updated alt text**
-   - Changed from "Abilytics" to "Sybilytics.ai" for brand consistency
+   - Changed from "Abilytics" to "Sibilytics AI" for brand consistency
 
 4. **Enhanced sizing with width-based approach**
    - Header: `w-48 sm:w-56 md:w-64 lg:w-72` (responsive width scaling for larger logo display)

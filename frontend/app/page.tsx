@@ -223,7 +223,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto px-4">
           <div className="text-center mb-12">
             <div className="inline-block mb-4">
-              <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">About Abilytics</span>
+              <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">About Sibilytics AI</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6 leading-tight">
               Intelligent <span className="text-emerald-600">Signal Processing</span><br />
@@ -233,7 +233,7 @@ export default function Home() {
 
           <div className="bg-white rounded-xl shadow-md p-8 md:p-10 border border-slate-200">
             <p className="text-gray-700 text-lg leading-relaxed mb-6">
-              <strong className="text-emerald-600">Abilytics</strong> is an advanced web-based platform designed for <strong>feature extraction</strong> from sensor and denoised signals, which can subsequently be used for <strong>machine learning-based analyses</strong> such as classification, clustering, and prediction.
+              <strong className="text-emerald-600">Sibilytics AI</strong> is an advanced web-based platform designed for <strong>feature extraction</strong> from sensor and denoised signals, which can subsequently be used for <strong>machine learning-based analyses</strong> such as classification, clustering, and prediction.
               Users can upload signal data in <span className="font-semibold">.txt</span>, <span className="font-semibold">.csv</span>, <span className="font-semibold">.xlsx</span>, or <span className="font-semibold">.lvm</span> formats, which can then be processed using the powerful <strong>Biorthogonal (bior) wavelet</strong>.
               The application offers dynamic control over the wavelet decomposition level (1–20), providing flexibility to accommodate diverse analysis requirements.
             </p>
@@ -273,7 +273,7 @@ export default function Home() {
 
             <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border-l-4 border-emerald-600">
               <p className="text-gray-800 text-lg leading-relaxed font-medium">
-                <strong className="text-emerald-600">Abilytics</strong> is a powerful and user-friendly tool for <strong>researchers, engineers, and data analysts</strong> working with time-series sensor data and looking to perform fast, interactive, and insightful signal processing.
+                <strong className="text-emerald-600">Sibilytics AI</strong> is a powerful and user-friendly tool for <strong>researchers, engineers, and data analysts</strong> working with time-series sensor data and looking to perform fast, interactive, and insightful signal processing.
               </p>
             </div>
 
@@ -406,7 +406,7 @@ export default function Home() {
               <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">Platform Demo</span>
             </div>
             <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-              See <span className="text-emerald-600">Abilytics</span> in Action
+              See <span className="text-emerald-600">Sibilytics AI</span> in Action
             </h2>
             <p className="text-slate-600 text-lg">Watch how our platform simplifies signal processing and analysis</p>
           </div>
@@ -658,7 +658,7 @@ export default function Home() {
           {/* Copyright */}
           <div className="border-t border-gray-700 pt-8 text-center">
             <p className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} Abilytics. All rights reserved.
+              © {new Date().getFullYear()} Sibilytics AI. All rights reserved.
             </p>
           </div>
         </div>
