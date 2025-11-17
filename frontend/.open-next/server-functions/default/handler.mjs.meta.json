@@ -3060,17 +3060,17 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/page_client-reference-manifest.js": {
-      "bytes": 5445,
+      "bytes": 5447,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js": {
-      "bytes": 5551,
+      "bytes": 5553,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/api/contact/route_client-reference-manifest.js": {
-      "bytes": 5555,
+      "bytes": 5557,
       "imports": [],
       "format": "cjs"
     },
@@ -3662,7 +3662,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/_not-found/page.js": {
-      "bytes": 3876,
+      "bytes": 4078,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js",
@@ -3703,7 +3703,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/page.js": {
-      "bytes": 115888,
+      "bytes": 130097,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js",
@@ -3790,7 +3790,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/node_modules/next/dist/server/require.js": {
-      "bytes": 17224,
+      "bytes": 18580,
       "imports": [
         {
           "path": "path",
@@ -6944,13 +6944,13 @@
           "bytesInOutput": 586
         },
         ".open-next/server-functions/default/.next/server/app/page_client-reference-manifest.js": {
-          "bytesInOutput": 5118
+          "bytesInOutput": 5120
         },
         ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js": {
-          "bytesInOutput": 5236
+          "bytesInOutput": 5238
         },
         ".open-next/server-functions/default/.next/server/app/api/contact/route_client-reference-manifest.js": {
-          "bytesInOutput": 5242
+          "bytesInOutput": 5244
         },
         ".open-next/server-functions/default/node_modules/next/dist/server/load-manifest.js": {
           "bytesInOutput": 12589
@@ -7052,16 +7052,16 @@
           "bytesInOutput": 36172
         },
         ".open-next/server-functions/default/.next/server/app/_not-found/page.js": {
-          "bytesInOutput": 3937
+          "bytesInOutput": 4139
         },
         ".open-next/server-functions/default/.next/server/app/page.js": {
-          "bytesInOutput": 119519
+          "bytesInOutput": 134464
         },
         ".open-next/server-functions/default/.next/server/app/api/contact/route.js": {
           "bytesInOutput": 139495
         },
         ".open-next/server-functions/default/node_modules/next/dist/server/require.js": {
-          "bytesInOutput": 14157
+          "bytesInOutput": 15385
         },
         ".open-next/server-functions/default/node_modules/next/dist/lib/interop-default.js": {
           "bytesInOutput": 363
@@ -7346,7 +7346,7 @@
           "bytesInOutput": 64035
         }
       },
-      "bytes": 8306636
+      "bytes": 8323017
     }
   }
 }
