@@ -5,8 +5,14 @@ export async function POST(request: NextRequest) {
   try {
     // Initialize Resend at runtime to avoid build-time errors
     const resend = new Resend(process.env.RESEND_API_KEY);
-    
-    const body = await request.json();
+
+    const body = await request.json() as {
+      name: string;
+      email: string;
+      phone: string;
+      subject: string;
+      message: string;
+    };
     const { name, email, phone, subject, message } = body;
 
     // Validate required fields

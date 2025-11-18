@@ -8,6 +8,11 @@ compatibility_flags = ["nodejs_compat_v2"]
 directory = ".open-next/assets"
 binding = "ASSETS"
 
+# KV Namespace bindings
+[[kv_namespaces]]
+binding = "VISITOR_COUNT"
+id = "61917fc0926842ca8a62a395c81262d3"
+
 # Environment variables
 [vars]
 RESEND_API_KEY = "re_LRiYy5aB_HE1J9iz7yBmjUFzoqrerL3VD"

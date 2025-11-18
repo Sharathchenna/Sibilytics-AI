@@ -1,5 +1,5 @@
 'use client';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import SignalProcessor from "./components/SignalProcessor";
 import SVMClassifier from "./components/SVMClassifier";
@@ -17,6 +17,64 @@ export default function Home() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [visitorCount, setVisitorCount] = useState<number | null>(null);
+
+  // Fetch visitor count on page load with hybrid tracking
+  useEffect(() => {
+    const trackVisitor = async () => {
+      try {
+        // Get or create a session ID in localStorage
+        let sessionId = localStorage.getItem('visitor_session_id');
+        if (!sessionId) {
+          // Generate a unique session ID
+          sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+          localStorage.setItem('visitor_session_id', sessionId);
+        }
+
+        // Send POST request to standalone worker
+        const response = await fetch('https://visitor-counter.ksingh-869.workers.dev', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ sessionId }),
+        });
+
+        const data = await response.json() as {
+          count?: number;
+          success?: boolean;
+          counted?: boolean;
+          message?: string;
+          debug?: any;
+        };
+
+        if (data.count !== undefined) {
+          setVisitorCount(data.count);
+        }
+
+        // Log debug information
+        console.log('=== Visitor Counter Debug Info ===');
+        console.log('Count:', data.count);
+        console.log('Counted this visit:', data.counted);
+        console.log('Message:', data.message);
+        if (data.debug) {
+          console.log('KV Debug:', data.debug);
+        }
+        console.log('================================');
+
+        // Optional: Log whether this visit was counted (for debugging)
+        if (data.counted) {
+          console.log('✅ New unique visitor counted');
+        } else {
+          console.log('ℹ️ Already counted in the last week');
+        }
+      } catch (error) {
+        console.error('Error tracking visitor:', error);
+      }
+    };
+
+    trackVisitor();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -63,7 +121,7 @@ export default function Home() {
         body: JSON.stringify(formData),
       });
 
-      const data = await response.json();
+      const data = await response.json() as { error?: string; success?: boolean };
 
       if (!response.ok) {
         throw new Error(data.error || 'Failed to send message');
@@ -117,13 +175,13 @@ export default function Home() {
               <a href="#solutions" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
                 Solutions
               </a>
-              <a href="#signal-processing" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
+              <a href="#signal-processing" className="font-medium transition-colors" style={{ color: '#9333ea' }}>
                 Signal Processing
               </a>
-              <a href="#svm-classification" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
+              <a href="#svm-classification" className="font-medium transition-colors" style={{ color: '#9333ea' }}>
                 SVM Classification
               </a>
-              <a href="#data-analysis" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
+              <a href="#data-analysis" className="font-medium transition-colors" style={{ color: '#9333ea' }}>
                 Data Analysis
               </a>
               <a href="#contact" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
@@ -155,15 +213,15 @@ export default function Home() {
                 Solutions
               </a>
               <a href="#signal-processing" onClick={() => setMobileMenuOpen(false)}
-                 className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
+                 className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
                 Signal Processing
               </a>
               <a href="#svm-classification" onClick={() => setMobileMenuOpen(false)}
-                 className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
+                 className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
                 SVM Classification
               </a>
               <a href="#data-analysis" onClick={() => setMobileMenuOpen(false)}
-                 className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
+                 className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
                 Data Analysis
               </a>
               <a href="#contact" onClick={() => setMobileMenuOpen(false)}
@@ -398,35 +456,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Platform Demo Video Section */}
-      <div className="py-20 bg-white relative z-10">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-12 max-w-3xl mx-auto">
-            <div className="inline-block mb-4">
-              <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">Platform Demo</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-              See <span className="text-emerald-600">Sibilytics AI</span> in Action
-            </h2>
-            <p className="text-slate-600 text-lg">Watch how our platform simplifies signal processing and analysis</p>
-          </div>
-
-          <div className="max-w-5xl mx-auto">
-            <div className="relative rounded-2xl overflow-hidden shadow-2xl border-4 border-emerald-200">
-              <video
-                className="w-full h-auto"
-                controls
-                preload="metadata"
-                poster="/logo.png"
-              >
-                <source src="/website.mp4" type="video/mp4" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Signal Processing Section */}
       <SignalProcessor />
 
@@ -646,9 +675,9 @@ export default function Home() {
               <ul className="space-y-3 text-sm mt-3">
                 <li><a href="#" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Home</a></li>
                 <li><a href="#solutions" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Solutions</a></li>
-                <li><a href="#signal-processing" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Signal Processing</a></li>
-                <li><a href="#svm-classification" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">SVM Classification</a></li>
-                <li><a href="#data-analysis" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Data Analysis</a></li>
+                <li><a href="#signal-processing" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Signal Processing</a></li>
+                <li><a href="#svm-classification" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">SVM Classification</a></li>
+                <li><a href="#data-analysis" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Data Analysis</a></li>
                 <li><a href="#contact" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Contact</a></li>
               </ul>
             </div>
@@ -660,6 +689,12 @@ export default function Home() {
             <p className="text-gray-400 text-sm">
               © {new Date().getFullYear()} Sibilytics AI. All rights reserved.
             </p>
+            {visitorCount !== null && (
+              <p className="text-gray-500 text-xs mt-3 flex items-center justify-center gap-2">
+                <Activity className="w-3 h-3" />
+                <span>Unique Visitors: <span className="font-semibold text-emerald-400">{visitorCount.toLocaleString()}</span></span>
+              </p>
+            )}
           </div>
         </div>
       </footer>
