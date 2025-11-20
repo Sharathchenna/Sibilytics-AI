@@ -1462,9 +1462,9 @@ async def train_svm_model(
     target_col: str = Form(...),
     test_sizes: str = Form("0.2,0.3"),  # Comma-separated string
     kernels: str = Form("poly,rbf,linear,sigmoid"),  # Comma-separated string
-    c_values: str = Form("1,3,5,7,9"),  # Reduced from 9 to 5 values for 2x speedup
-    gamma_values: str = Form("0.0001,0.001,0.01,0.1"),  # Reduced from 5 to 4 values
-    cv_folds: int = Form(2)  # Reduced from 3 to 2 for 33% speedup
+    c_values: str = Form("1,3,5,7,9"),  # Optimized: 5 values covering the range
+    gamma_values: str = Form("0.0001,0.001,0.01"),  # Optimized: 3 key values for 2x faster training
+    cv_folds: int = Form(2)  # Reduced from 3 to 2 for faster training
 ):
     """
     Train SVM models with multiple kernels and test sizes.
@@ -1565,9 +1565,9 @@ async def train_svm_model(
                 # OPTIMIZATION: Use LinearSVC for linear kernel (10-100x faster)
                 if kernel == "linear":
                     # LinearSVC is optimized for linear kernels and much faster than SVC
-                    base_svm = LinearSVC(random_state=42, max_iter=10000, dual=True)
+                    base_svm = LinearSVC(random_state=42, max_iter=5000, dual=True, tol=1e-3)
                     # Wrap in CalibratedClassifierCV to get probability estimates
-                    svm = CalibratedClassifierCV(base_svm, cv=3)
+                    svm = CalibratedClassifierCV(base_svm, cv=2)  # Reduced CV for faster training
                     parameters = {"estimator__C": c_list}  # Use 'estimator' not 'base_estimator'
                 else:
                     # Setup SVM with increased cache for non-linear kernels
@@ -1575,7 +1575,9 @@ async def train_svm_model(
                         kernel=kernel,
                         probability=True,
                         random_state=42,
-                        cache_size=500  # Increased from default 200MB to 500MB
+                        cache_size=1000,  # Increased cache for faster kernel computation
+                        max_iter=5000,  # Limit iterations for faster convergence
+                        tol=1e-3  # Slightly relaxed tolerance for faster convergence
                     )
                     parameters = {"C": c_list, 'gamma': gamma_list}
 
@@ -1583,8 +1585,8 @@ async def train_svm_model(
                         parameters['degree'] = [3]
 
                 # OPTIMIZATION: Use RandomizedSearchCV for 3-5x speedup
-                # Samples 20 random combinations instead of trying all 45+
-                n_iter = min(20, len(c_list) * len(gamma_list) if kernel != "linear" else len(c_list))
+                # Samples 12 random combinations for faster training while maintaining good coverage
+                n_iter = min(12, len(c_list) * len(gamma_list) if kernel != "linear" else len(c_list))
                 searcher = RandomizedSearchCV(
                     svm, parameters, n_iter=n_iter, n_jobs=-1, cv=cv_folds,
                     refit=True, verbose=0, scoring='roc_auc', random_state=42
