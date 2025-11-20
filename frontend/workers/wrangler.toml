@@ -1,0 +1,7 @@
+name = "visitor-counter"
+main = "visitor-counter.ts"
+compatibility_date = "2025-06-01"
+
+[[kv_namespaces]]
+binding = "VISITOR_COUNT"
+id = "61917fc0926842ca8a62a395c81262d3"

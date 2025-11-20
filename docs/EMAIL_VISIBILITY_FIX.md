@@ -81,3 +81,9 @@ The email address in the Contact Information section was not visible due to low 
 - Check contrast ratios meet WCAG accessibility guidelines
 - Ensure text wrapping works properly on narrow screens
 
+
+
+
+
+
+

@@ -957,7 +957,12 @@ async def generate_spectrum_plot(
         contents = await file.read()
         df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
         
+        time_data = df.iloc[:, time_column].values
         Signal = df.iloc[:, signal_column].values
+
+        # Calculate sampling frequency
+        tf = time_data[2] - time_data[1]
+        fs = 1 / tf
         
         print(f"[SPECTRUM PLOT] Processing {len(Signal):,} points ({spectrum_type})")
         
@@ -972,7 +977,7 @@ async def generate_spectrum_plot(
             colorscale = 'Viridis'
         
         # Calculate spectrogram
-        f, t, Sxx = spectrogram(signal_data, 20000)
+        f, t, Sxx = spectrogram(signal_data, fs)
         
         # Convert to dB scale
         z_data = 10 * np.log10(Sxx + 1e-10)  # Add small value to avoid log(0)
@@ -1291,8 +1296,8 @@ async def generate_all_plots(
         t1 = time.time()
 
         # Helper function to generate and downsample spectrogram
-        def generate_spectrogram(signal, name, colorscale):
-            f, t, Sxx = spectrogram(signal, 20000)
+        def generate_spectrogram(signal, name, colorscale, fs):
+            f, t, Sxx = spectrogram(signal, fs)
             z_data = 10 * np.log10(Sxx + 1e-10)
 
             # Downsample if too large
@@ -1328,10 +1333,10 @@ async def generate_all_plots(
             }
 
         # Generate raw spectrum
-        plots['spectrum_raw'] = generate_spectrogram(Signal, "Raw", "Viridis")
+        plots['spectrum_raw'] = generate_spectrogram(Signal, "Raw", "Viridis", fs)
 
         # Generate denoised spectrum
-        plots['spectrum_denoised'] = generate_spectrogram(denoised_signal, "Denoised", "Plasma")
+        plots['spectrum_denoised'] = generate_spectrogram(denoised_signal, "Denoised", "Plasma", fs)
 
         print(f"[BATCH] ✓ Spectrograms (raw + denoised): {time.time() - t1:.3f}s")
         
