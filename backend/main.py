@@ -1370,9 +1370,22 @@ def make_meshgrid(x, y, h=.02):
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
     return xx, yy
 
-def plot_contours(ax, clf, xx, yy, **params):
-    """Plot decision boundaries"""
-    Z = clf.predict(np.c_[xx.ravel(), yy.ravel()])
+def plot_contours(ax, clf, xx, yy, feature_names=None, class_mapping=None, **params):
+    """Plot decision boundaries with proper feature names for DataFrame compatibility"""
+    # Create prediction points
+    points = np.c_[xx.ravel(), yy.ravel()]
+
+    # Convert to DataFrame with feature names if provided (fixes sklearn warning)
+    if feature_names is not None and len(feature_names) == 2:
+        points_df = pd.DataFrame(points, columns=feature_names)
+        Z = clf.predict(points_df)
+    else:
+        Z = clf.predict(points)
+
+    # Convert class labels to numeric if they are strings (fixes matplotlib contourf error)
+    if class_mapping is not None:
+        Z = np.array([class_mapping.get(val, val) for val in Z])
+
     Z = Z.reshape(xx.shape)
     out = ax.contourf(xx, yy, Z, **params)
     return out
@@ -1439,6 +1452,20 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
         columns = df.columns.tolist()
         sample_data = df.head(5).to_dict('records')
 
+        # Get unique values for each column (useful for target selection)
+        unique_values = {}
+        for col in columns:
+            try:
+                # Get unique values and limit to first 20 to avoid huge responses
+                uniques = df[col].unique().tolist()[:20]
+                unique_values[col] = {
+                    "values": uniques,
+                    "count": int(df[col].nunique()),
+                    "dtype": str(df[col].dtype)
+                }
+            except:
+                unique_values[col] = {"values": [], "count": 0, "dtype": "unknown"}
+
         print(f"[SVM UPLOAD] Dataset shape: {df.shape}")
         print(f"[SVM UPLOAD] Columns: {columns}")
 
@@ -1448,6 +1475,7 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
             "columns": columns,
             "rows": df.shape[0],
             "sample_data": sample_data,
+            "unique_values": unique_values,  # NEW: unique values per column
             "status": "success"
         }
 
@@ -1610,20 +1638,27 @@ async def train_svm_model(
                     y_pred_proba_score = y_pred_proba
 
                 # Calculate metrics
-                auc_score = roc_auc_score(y_test_bin, y_pred_proba_score)
-                accuracy = accuracy_score(y_test, y_pred)
-                precision = precision_score(y_test, y_pred, average='weighted', zero_division=0)
-                recall = recall_score(y_test, y_pred, average='weighted', zero_division=0)
-                f1 = f1_score(y_test, y_pred, average='weighted', zero_division=0)
+                # Handle AUC calculation for binary vs multiclass (matching pasted code logic)
+                if len(unique_classes) == 2:
+                    auc_score = roc_auc_score(y_test_bin, y_pred_proba_score)
+                else:
+                    # Use 'ovo' (One-vs-One) strategy for multiclass, matching pasted code
+                    auc_score = roc_auc_score(y_test_bin, y_pred_proba_score, multi_class='ovo')
 
-                # ROC curve data
+                accuracy = accuracy_score(y_test, y_pred)
+                # Use 'macro' averaging like pasted code (unweighted mean of per-class scores)
+                precision = precision_score(y_test, y_pred, average='macro', zero_division=0)
+                recall = recall_score(y_test, y_pred, average='macro', zero_division=0)
+                f1 = f1_score(y_test, y_pred, average='macro', zero_division=0)
+
+                # ROC curve data (matching pasted code logic for per-class curves)
                 if len(unique_classes) == 2:
                     fpr, tpr, _ = roc_curve(y_test_bin, y_pred_proba_score)
                 else:
-                    # For multiclass, use macro average
+                    # For multiclass, generate per-class ROC curves (like pasted code)
                     fpr, tpr = {}, {}
-                    for i in range(len(unique_classes)):
-                        fpr[i], tpr[i], _ = roc_curve(y_test_bin[:, i], y_pred_proba[:, i])
+                    for i, cls in enumerate(unique_classes):
+                        fpr[cls], tpr[cls], _ = roc_curve(y_test_bin[:, i], y_pred_proba[:, i])
 
                 # Store results
                 test_size_results['kernels'][kernel] = {
@@ -1654,12 +1689,20 @@ async def train_svm_model(
                 test_size_results['comparison']['Best C'].append(best_c)
                 test_size_results['comparison']['Best Gamma'].append(best_gamma if best_gamma is not None else "N/A")
 
-                # Store ROC data
+                # Store ROC data (handle both binary and multiclass like pasted code)
                 if len(unique_classes) == 2:
                     test_size_results['roc_data'][kernel] = {
                         'fpr': fpr.tolist(),
                         'tpr': tpr.tolist(),
                         'auc': float(auc_score)
+                    }
+                else:
+                    # Store multiclass ROC data with per-class curves (matching pasted code)
+                    test_size_results['roc_data'][kernel] = {
+                        'fpr': {str(cls): fpr[cls].tolist() for cls in unique_classes},
+                        'tpr': {str(cls): tpr[cls].tolist() for cls in unique_classes},
+                        'auc': float(auc_score),
+                        'classes': [str(cls) for cls in unique_classes]
                     }
 
                 # Track best overall model
@@ -1698,9 +1741,11 @@ async def train_svm_model(
         print(f"\n[SVM TRAIN] Generating plots...")
         plots = {}
 
-        # 1. ROC Curves Comparison
+        # 1. ROC Curves Comparison (handle both binary and multiclass like pasted code)
+        fig, ax = plt.subplots(figsize=(12, 9))
+
         if len(unique_classes) == 2:
-            fig, ax = plt.subplots(figsize=(10, 8))
+            # Binary classification - one curve per kernel/test_size
             for test_size, results in all_results.items():
                 for kernel, roc_data in results['roc_data'].items():
                     ax.plot(
@@ -1708,14 +1753,26 @@ async def train_svm_model(
                         label=f'{kernel} (TS={test_size}, AUC={roc_data["auc"]:.3f})',
                         linewidth=2
                     )
-            ax.plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random')
-            ax.set_xlabel('False Positive Rate', fontsize=12)
-            ax.set_ylabel('True Positive Rate', fontsize=12)
-            ax.set_title('ROC Curve Comparison Across Test Sizes and Kernels', fontsize=14)
-            ax.legend(loc='lower right', fontsize=8)
-            ax.grid(True, alpha=0.3)
-            plots['roc_comparison'] = plot_to_base64(fig)
-            print(f"  ✓ ROC comparison plot")
+        else:
+            # Multiclass - plot per-class curves like pasted code
+            for test_size, results in all_results.items():
+                for kernel, roc_data in results['roc_data'].items():
+                    # Plot each class curve
+                    for cls in roc_data['classes']:
+                        ax.plot(
+                            roc_data['fpr'][cls], roc_data['tpr'][cls],
+                            label=f'{kernel} (TS={test_size}, Class {cls})',
+                            linewidth=2
+                        )
+
+        ax.plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random')
+        ax.set_xlabel('False Positive Rate', fontsize=12)
+        ax.set_ylabel('True Positive Rate', fontsize=12)
+        ax.set_title('ROC Curve Comparison Across Test Sizes and Kernels', fontsize=14)
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=8)
+        ax.grid(True, alpha=0.3)
+        plots['roc_comparison'] = plot_to_base64(fig)
+        print(f"  ✓ ROC comparison plot")
 
         # 2. Metric Comparisons
         metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'AUC Score']
@@ -1766,8 +1823,15 @@ async def train_svm_model(
             X_full = df[[feature_col_1, feature_col_2]]
             y_full = df[target_col]
 
+            # Create mapping from class labels to numeric indices (for string labels like "Iris-setosa")
+            class_to_num = {cls: idx for idx, cls in enumerate(unique_classes)}
+
             xx, yy = make_meshgrid(X_full[feature_col_1], X_full[feature_col_2])
-            plot_contours(ax, best_overall_config['searcher'], xx, yy, cmap=plt.cm.coolwarm, alpha=0.3)
+            # Pass feature names and class mapping to fix sklearn warning and string label error
+            plot_contours(ax, best_overall_config['searcher'], xx, yy,
+                         feature_names=[feature_col_1, feature_col_2],
+                         class_mapping=class_to_num,
+                         cmap=plt.cm.coolwarm, alpha=0.3)
 
             # Plot points
             for class_val in unique_classes:

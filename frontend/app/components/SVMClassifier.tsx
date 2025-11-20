@@ -292,6 +292,29 @@ export default function SVMClassifier() {
                       <option key={col} value={col}>{col}</option>
                     ))}
                   </select>
+                  {/* Show unique class values when target is selected */}
+                  {targetCol && uploadData.unique_values?.[targetCol] && (
+                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="text-xs font-semibold text-gray-700 mb-2">
+                        {uploadData.unique_values[targetCol].count} Unique Classes:
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {uploadData.unique_values[targetCol].values.map((val: any, idx: number) => (
+                          <span
+                            key={idx}
+                            className="px-3 py-1 bg-white border border-blue-300 rounded-full text-xs font-medium text-blue-700"
+                          >
+                            {String(val)}
+                          </span>
+                        ))}
+                        {uploadData.unique_values[targetCol].count > uploadData.unique_values[targetCol].values.length && (
+                          <span className="px-3 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-600">
+                            +{uploadData.unique_values[targetCol].count - uploadData.unique_values[targetCol].values.length} more
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -516,6 +516,13 @@ export interface SVMUploadResponse {
   columns: string[];
   rows: number;
   sample_data: Record<string, any>[];
+  unique_values?: {
+    [column: string]: {
+      values: any[];
+      count: number;
+      dtype: string;
+    };
+  };
   status: string;
 }
 

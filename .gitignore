@@ -45,3 +45,4 @@ yarn-error.log*
 next-env.d.ts
 /Users/sharathchenna/Developer/personal-projects/Feature-Extraction/frontend/.open-next
 /frontend/.open-next/
+backend/__pycache__/main.cpython-313.pyc
