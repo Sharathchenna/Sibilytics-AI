@@ -54,9 +54,9 @@ export default function SignalProcessor() {
   const currentPlotsData = plotsData.get(selectedFileForVisualization) || null;
 
   const waveletOptions = [
-    'bior1.3', 'bior1.5', 'bior2.2', 'bior2.4', 
-    'bior2.6', 'bior3.1', 'bior3.3', 'bior3.5', 
-    'bior3.7', 'bior3.9', 'bior4.4', 'bior5.5', 
+    'bior1.3', 'bior1.5', 'bior2.2', 'bior2.4',
+    'bior2.6', 'bior3.1', 'bior3.3', 'bior3.5',
+    'bior3.7', 'bior3.9', 'bior4.4', 'bior5.5',
     'bior6.8'
   ];
 
@@ -76,6 +76,15 @@ export default function SignalProcessor() {
       });
 
       if (validFiles.length > 0) {
+        // Reset state for new selection
+        setUploadedFiles([]);
+        setProcessData(new Map());
+        setPlotsData(new Map());
+        setAllStatsRaw([]);
+        setAllStatsDenoised([]);
+        setSelectedFileForVisualization(0);
+        setUploadProgress(null);
+
         setSelectedFiles(validFiles);
         setUploadStatus(`${validFiles.length} file(s) selected`);
         setError('');
@@ -275,6 +284,8 @@ export default function SignalProcessor() {
     setShowResults(false);
     setProcessData(new Map());
     setPlotsData(new Map());
+    setAllStatsRaw([]);
+    setAllStatsDenoised([]);
     setError('');
     setUploadProgress(null);
     if (fileInputRef.current) {
@@ -350,11 +361,10 @@ export default function SignalProcessor() {
 
           {/* Upload Status */}
           {uploadStatus && !error && (
-            <div className={`mt-6 p-4 rounded flex items-center gap-3 ${
-              uploadStatus.includes('successfully') || uploadStatus.includes('complete')
-                ? 'bg-green-100 text-green-800' 
+            <div className={`mt-6 p-4 rounded flex items-center gap-3 ${uploadStatus.includes('successfully') || uploadStatus.includes('complete')
+                ? 'bg-green-100 text-green-800'
                 : 'bg-blue-100 text-blue-800'
-            }`}>
+              }`}>
               {isUploading || isProcessing ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
@@ -370,25 +380,24 @@ export default function SignalProcessor() {
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm font-semibold text-gray-700">
-                    {uploadProgress.status === 'compressing' ? '🗜️ Compressing' : 
-                     uploadProgress.status === 'uploading' ? '📤 Uploading' : 
-                     uploadProgress.status === 'complete' ? '✅ Complete' : 
-                     '❌ Error'}
+                    {uploadProgress.status === 'compressing' ? '🗜️ Compressing' :
+                      uploadProgress.status === 'uploading' ? '📤 Uploading' :
+                        uploadProgress.status === 'complete' ? '✅ Complete' :
+                          '❌ Error'}
                   </span>
                   <span className="text-lg font-bold text-blue-600">
                     {uploadProgress.percentage}%
                   </span>
                 </div>
-                
+
                 {/* Progress Bar */}
                 <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden shadow-inner">
                   <div
-                    className={`h-full flex items-center justify-center text-xs font-semibold text-white transition-all duration-300 ${
-                      uploadProgress.status === 'compressing' ? 'bg-yellow-500' :
-                      uploadProgress.status === 'uploading' ? 'bg-blue-600' :
-                      uploadProgress.status === 'complete' ? 'bg-green-600' :
-                      'bg-red-600'
-                    }`}
+                    className={`h-full flex items-center justify-center text-xs font-semibold text-white transition-all duration-300 ${uploadProgress.status === 'compressing' ? 'bg-yellow-500' :
+                        uploadProgress.status === 'uploading' ? 'bg-blue-600' :
+                          uploadProgress.status === 'complete' ? 'bg-green-600' :
+                            'bg-red-600'
+                      }`}
                     style={{ width: `${uploadProgress.percentage}%` }}
                   >
                     {uploadProgress.percentage > 10 && `${uploadProgress.percentage}%`}
