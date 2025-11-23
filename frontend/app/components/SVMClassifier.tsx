@@ -373,22 +373,24 @@ export default function SVMClassifier() {
                     ))}
                   </select>
                   {/* Show unique class values when target is selected */}
-                  {targetCol && uploadData.unique_values?.[targetCol] && (
+                  {targetCol && uploadData.unique_values?.[targetCol] && (() => {
+                    const targetData = uploadData.unique_values![targetCol];
+                    return (
                     <div className="mt-3 space-y-2">
                       <div className={`p-3 rounded-lg border ${
-                        uploadData.unique_values[targetCol].count < 2 
+                        targetData.count < 2 
                           ? 'bg-red-50 border-red-200' 
                           : 'bg-blue-50 border-blue-200'
                       }`}>
                         <div className="text-xs font-semibold text-gray-700 mb-2">
-                          {uploadData.unique_values[targetCol].count} Unique Classes:
+                          {targetData.count} Unique Classes:
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {uploadData.unique_values[targetCol].values.map((val: any, idx: number) => (
+                          {targetData.values.map((val: any, idx: number) => (
                             <span
                               key={idx}
                               className={`px-3 py-1 border rounded-full text-xs font-medium ${
-                                uploadData.unique_values[targetCol].count < 2
+                                targetData.count < 2
                                   ? 'bg-white border-red-300 text-red-700'
                                   : 'bg-white border-blue-300 text-blue-700'
                               }`}
@@ -396,27 +398,28 @@ export default function SVMClassifier() {
                               {String(val)}
                             </span>
                           ))}
-                          {uploadData.unique_values[targetCol].count > uploadData.unique_values[targetCol].values.length && (
+                          {targetData.count > targetData.values.length && (
                             <span className="px-3 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-600">
-                              +{uploadData.unique_values[targetCol].count - uploadData.unique_values[targetCol].values.length} more
+                              +{targetData.count - targetData.values.length} more
                             </span>
                           )}
                         </div>
                       </div>
                       
                       {/* Warning for insufficient classes */}
-                      {uploadData.unique_values[targetCol].count < 2 && (
+                      {targetData.count < 2 && (
                         <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
                           <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                           <div className="text-sm text-red-800">
                             <strong>Warning:</strong> SVM classification requires at least 2 different classes. 
-                            This column only has {uploadData.unique_values[targetCol].count} unique value(s). 
+                            This column only has {targetData.count} unique value(s). 
                             Please select a different target column with multiple classes.
                           </div>
                         </div>
                       )}
                     </div>
-                  )}
+                    );
+                  })()}
                 </div>
               </div>
 
