@@ -50,6 +50,7 @@ def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
     Parse file content based on file extension.
     Supports: .txt, .lvm (tab-delimited), .csv (comma-delimited), .xlsx (Excel)
     Handles gzip-compressed files (strips .gz extension)
+    Handles LabVIEW LVM files with or without headers
     """
     # Remove .gz extension if present (file content is already decompressed)
     filename_clean = filename.lower()
@@ -60,8 +61,32 @@ def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
 
     try:
         if file_ext in ['txt', 'lvm']:
-            # Tab-delimited files
-            df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
+            # Special handling for LabVIEW LVM files
+            content_str = contents.decode('utf-8')
+            
+            # Check if this is a LabVIEW file with header
+            if content_str.startswith('LabVIEW Measurement'):
+                # Find the last occurrence of ***End_of_Header***
+                lines = content_str.split('\n')
+                data_start_idx = 0
+                
+                for idx, line in enumerate(lines):
+                    if '***End_of_Header***' in line:
+                        data_start_idx = idx + 1
+                
+                # Skip the header line (X_Value, Force_0, etc.) if present
+                if data_start_idx < len(lines):
+                    # Check if the next line looks like a header (contains non-numeric column names)
+                    next_line = lines[data_start_idx].strip()
+                    if next_line and not next_line[0].isdigit() and not next_line[0] == '-':
+                        data_start_idx += 1
+                
+                # Parse from data start
+                data_content = '\n'.join(lines[data_start_idx:])
+                df = pd.read_csv(StringIO(data_content), delimiter='\t', header=None)
+            else:
+                # Regular tab-delimited file without LabVIEW header
+                df = pd.read_csv(StringIO(content_str), delimiter='\t', header=None)
         elif file_ext == 'csv':
             # CSV files - try to auto-detect delimiter
             content_str = contents.decode('utf-8')
