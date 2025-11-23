@@ -523,6 +523,7 @@ export interface SVMUploadResponse {
       dtype: string;
     };
   };
+  has_header: boolean; // NEW: indicates if original file had headers
   status: string;
 }
 

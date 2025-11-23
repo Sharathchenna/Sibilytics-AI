@@ -69,13 +69,20 @@ export default function SVMClassifier() {
     try {
       const response = await uploadSVMDataset(selectedFile);
       setUploadData(response);
-      setUploadStatus(`Dataset uploaded successfully! ${response.rows} rows, ${response.columns.length} columns`);
+      
+      // Create status message with header detection info
+      let statusMessage = `Dataset uploaded successfully! ${response.rows} rows, ${response.columns.length} columns`;
+      if (response.has_header === false) {
+        statusMessage += ` (No headers detected - column names auto-generated)`;
+      }
+      setUploadStatus(statusMessage);
 
-      // Auto-select first 2 columns as features and 3rd as target if available
+      // Auto-select first 2 columns as features and last column as target if available
       if (response.columns.length >= 3) {
         setFeatureCol1(response.columns[0]);
         setFeatureCol2(response.columns[1]);
-        setTargetCol(response.columns[2]);
+        // For auto-generated columns, last column is likely the target (class)
+        setTargetCol(response.columns[response.columns.length - 1]);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
@@ -88,6 +95,27 @@ export default function SVMClassifier() {
   const handleTrain = async () => {
     if (!uploadData || !featureCol1 || !featureCol2 || !targetCol) {
       setError('Please select feature columns and target column');
+      return;
+    }
+
+    // Validate target column has at least 2 classes
+    if (uploadData.unique_values && uploadData.unique_values[targetCol]) {
+      const classCount = uploadData.unique_values[targetCol].count;
+      if (classCount < 2) {
+        setError(`Target column "${targetCol}" only has ${classCount} unique class(es). SVM requires at least 2 classes. Please select a different target column.`);
+        return;
+      }
+    }
+
+    // Validate features are not the same as target
+    if (featureCol1 === targetCol || featureCol2 === targetCol) {
+      setError('Feature columns cannot be the same as the target column');
+      return;
+    }
+
+    // Validate features are different from each other
+    if (featureCol1 === featureCol2) {
+      setError('Feature columns must be different from each other');
       return;
     }
 
@@ -227,9 +255,43 @@ export default function SVMClassifier() {
               )}
 
               {uploadStatus && (
-                <div className="mt-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-600" />
-                  <span className="text-green-800 font-medium">{uploadStatus}</span>
+                <div className="mt-4 space-y-2">
+                  <div className="p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="text-green-800 font-medium">{uploadStatus}</span>
+                  </div>
+                  
+                  {/* Header Detection Info */}
+                  {uploadData && (
+                    <div className={`p-3 rounded-lg border flex items-center gap-3 ${
+                      uploadData.has_header 
+                        ? 'bg-blue-50 border-blue-200' 
+                        : 'bg-amber-50 border-amber-200'
+                    }`}>
+                      <div className="flex-shrink-0">
+                        {uploadData.has_header ? (
+                          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        {uploadData.has_header ? (
+                          <span className="text-blue-800 text-sm">
+                            <strong>Headers detected:</strong> Using column names from file
+                          </span>
+                        ) : (
+                          <span className="text-amber-800 text-sm">
+                            <strong>No headers detected:</strong> Auto-generated column names (Column_1, Column_2, etc.)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -244,6 +306,24 @@ export default function SVMClassifier() {
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800">Select Features & Target</h3>
               </div>
+
+              {/* Header Detection Info */}
+              {uploadData.has_header === false && (
+                <div className="ml-13 mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-semibold text-blue-800 mb-1">
+                        Column Headers Auto-Generated
+                      </p>
+                      <p className="text-sm text-blue-700">
+                        Your file doesn't have column headers. We've automatically generated column names (Column_1, Column_2, etc.) for easy selection.
+                        The data remains unchanged.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="ml-13 grid md:grid-cols-3 gap-4">
                 <div>
@@ -294,25 +374,47 @@ export default function SVMClassifier() {
                   </select>
                   {/* Show unique class values when target is selected */}
                   {targetCol && uploadData.unique_values?.[targetCol] && (
-                    <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                      <div className="text-xs font-semibold text-gray-700 mb-2">
-                        {uploadData.unique_values[targetCol].count} Unique Classes:
+                    <div className="mt-3 space-y-2">
+                      <div className={`p-3 rounded-lg border ${
+                        uploadData.unique_values[targetCol].count < 2 
+                          ? 'bg-red-50 border-red-200' 
+                          : 'bg-blue-50 border-blue-200'
+                      }`}>
+                        <div className="text-xs font-semibold text-gray-700 mb-2">
+                          {uploadData.unique_values[targetCol].count} Unique Classes:
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {uploadData.unique_values[targetCol].values.map((val: any, idx: number) => (
+                            <span
+                              key={idx}
+                              className={`px-3 py-1 border rounded-full text-xs font-medium ${
+                                uploadData.unique_values[targetCol].count < 2
+                                  ? 'bg-white border-red-300 text-red-700'
+                                  : 'bg-white border-blue-300 text-blue-700'
+                              }`}
+                            >
+                              {String(val)}
+                            </span>
+                          ))}
+                          {uploadData.unique_values[targetCol].count > uploadData.unique_values[targetCol].values.length && (
+                            <span className="px-3 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-600">
+                              +{uploadData.unique_values[targetCol].count - uploadData.unique_values[targetCol].values.length} more
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {uploadData.unique_values[targetCol].values.map((val: any, idx: number) => (
-                          <span
-                            key={idx}
-                            className="px-3 py-1 bg-white border border-blue-300 rounded-full text-xs font-medium text-blue-700"
-                          >
-                            {String(val)}
-                          </span>
-                        ))}
-                        {uploadData.unique_values[targetCol].count > uploadData.unique_values[targetCol].values.length && (
-                          <span className="px-3 py-1 bg-gray-100 border border-gray-300 rounded-full text-xs text-gray-600">
-                            +{uploadData.unique_values[targetCol].count - uploadData.unique_values[targetCol].values.length} more
-                          </span>
-                        )}
-                      </div>
+                      
+                      {/* Warning for insufficient classes */}
+                      {uploadData.unique_values[targetCol].count < 2 && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
+                          <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <div className="text-sm text-red-800">
+                            <strong>Warning:</strong> SVM classification requires at least 2 different classes. 
+                            This column only has {uploadData.unique_values[targetCol].count} unique value(s). 
+                            Please select a different target column with multiple classes.
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -321,14 +423,24 @@ export default function SVMClassifier() {
               {/* Sample Data Preview */}
               {uploadData.sample_data.length > 0 && (
                 <div className="ml-13 mt-6">
-                  <h4 className="text-sm font-semibold text-gray-700 mb-3">Sample Data Preview</h4>
+                  <div className="flex items-center gap-2 mb-3">
+                    <h4 className="text-sm font-semibold text-gray-700">Sample Data Preview</h4>
+                    {!uploadData.has_header && (
+                      <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                        Auto-generated columns
+                      </span>
+                    )}
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
-                      <thead className="bg-gray-50">
+                      <thead className={uploadData.has_header ? 'bg-gray-50' : 'bg-amber-50'}>
                         <tr>
                           {uploadData.columns.map((col) => (
                             <th key={col} className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">
                               {col}
+                              {!uploadData.has_header && (
+                                <span className="ml-1 text-amber-600">*</span>
+                              )}
                             </th>
                           ))}
                         </tr>
@@ -446,7 +558,13 @@ export default function SVMClassifier() {
               <div className="ml-13">
                 <button
                   onClick={handleTrain}
-                  disabled={isTraining}
+                  disabled={
+                    isTraining || 
+                    featureCol1 === featureCol2 || 
+                    featureCol1 === targetCol || 
+                    featureCol2 === targetCol ||
+                    (uploadData.unique_values?.[targetCol]?.count || 0) < 2
+                  }
                   className="px-8 py-4 bg-emerald-600 text-white rounded-lg font-bold text-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex items-center gap-3"
                 >
                   {isTraining ? (
@@ -461,6 +579,30 @@ export default function SVMClassifier() {
                     </>
                   )}
                 </button>
+                
+                {/* Show why button is disabled */}
+                {!isTraining && (
+                  <>
+                    {featureCol1 === featureCol2 && (
+                      <div className="mt-3 text-sm text-amber-600 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        Feature columns must be different from each other
+                      </div>
+                    )}
+                    {(featureCol1 === targetCol || featureCol2 === targetCol) && (
+                      <div className="mt-3 text-sm text-amber-600 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        Feature columns cannot be the same as target column
+                      </div>
+                    )}
+                    {(uploadData.unique_values?.[targetCol]?.count || 0) < 2 && (
+                      <div className="mt-3 text-sm text-red-600 flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        Target column needs at least 2 different classes
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           )}

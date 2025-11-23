@@ -1424,6 +1424,74 @@ def plot_to_base64(fig):
     plt.close(fig)
     return img_base64
 
+def detect_csv_has_header(content_str: str, delimiter: str = ',') -> bool:
+    """
+    Detect if a CSV file has a header row by checking if the first row
+    contains non-numeric values while subsequent rows are mostly numeric.
+    Handles ML datasets where target/class column may contain text labels.
+    """
+    try:
+        lines = content_str.strip().split('\n')
+        if len(lines) < 2:
+            return True  # Default to True for single-line files
+        
+        first_row = lines[0].split(delimiter)
+        second_row = lines[1].split(delimiter) if len(lines) > 1 else []
+        third_row = lines[2].split(delimiter) if len(lines) > 2 else []
+        
+        # Helper function to check if a cell is numeric
+        def is_numeric(cell):
+            cell = cell.strip()
+            if not cell:
+                return False
+            try:
+                float(cell)
+                return True
+            except ValueError:
+                return False
+        
+        # Count numeric cells in each row
+        first_row_numeric_count = sum(1 for cell in first_row if is_numeric(cell))
+        second_row_numeric_count = sum(1 for cell in second_row if is_numeric(cell))
+        third_row_numeric_count = sum(1 for cell in third_row if is_numeric(cell)) if third_row else 0
+        
+        # Check if most columns (excluding last) are numeric in first row
+        first_row_mostly_numeric_except_last = (
+            first_row_numeric_count >= len(first_row) - 1 if len(first_row) > 1 else False
+        )
+        
+        # If first row is mostly numeric (with maybe 1 text column), likely no header
+        if first_row_mostly_numeric_except_last:
+            # Compare with second and third rows
+            second_row_pattern_similar = (
+                second_row_numeric_count >= len(second_row) - 1 if len(second_row) > 1 else False
+            )
+            third_row_pattern_similar = (
+                third_row_numeric_count >= len(third_row) - 1 if len(third_row) > 1 else False
+            )
+            
+            # If first 2-3 rows have similar patterns (mostly numeric), no header
+            if second_row_pattern_similar and (not third_row or third_row_pattern_similar):
+                return False
+        
+        # If first row is ALL numeric, definitely no header
+        if first_row_numeric_count == len(first_row):
+            return False
+        
+        # If first row has NO numeric values and second row has numeric values, likely has header
+        if first_row_numeric_count == 0 and second_row_numeric_count > 0:
+            return True
+        
+        # If first row has fewer numeric cells than second row, likely has header
+        if first_row_numeric_count < second_row_numeric_count:
+            return True
+        
+        # Default to True (assume header exists when uncertain)
+        return True
+    except Exception as e:
+        print(f"[HEADER DETECTION ERROR] {e}")
+        return True  # Default to True on error
+
 @app.options("/api/svm/upload-dataset")
 async def options_svm_upload_dataset():
     return {}
@@ -1433,6 +1501,7 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
     """
     Upload xlsx or csv file for SVM classification.
     Returns available columns for feature and target selection.
+    Auto-detects if CSV has headers and generates column names if needed.
     """
     try:
         print(f"[SVM UPLOAD] Received file: {file.filename}")
@@ -1446,21 +1515,61 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
             filename_clean = filename_clean[:-3]  # Remove '.gz'
 
         file_ext = filename_clean.split('.')[-1]
+        has_header = True  # Default assumption
+        detected_delimiter = ','  # Default delimiter
 
         if file_ext == 'xlsx':
-            df = pd.read_excel(BytesIO(contents))
+            # Try to detect if Excel file has headers
+            df_test = pd.read_excel(BytesIO(contents), nrows=2)
+            if len(df_test) >= 1:
+                # Check if first row (which became column names) looks like data
+                first_col = str(df_test.columns[0])
+                if first_col.replace('.', '', 1).replace('-', '', 1).isdigit():
+                    # Likely no header, re-read without header
+                    df = pd.read_excel(BytesIO(contents), header=None)
+                    has_header = False
+                    # Generate column names
+                    df.columns = [f"Column_{i+1}" for i in range(len(df.columns))]
+                    print(f"[SVM UPLOAD] Excel file has no header, generated column names")
+                else:
+                    df = pd.read_excel(BytesIO(contents))
+            else:
+                df = pd.read_excel(BytesIO(contents))
         elif file_ext == 'csv':
-            # Try different delimiters
+            # Try different delimiters and detect headers
             content_str = contents.decode('utf-8')
+            df = None
+            
             for delimiter in [',', '\t', ';']:
                 try:
-                    df = pd.read_csv(StringIO(content_str), delimiter=delimiter)
-                    if df.shape[1] > 1:
+                    # Try reading with header first
+                    df_test = pd.read_csv(StringIO(content_str), delimiter=delimiter, nrows=2)
+                    if df_test.shape[1] > 1:
+                        detected_delimiter = delimiter
+                        # Detect if has header
+                        has_header = detect_csv_has_header(content_str, delimiter)
+                        
+                        if has_header:
+                            df = pd.read_csv(StringIO(content_str), delimiter=delimiter)
+                            print(f"[SVM UPLOAD] CSV has headers, using them")
+                        else:
+                            df = pd.read_csv(StringIO(content_str), delimiter=delimiter, header=None)
+                            # Generate meaningful column names
+                            df.columns = [f"Column_{i+1}" for i in range(len(df.columns))]
+                            print(f"[SVM UPLOAD] CSV has no headers, generated column names")
                         break
-                except:
+                except Exception as e:
+                    print(f"[SVM UPLOAD] Failed to read with delimiter '{delimiter}': {e}")
                     continue
-            else:
-                df = pd.read_csv(StringIO(content_str), delimiter=',')
+            
+            # If all delimiters failed, default to comma
+            if df is None:
+                has_header = detect_csv_has_header(content_str, ',')
+                if has_header:
+                    df = pd.read_csv(StringIO(content_str), delimiter=',')
+                else:
+                    df = pd.read_csv(StringIO(content_str), delimiter=',', header=None)
+                    df.columns = [f"Column_{i+1}" for i in range(len(df.columns))]
         else:
             raise ValueError(f"Unsupported file format: {file_ext}")
 
@@ -1471,7 +1580,20 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
 
         # Save to cache
         cache_path.write_bytes(contents)
+        
+        # Save metadata about the file (including header info)
+        metadata = {
+            "has_header": has_header,
+            "delimiter": detected_delimiter,
+            "file_ext": file_ext,
+            "columns": df.columns.tolist()
+        }
+        metadata_path = CACHE_DIR / f"{file_id}.metadata.json"
+        import json
+        metadata_path.write_text(json.dumps(metadata))
+        
         print(f"[SVM UPLOAD] Cached dataset: {file_id}")
+        print(f"[SVM UPLOAD] Has header: {has_header}, Delimiter: {detected_delimiter}")
 
         # Get column names and sample data
         columns = df.columns.tolist()
@@ -1500,7 +1622,8 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
             "columns": columns,
             "rows": df.shape[0],
             "sample_data": sample_data,
-            "unique_values": unique_values,  # NEW: unique values per column
+            "unique_values": unique_values,
+            "has_header": has_header,  # NEW: indicate if original file had headers
             "status": "success"
         }
 
@@ -1552,18 +1675,41 @@ async def train_svm_model(
             raise HTTPException(status_code=404, detail=f"Cached file not found: {file_id}")
 
         contents = cache_path.read_bytes()
-
-        # Handle .gz extension in file_id
-        file_id_clean = file_id.lower()
-        if file_id_clean.endswith('.gz'):
-            file_id_clean = file_id_clean[:-3]
-
-        file_ext = file_id_clean.split('.')[-1]
-
-        if file_ext == 'xlsx':
-            df = pd.read_excel(BytesIO(contents))
+        
+        # Load metadata to read file consistently with upload
+        metadata_path = CACHE_DIR / f"{file_id}.metadata.json"
+        import json
+        if metadata_path.exists():
+            metadata = json.loads(metadata_path.read_text())
+            has_header = metadata.get("has_header", True)
+            delimiter = metadata.get("delimiter", ",")
+            file_ext = metadata.get("file_ext", "csv")
+            saved_columns = metadata.get("columns", [])
+            print(f"[SVM TRAIN] Using metadata - has_header: {has_header}, delimiter: {delimiter}")
         else:
-            df = pd.read_csv(StringIO(contents.decode('utf-8')))
+            # Fallback to old behavior if metadata doesn't exist
+            file_id_clean = file_id.lower()
+            if file_id_clean.endswith('.gz'):
+                file_id_clean = file_id_clean[:-3]
+            file_ext = file_id_clean.split('.')[-1]
+            has_header = True
+            delimiter = ','
+            saved_columns = []
+            print(f"[SVM TRAIN] No metadata found, using defaults")
+
+        # Read file based on metadata
+        if file_ext == 'xlsx':
+            if has_header:
+                df = pd.read_excel(BytesIO(contents))
+            else:
+                df = pd.read_excel(BytesIO(contents), header=None)
+                df.columns = saved_columns if saved_columns else [f"Column_{i+1}" for i in range(len(df.columns))]
+        else:  # CSV
+            if has_header:
+                df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter=delimiter)
+            else:
+                df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter=delimiter, header=None)
+                df.columns = saved_columns if saved_columns else [f"Column_{i+1}" for i in range(len(df.columns))]
 
         print(f"[SVM TRAIN] Loaded dataset: {df.shape}")
 
