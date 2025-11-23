@@ -878,8 +878,10 @@ export default function DataVisualization() {
                                 zmin: -1,
                                 zmax: 1,
                                 colorbar: {
-                                  title: 'Correlation',
-                                  titleside: 'right',
+                                  title: {
+                                    text: 'Correlation',
+                                    side: 'right'
+                                  },
                                   tickmode: 'linear',
                                   tick0: -1,
                                   dtick: 0.5
@@ -892,21 +894,15 @@ export default function DataVisualization() {
                                 ),
                                 texttemplate: '%{text}',
                                 textfont: {
-                                  size: 10,
-                                  color: correlationData.columns.map(col1 =>
-                                    correlationData.columns.map(col2 => {
-                                      const val = correlationData.correlation_matrix[col1][col2];
-                                      return Math.abs(val) > 0.5 ? 'white' : 'black';
-                                    })
-                                  )
+                                  size: 10
                                 },
                                 showscale: true,
-                              },
+                              } as any,
                             ]}
                             layout={{
                               title: { 
                                 text: 'Correlation Heatmap',
-                                font: { size: 18, weight: 'bold' }
+                                font: { size: 18 }
                               },
                               xaxis: { 
                                 title: { text: '' },
@@ -1153,8 +1149,10 @@ export default function DataVisualization() {
                                 colorscale: 'Viridis',
                                 showscale: true,
                                 colorbar: {
-                                  title: surfaceData.z_label,
-                                  titleside: 'right'
+                                  title: {
+                                    text: surfaceData.z_label,
+                                    side: 'right'
+                                  }
                                 }
                               },
                             },
