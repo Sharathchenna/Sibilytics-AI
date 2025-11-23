@@ -2234,8 +2234,17 @@ async def predict_svm(
         prediction = model_data['model'].predict(X_new)[0]
         probabilities = model_data['model'].predict_proba(X_new)[0]
 
+        # Convert prediction to string to handle both numeric and string labels
+        prediction_str = str(prediction)
+        
+        # Try to convert to int if it's a numeric string, otherwise keep as string
+        try:
+            prediction_value = int(float(prediction))
+        except (ValueError, TypeError):
+            prediction_value = prediction_str
+
         return {
-            "prediction": int(prediction),
+            "prediction": prediction_value,
             "probabilities": {
                 str(cls): float(prob)
                 for cls, prob in zip(model_data['unique_classes'], probabilities)
@@ -2249,6 +2258,8 @@ async def predict_svm(
 
     except Exception as e:
         print(f"[SVM PREDICT ERROR] {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
 
 @app.options("/api/svm/download-results")

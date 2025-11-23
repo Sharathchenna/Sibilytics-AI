@@ -296,6 +296,41 @@ export default function DataVisualization() {
     }
   };
 
+  // Download plot as PNG
+  const downloadPlotAsPNG = (plotId: string, filename: string) => {
+    const plotElement = document.querySelector(`#${plotId} .plotly`) as any;
+    if (plotElement && plotElement._fullLayout) {
+      import('plotly.js-dist-min').then((Plotly) => {
+        Plotly.downloadImage(plotElement, {
+          format: 'png',
+          width: 1920,
+          height: 1080,
+          filename: filename
+        });
+      });
+    }
+  };
+
+  // Download filtered data as CSV
+  const downloadFilteredData = () => {
+    if (!filterData) return;
+
+    const csvContent = [
+      `${filterData.x_column},${filterData.y_column}`,
+      ...filterData.x_values.map((x, i) => `${x},${filterData.y_values[i]}`)
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `filtered_data_${filterData.x_column}_${filterData.y_column}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div id="data-analysis" className="py-20 bg-white relative z-10">
       <div className="max-w-7xl mx-auto px-4">
@@ -573,26 +608,38 @@ export default function DataVisualization() {
 
                   {scatterData && (
                     <div className="bg-white p-4 rounded-lg shadow-md">
-                      <Plot
-                        data={[
-                          {
-                            x: scatterData.x,
-                            y: scatterData.y,
-                            type: 'scatter',
-                            mode: 'markers',
-                            marker: { color: '#3b82f6', size: 8 },
-                            name: `${scatterData.x_label} vs ${scatterData.y_label}`,
-                          },
-                        ]}
-                        layout={{
-                          title: { text: `${scatterData.x_label} vs ${scatterData.y_label}` },
-                          xaxis: { title: { text: scatterData.x_label } },
-                          yaxis: { title: { text: scatterData.y_label } },
-                          autosize: true,
-                        }}
-                        config={{ responsive: true }}
-                        style={{ width: '100%', height: '500px' }}
-                      />
+                      <div className="flex justify-end mb-2">
+                        <button
+                          onClick={() => downloadPlotAsPNG('scatter-plot', `scatter_${scatterData.x_label}_vs_${scatterData.y_label}`)}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition flex items-center gap-2 text-sm"
+                          title="Download plot as PNG"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download PNG
+                        </button>
+                      </div>
+                      <div id="scatter-plot">
+                        <Plot
+                          data={[
+                            {
+                              x: scatterData.x,
+                              y: scatterData.y,
+                              type: 'scatter',
+                              mode: 'markers',
+                              marker: { color: '#3b82f6', size: 8 },
+                              name: `${scatterData.x_label} vs ${scatterData.y_label}`,
+                            },
+                          ]}
+                          layout={{
+                            title: { text: `${scatterData.x_label} vs ${scatterData.y_label}` },
+                            xaxis: { title: { text: scatterData.x_label } },
+                            yaxis: { title: { text: scatterData.y_label } },
+                            autosize: true,
+                          }}
+                          config={{ responsive: true }}
+                          style={{ width: '100%', height: '500px' }}
+                        />
+                      </div>
                       <p className="text-sm text-gray-600 mt-2 text-center">
                         {scatterData.points_count.toLocaleString()} data points
                       </p>
@@ -646,27 +693,39 @@ export default function DataVisualization() {
                   {histogramData && (
                     <div className="space-y-4">
                       <div className="bg-white p-4 rounded-lg shadow-md">
-                        <Plot
-                          data={[
-                            {
-                              x: histogramData.bin_edges.slice(0, -1).map((edge, i) => 
-                                (edge + histogramData.bin_edges[i + 1]) / 2
-                              ),
-                              y: histogramData.hist,
-                              type: 'bar',
-                              marker: { color: '#10b981' },
-                              name: 'Frequency',
-                            },
-                          ]}
-                          layout={{
-                            title: { text: `Distribution of ${histogramData.column}` },
-                            xaxis: { title: { text: histogramData.column } },
-                            yaxis: { title: { text: 'Frequency' } },
-                            autosize: true,
-                          }}
-                          config={{ responsive: true }}
-                          style={{ width: '100%', height: '400px' }}
-                        />
+                        <div className="flex justify-end mb-2">
+                          <button
+                            onClick={() => downloadPlotAsPNG('histogram-plot', `histogram_${histogramData.column}`)}
+                            className="px-4 py-2 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition flex items-center gap-2 text-sm"
+                            title="Download plot as PNG"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download PNG
+                          </button>
+                        </div>
+                        <div id="histogram-plot">
+                          <Plot
+                            data={[
+                              {
+                                x: histogramData.bin_edges.slice(0, -1).map((edge, i) => 
+                                  (edge + histogramData.bin_edges[i + 1]) / 2
+                                ),
+                                y: histogramData.hist,
+                                type: 'bar',
+                                marker: { color: '#10b981' },
+                                name: 'Frequency',
+                              },
+                            ]}
+                            layout={{
+                              title: { text: `Distribution of ${histogramData.column}` },
+                              xaxis: { title: { text: histogramData.column } },
+                              yaxis: { title: { text: 'Frequency' } },
+                              autosize: true,
+                            }}
+                            config={{ responsive: true }}
+                            style={{ width: '100%', height: '400px' }}
+                          />
+                        </div>
                       </div>
                       
                       {/* Statistics */}
@@ -787,31 +846,84 @@ export default function DataVisualization() {
 
                       {/* Correlation Heatmap */}
                       <div className="bg-white p-4 rounded-lg shadow-md">
-                        <Plot
-                          data={[
-                            {
-                              z: correlationData.columns.map(col1 =>
-                                correlationData.columns.map(col2 =>
-                                  correlationData.correlation_matrix[col1][col2]
-                                )
-                              ),
-                              x: correlationData.columns,
-                              y: correlationData.columns,
-                              type: 'heatmap',
-                              colorscale: 'RdBu',
-                              zmin: -1,
-                              zmax: 1,
-                            },
-                          ]}
-                          layout={{
-                            title: { text: 'Correlation Heatmap' },
-                            xaxis: { title: { text: '' } },
-                            yaxis: { title: { text: '' } },
-                            autosize: true,
-                          }}
-                          config={{ responsive: true }}
-                          style={{ width: '100%', height: '600px' }}
-                        />
+                        <div className="flex justify-end mb-2">
+                          <button
+                            onClick={() => downloadPlotAsPNG('correlation-heatmap', 'correlation_heatmap')}
+                            className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition flex items-center gap-2 text-sm"
+                            title="Download heatmap as PNG"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download PNG
+                          </button>
+                        </div>
+                        <div id="correlation-heatmap">
+                          <Plot
+                            data={[
+                              {
+                                z: correlationData.columns.map(col1 =>
+                                  correlationData.columns.map(col2 =>
+                                    correlationData.correlation_matrix[col1][col2]
+                                  )
+                                ),
+                                x: correlationData.columns,
+                                y: correlationData.columns,
+                                type: 'heatmap',
+                                colorscale: [
+                                  [0, '#b91c1c'],      // Strong negative (red)
+                                  [0.25, '#f87171'],   // Weak negative (light red)
+                                  [0.5, '#ffffff'],    // No correlation (white)
+                                  [0.75, '#93c5fd'],   // Weak positive (light blue)
+                                  [1, '#1e3a8a']       // Strong positive (dark blue)
+                                ],
+                                zmin: -1,
+                                zmax: 1,
+                                colorbar: {
+                                  title: 'Correlation',
+                                  titleside: 'right',
+                                  tickmode: 'linear',
+                                  tick0: -1,
+                                  dtick: 0.5
+                                },
+                                hovertemplate: '<b>%{y}</b> vs <b>%{x}</b><br>Correlation: %{z:.3f}<extra></extra>',
+                                text: correlationData.columns.map(col1 =>
+                                  correlationData.columns.map(col2 =>
+                                    correlationData.correlation_matrix[col1][col2]?.toFixed(2) || ''
+                                  )
+                                ),
+                                texttemplate: '%{text}',
+                                textfont: {
+                                  size: 10,
+                                  color: correlationData.columns.map(col1 =>
+                                    correlationData.columns.map(col2 => {
+                                      const val = correlationData.correlation_matrix[col1][col2];
+                                      return Math.abs(val) > 0.5 ? 'white' : 'black';
+                                    })
+                                  )
+                                },
+                                showscale: true,
+                              },
+                            ]}
+                            layout={{
+                              title: { 
+                                text: 'Correlation Heatmap',
+                                font: { size: 18, weight: 'bold' }
+                              },
+                              xaxis: { 
+                                title: { text: '' },
+                                tickangle: -45,
+                                side: 'bottom'
+                              },
+                              yaxis: { 
+                                title: { text: '' },
+                                autorange: 'reversed'
+                              },
+                              autosize: true,
+                              margin: { l: 100, r: 100, t: 100, b: 150 },
+                            }}
+                            config={{ responsive: true }}
+                            style={{ width: '100%', height: '700px' }}
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
@@ -897,29 +1009,51 @@ export default function DataVisualization() {
 
                   {filterData && (
                     <div className="bg-white p-4 rounded-lg shadow-md">
-                      <p className="text-sm text-gray-600 mb-3">
-                        Found {filterData.filtered_count} data points where {filterData.x_column} is between {filterData.x_range[0]} and {filterData.x_range[1]}
-                      </p>
-                      <Plot
-                        data={[
-                          {
-                            x: filterData.x_values,
-                            y: filterData.y_values,
-                            type: 'scatter',
-                            mode: 'markers',
-                            marker: { color: '#f97316', size: 8 },
-                            name: 'Filtered Data',
-                          },
-                        ]}
-                        layout={{
-                          title: { text: `Filtered: ${filterData.x_column} vs ${filterData.y_column}` },
-                          xaxis: { title: { text: filterData.x_column } },
-                          yaxis: { title: { text: filterData.y_column } },
-                          autosize: true,
-                        }}
-                        config={{ responsive: true }}
-                        style={{ width: '100%', height: '400px' }}
-                      />
+                      <div className="flex justify-between items-center mb-3">
+                        <p className="text-sm text-gray-600">
+                          Found {filterData.filtered_count} data points where {filterData.x_column} is between {filterData.x_range[0]} and {filterData.x_range[1]}
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={downloadFilteredData}
+                            className="px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition flex items-center gap-2 text-sm"
+                            title="Download filtered data as CSV"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download CSV
+                          </button>
+                          <button
+                            onClick={() => downloadPlotAsPNG('filtered-plot', `filtered_${filterData.x_column}_vs_${filterData.y_column}`)}
+                            className="px-4 py-2 bg-orange-600 text-white rounded-lg font-semibold hover:bg-orange-700 transition flex items-center gap-2 text-sm"
+                            title="Download plot as PNG"
+                          >
+                            <Download className="w-4 h-4" />
+                            Download PNG
+                          </button>
+                        </div>
+                      </div>
+                      <div id="filtered-plot">
+                        <Plot
+                          data={[
+                            {
+                              x: filterData.x_values,
+                              y: filterData.y_values,
+                              type: 'scatter',
+                              mode: 'markers',
+                              marker: { color: '#f97316', size: 8 },
+                              name: 'Filtered Data',
+                            },
+                          ]}
+                          layout={{
+                            title: { text: `Filtered: ${filterData.x_column} vs ${filterData.y_column}` },
+                            xaxis: { title: { text: filterData.x_column } },
+                            yaxis: { title: { text: filterData.y_column } },
+                            autosize: true,
+                          }}
+                          config={{ responsive: true }}
+                          style={{ width: '100%', height: '400px' }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -994,34 +1128,50 @@ export default function DataVisualization() {
 
                   {surfaceData && (
                     <div className="bg-white p-4 rounded-lg shadow-md">
-                      <Plot
-                        data={[
-                          {
-                            x: surfaceData.x,
-                            y: surfaceData.y,
-                            z: surfaceData.z,
-                            type: 'scatter3d',
-                            mode: 'markers',
-                            marker: {
-                              size: 4,
-                              color: surfaceData.z,
-                              colorscale: 'Viridis',
-                              showscale: true,
+                      <div className="flex justify-end mb-2">
+                        <button
+                          onClick={() => downloadPlotAsPNG('surface-plot', `3d_${surfaceData.x_label}_${surfaceData.y_label}_${surfaceData.z_label}`)}
+                          className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition flex items-center gap-2 text-sm"
+                          title="Download 3D plot as PNG"
+                        >
+                          <Download className="w-4 h-4" />
+                          Download PNG
+                        </button>
+                      </div>
+                      <div id="surface-plot">
+                        <Plot
+                          data={[
+                            {
+                              x: surfaceData.x,
+                              y: surfaceData.y,
+                              z: surfaceData.z,
+                              type: 'scatter3d',
+                              mode: 'markers',
+                              marker: {
+                                size: 4,
+                                color: surfaceData.z,
+                                colorscale: 'Viridis',
+                                showscale: true,
+                                colorbar: {
+                                  title: surfaceData.z_label,
+                                  titleside: 'right'
+                                }
+                              },
                             },
-                          },
-                        ]}
-                        layout={{
-                          title: { text: `3D Plot: ${surfaceData.x_label} vs ${surfaceData.y_label} vs ${surfaceData.z_label}` },
-                          scene: {
-                            xaxis: { title: { text: surfaceData.x_label } },
-                            yaxis: { title: { text: surfaceData.y_label } },
-                            zaxis: { title: { text: surfaceData.z_label } },
-                          },
-                          autosize: true,
-                        }}
-                        config={{ responsive: true }}
-                        style={{ width: '100%', height: '600px' }}
-                      />
+                          ]}
+                          layout={{
+                            title: { text: `3D Plot: ${surfaceData.x_label} vs ${surfaceData.y_label} vs ${surfaceData.z_label}` },
+                            scene: {
+                              xaxis: { title: { text: surfaceData.x_label } },
+                              yaxis: { title: { text: surfaceData.y_label } },
+                              zaxis: { title: { text: surfaceData.z_label } },
+                            },
+                            autosize: true,
+                          }}
+                          config={{ responsive: true }}
+                          style={{ width: '100%', height: '600px' }}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
