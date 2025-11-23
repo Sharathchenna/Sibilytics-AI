@@ -589,3 +589,352 @@ export interface SVMPredictResponse {
   };
 }
 
+// ============================================================================
+// DATA VISUALIZATION & CLEANING API FUNCTIONS
+// ============================================================================
+
+// Upload dataset for data visualization
+export const uploadDataVizDataset = async (file: File): Promise<DataVizUploadResponse> => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Upload failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Generate scatter plot data
+export const generateScatterPlot = async (
+  fileId: string,
+  xColumn: string,
+  yColumn: string
+): Promise<ScatterPlotResponse> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+  formData.append('x_column', xColumn);
+  formData.append('y_column', yColumn);
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/scatter-plot`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Scatter plot generation failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Handle null values
+export const handleNullValues = async (
+  fileId: string,
+  column: string,
+  method: string
+): Promise<HandleNullsResponse> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+  formData.append('column', column);
+  formData.append('method', method);
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/handle-nulls`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Null handling failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Generate histogram data
+export const generateHistogram = async (
+  fileId: string,
+  column: string,
+  bins: number = 20
+): Promise<HistogramResponse> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+  formData.append('column', column);
+  formData.append('bins', bins.toString());
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/histogram`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Histogram generation failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Calculate correlation matrix
+export const calculateCorrelation = async (
+  fileId: string,
+  threshold: number = 0.8
+): Promise<CorrelationResponse> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+  formData.append('threshold', threshold.toString());
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/correlation`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Correlation calculation failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Remove correlated features
+export const removeCorrelatedFeatures = async (
+  fileId: string,
+  columnsToRemove: string
+): Promise<RemoveColumnsResponse> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+  formData.append('columns_to_remove', columnsToRemove);
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/remove-correlated`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Column removal failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Filter data by X interval
+export const filterByInterval = async (
+  fileId: string,
+  xColumn: string,
+  yColumn: string,
+  xMin: number,
+  xMax: number
+): Promise<FilterIntervalResponse> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+  formData.append('x_column', xColumn);
+  formData.append('y_column', yColumn);
+  formData.append('x_min', xMin.toString());
+  formData.append('x_max', xMax.toString());
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/filter-interval`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Interval filtering failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Generate surface plot data
+export const generateSurfacePlot = async (
+  fileId: string,
+  xColumn: string,
+  yColumn: string,
+  zColumn: string
+): Promise<SurfacePlotResponse> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+  formData.append('x_column', xColumn);
+  formData.append('y_column', yColumn);
+  formData.append('z_column', zColumn);
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/surface-plot`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Surface plot generation failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Encode categorical column
+export const encodeCategorical = async (
+  fileId: string,
+  column: string,
+  method: string
+): Promise<EncodeCategoricalResponse> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+  formData.append('column', column);
+  formData.append('method', method);
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/encode-categorical`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Categorical encoding failed: ${response.statusText}`);
+  }
+
+  return response.json();
+};
+
+// Download cleaned dataset
+export const downloadCleanedDataset = async (fileId: string): Promise<void> => {
+  const formData = new FormData();
+  formData.append('file_id', fileId);
+
+  const response = await fetch(`${API_BASE_URL}/api/data-viz/download-cleaned`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Download failed: ${response.statusText}`);
+  }
+
+  const blob = await response.blob();
+  const contentDisposition = response.headers.get('Content-Disposition');
+  const filename = contentDisposition
+    ? contentDisposition.split('filename=')[1].replace(/"/g, '')
+    : 'cleaned_data.csv';
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+};
+
+// Data Viz Types
+export interface DataVizUploadResponse {
+  file_id: string;
+  filename: string;
+  rows: number;
+  columns: string[];
+  numeric_columns: string[];
+  categorical_columns: string[];
+  null_summary: {
+    [column: string]: {
+      null_count: number;
+      null_percentage: number;
+      dtype: string;
+    };
+  };
+  stats_summary: {
+    [column: string]: {
+      mean: number | null;
+      median: number | null;
+      std: number | null;
+      min: number | null;
+      max: number | null;
+    };
+  };
+  sample_data: Record<string, any>[];
+  status: string;
+}
+
+export interface ScatterPlotResponse {
+  x: number[];
+  y: number[];
+  x_label: string;
+  y_label: string;
+  points_count: number;
+  status: string;
+}
+
+export interface HandleNullsResponse {
+  message: string;
+  new_row_count: number;
+  null_summary: {
+    [column: string]: {
+      null_count: number;
+      null_percentage: number;
+    };
+  };
+  status: string;
+}
+
+export interface HistogramResponse {
+  hist: number[];
+  bin_edges: number[];
+  stats: {
+    mean: number;
+    median: number;
+    std: number;
+    min: number;
+    max: number;
+    skewness: number;
+    kurtosis: number;
+  };
+  column: string;
+  status: string;
+}
+
+export interface CorrelationResponse {
+  correlation_matrix: { [key: string]: { [key: string]: number } };
+  columns: string[];
+  highly_correlated: Array<{
+    column1: string;
+    column2: string;
+    correlation: number;
+  }>;
+  threshold: number;
+  status: string;
+}
+
+export interface RemoveColumnsResponse {
+  message: string;
+  removed_columns: string[];
+  remaining_columns: string[];
+  status: string;
+}
+
+export interface FilterIntervalResponse {
+  x_values: number[];
+  y_values: number[];
+  filtered_count: number;
+  x_column: string;
+  y_column: string;
+  x_range: [number, number];
+  status: string;
+}
+
+export interface SurfacePlotResponse {
+  x: number[];
+  y: number[];
+  z: number[];
+  x_label: string;
+  y_label: string;
+  z_label: string;
+  points_count: number;
+  status: string;
+}
+
+export interface EncodeCategoricalResponse {
+  message: string;
+  mapping: { [key: string]: number };
+  new_columns: string[];
+  status: string;
+}
+

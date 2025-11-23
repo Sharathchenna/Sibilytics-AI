@@ -37,6 +37,9 @@ from sklearn.preprocessing import label_binarize
 import pickle
 import uuid
 
+# Import data visualization router
+from data_viz import router as data_viz_router
+
 # File cache directory
 CACHE_DIR = Path("/tmp/upload_cache")
 CACHE_DIR.mkdir(exist_ok=True)
@@ -355,6 +358,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include data visualization router
+app.include_router(data_viz_router)
 
 def safe_float(value):
     """Convert value to float, handling inf and nan"""
