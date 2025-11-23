@@ -239,13 +239,14 @@ async def handle_null_values_endpoint(
         output.seek(0)
         cache_path.write_bytes(output.read())
         
-        # Return updated null summary
+        # Return updated null summary (with dtype to match upload response)
         null_summary = {}
         for col in df.columns:
             null_count = int(df[col].isnull().sum())
             null_summary[col] = {
                 "null_count": null_count,
-                "null_percentage": round((null_count / len(df)) * 100, 2) if len(df) > 0 else 0
+                "null_percentage": round((null_count / len(df)) * 100, 2) if len(df) > 0 else 0,
+                "dtype": str(df[col].dtype)
             }
         
         return {

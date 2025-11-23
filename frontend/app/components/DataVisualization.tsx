@@ -585,9 +585,9 @@ export default function DataVisualization() {
                           },
                         ]}
                         layout={{
-                          title: `${scatterData.x_label} vs ${scatterData.y_label}`,
-                          xaxis: { title: scatterData.x_label },
-                          yaxis: { title: scatterData.y_label },
+                          title: { text: `${scatterData.x_label} vs ${scatterData.y_label}` },
+                          xaxis: { title: { text: scatterData.x_label } },
+                          yaxis: { title: { text: scatterData.y_label } },
                           autosize: true,
                         }}
                         config={{ responsive: true }}
@@ -659,9 +659,9 @@ export default function DataVisualization() {
                             },
                           ]}
                           layout={{
-                            title: `Distribution of ${histogramData.column}`,
-                            xaxis: { title: histogramData.column },
-                            yaxis: { title: 'Frequency' },
+                            title: { text: `Distribution of ${histogramData.column}` },
+                            xaxis: { title: { text: histogramData.column } },
+                            yaxis: { title: { text: 'Frequency' } },
                             autosize: true,
                           }}
                           config={{ responsive: true }}
@@ -799,15 +799,14 @@ export default function DataVisualization() {
                               y: correlationData.columns,
                               type: 'heatmap',
                               colorscale: 'RdBu',
-                              zmid: 0,
                               zmin: -1,
                               zmax: 1,
                             },
                           ]}
                           layout={{
-                            title: 'Correlation Heatmap',
-                            xaxis: { title: '' },
-                            yaxis: { title: '' },
+                            title: { text: 'Correlation Heatmap' },
+                            xaxis: { title: { text: '' } },
+                            yaxis: { title: { text: '' } },
                             autosize: true,
                           }}
                           config={{ responsive: true }}
@@ -913,9 +912,9 @@ export default function DataVisualization() {
                           },
                         ]}
                         layout={{
-                          title: `Filtered: ${filterData.x_column} vs ${filterData.y_column}`,
-                          xaxis: { title: filterData.x_column },
-                          yaxis: { title: filterData.y_column },
+                          title: { text: `Filtered: ${filterData.x_column} vs ${filterData.y_column}` },
+                          xaxis: { title: { text: filterData.x_column } },
+                          yaxis: { title: { text: filterData.y_column } },
                           autosize: true,
                         }}
                         config={{ responsive: true }}
@@ -1012,11 +1011,11 @@ export default function DataVisualization() {
                           },
                         ]}
                         layout={{
-                          title: `3D Plot: ${surfaceData.x_label} vs ${surfaceData.y_label} vs ${surfaceData.z_label}`,
+                          title: { text: `3D Plot: ${surfaceData.x_label} vs ${surfaceData.y_label} vs ${surfaceData.z_label}` },
                           scene: {
-                            xaxis: { title: surfaceData.x_label },
-                            yaxis: { title: surfaceData.y_label },
-                            zaxis: { title: surfaceData.z_label },
+                            xaxis: { title: { text: surfaceData.x_label } },
+                            yaxis: { title: { text: surfaceData.y_label } },
+                            zaxis: { title: { text: surfaceData.z_label } },
                           },
                           autosize: true,
                         }}

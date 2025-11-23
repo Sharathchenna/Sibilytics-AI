@@ -870,6 +870,7 @@ export interface HandleNullsResponse {
     [column: string]: {
       null_count: number;
       null_percentage: number;
+      dtype: string;
     };
   };
   status: string;
