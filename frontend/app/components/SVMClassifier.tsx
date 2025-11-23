@@ -193,6 +193,22 @@ export default function SVMClassifier() {
           <p className="text-slate-600 text-lg">
             Upload your feature dataset (xlsx/csv), select columns, and train Support Vector Machine models with automatic hyperparameter optimization
           </p>
+          
+          {/* Important Notice */}
+          <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-300 rounded-lg">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="text-left">
+                <p className="text-sm font-semibold text-blue-900 mb-1">
+                  📊 Data Requirements
+                </p>
+                <p className="text-sm text-blue-800">
+                  <strong>Feature columns must contain numeric values only.</strong> Target/class labels can be text or numbers. 
+                  If your features have text values, please convert them to numbers before uploading.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Main Content */}
@@ -325,10 +341,19 @@ export default function SVMClassifier() {
                 </div>
               )}
 
+              <div className="ml-13 mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-800">
+                    <strong>Note:</strong> Feature columns must contain <strong>numeric values only</strong>. Target/class column can be text or numbers.
+                  </p>
+                </div>
+              </div>
+
               <div className="ml-13 grid md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Feature 1 (X-axis)
+                    Feature 1 (X-axis) <span className="text-amber-600">*numeric</span>
                   </label>
                   <select
                     value={featureCol1}
@@ -344,7 +369,7 @@ export default function SVMClassifier() {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Feature 2 (Y-axis)
+                    Feature 2 (Y-axis) <span className="text-amber-600">*numeric</span>
                   </label>
                   <select
                     value={featureCol2}

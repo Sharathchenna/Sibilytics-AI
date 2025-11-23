@@ -653,6 +653,34 @@ All endpoints return standard HTTP error codes:
 
 ---
 
+## SVM Classification
+
+### Data Requirements
+
+**IMPORTANT:** Feature columns must contain **numeric values only**. The target/class column can be text or numbers.
+
+#### Valid Data Example:
+```csv
+sepal_length,sepal_width,species
+5.1,3.5,setosa
+4.9,3.0,setosa
+6.2,2.9,versicolor
+```
+- Features (sepal_length, sepal_width): ✅ Numeric
+- Target (species): ✅ Can be text
+
+#### Invalid Data Example:
+```csv
+size,weight,category
+small,light,A
+medium,heavy,B
+```
+- Features (size, weight): ❌ Text values (should be converted to numbers)
+
+**For detailed conversion guidelines, see:** `/docs/SVM_DATA_REQUIREMENTS.md`
+
+---
+
 ## Contact & Support
 
 For issues or questions, refer to the backend logs or contact the development team.

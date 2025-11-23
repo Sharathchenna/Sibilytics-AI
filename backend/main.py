@@ -45,12 +45,72 @@ CACHE_DIR.mkdir(exist_ok=True)
 MODEL_DIR = Path("/tmp/svm_models")
 MODEL_DIR.mkdir(exist_ok=True)
 
+def detect_signal_file_header(content_str: str, delimiter: str = ',') -> bool:
+    """
+    Detect if a signal file (CSV/TXT/LVM) has a header row.
+    Uses the same robust logic as SVM classification header detection.
+    """
+    try:
+        lines = content_str.strip().split('\n')
+        if len(lines) < 2:
+            return False  # Single-line files assumed to have no header
+        
+        first_row = lines[0].split(delimiter)
+        second_row = lines[1].split(delimiter) if len(lines) > 1 else []
+        third_row = lines[2].split(delimiter) if len(lines) > 2 else []
+        
+        # Helper function to check if a cell is numeric
+        def is_numeric(cell):
+            cell = cell.strip()
+            if not cell:
+                return False
+            try:
+                float(cell)
+                return True
+            except ValueError:
+                return False
+        
+        # Count numeric cells in each row
+        first_row_numeric_count = sum(1 for cell in first_row if is_numeric(cell))
+        second_row_numeric_count = sum(1 for cell in second_row if is_numeric(cell))
+        third_row_numeric_count = sum(1 for cell in third_row if is_numeric(cell)) if third_row else 0
+        
+        # If first row is ALL numeric, definitely no header
+        if first_row_numeric_count == len(first_row):
+            return False
+        
+        # If first row is mostly numeric (all cells), likely no header
+        if first_row_numeric_count >= len(first_row):
+            return False
+        
+        # If first row has NO numeric values and second row has numeric values, likely has header
+        if first_row_numeric_count == 0 and second_row_numeric_count > 0:
+            return True
+        
+        # If first row has fewer numeric cells than second row, likely has header
+        if first_row_numeric_count < second_row_numeric_count:
+            return True
+        
+        # Check pattern consistency - if first row has some non-numeric but subsequent rows are all numeric
+        second_row_all_numeric = second_row_numeric_count == len(second_row) if second_row else False
+        third_row_all_numeric = third_row_numeric_count == len(third_row) if third_row else False
+        
+        if not (first_row_numeric_count == len(first_row)) and second_row_all_numeric:
+            return True
+        
+        # Default to False (no header) when uncertain for signal files
+        return False
+    except Exception as e:
+        print(f"[HEADER DETECTION ERROR] {e}")
+        return False  # Default to no header on error
+
 def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
     """
     Parse file content based on file extension.
     Supports: .txt, .lvm (tab-delimited), .csv (comma-delimited), .xlsx (Excel)
     Handles gzip-compressed files (strips .gz extension)
     Handles LabVIEW LVM files with or without headers
+    NOW: Auto-detects headers for all file types using robust detection logic
     """
     # Remove .gz extension if present (file content is already decompressed)
     filename_clean = filename.lower()
@@ -74,45 +134,110 @@ def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
                     if '***End_of_Header***' in line:
                         data_start_idx = idx + 1
                 
-                # Skip the header line (X_Value, Force_0, etc.) if present
+                # IMPROVED: Check if the next line is a header using better logic
                 if data_start_idx < len(lines):
-                    # Check if the next line looks like a header (contains non-numeric column names)
                     next_line = lines[data_start_idx].strip()
-                    if next_line and not next_line[0].isdigit() and not next_line[0] == '-':
-                        data_start_idx += 1
+                    if next_line:
+                        # Check if ANY cell in the row is non-numeric
+                        cells = next_line.split('\t')
+                        has_non_numeric = False
+                        for cell in cells:
+                            cell_stripped = cell.strip()
+                            if cell_stripped:
+                                try:
+                                    float(cell_stripped)
+                                except ValueError:
+                                    has_non_numeric = True
+                                    break
+                        
+                        if has_non_numeric:
+                            data_start_idx += 1
+                            print(f"[PARSE] Detected column header in LVM file, skipping line: {next_line[:50]}")
                 
                 # Parse from data start
                 data_content = '\n'.join(lines[data_start_idx:])
                 df = pd.read_csv(StringIO(data_content), delimiter='\t', header=None)
             else:
                 # Regular tab-delimited file without LabVIEW header
-                df = pd.read_csv(StringIO(content_str), delimiter='\t', header=None)
+                # NEW: Detect if it has headers
+                has_header = detect_signal_file_header(content_str, '\t')
+                if has_header:
+                    print(f"[PARSE] Detected header in TXT/LVM file")
+                    df = pd.read_csv(StringIO(content_str), delimiter='\t')
+                    # Convert column names to None for consistency (signal processing expects numeric indices)
+                    df.columns = range(len(df.columns))
+                else:
+                    print(f"[PARSE] No header detected in TXT/LVM file")
+                    df = pd.read_csv(StringIO(content_str), delimiter='\t', header=None)
+                    
         elif file_ext == 'csv':
-            # CSV files - try to auto-detect delimiter
+            # CSV files - try to auto-detect delimiter AND headers
             content_str = contents.decode('utf-8')
-            # Try comma first, then tab, then semicolon
+            df = None
+            detected_delimiter = ','
+            
             for delimiter in [',', '\t', ';']:
                 try:
-                    df = pd.read_csv(StringIO(content_str), delimiter=delimiter, header=None)
+                    # NEW: Detect if has header
+                    has_header = detect_signal_file_header(content_str, delimiter)
+                    
+                    if has_header:
+                        print(f"[PARSE] Detected header in CSV file (delimiter: '{delimiter}')")
+                        df = pd.read_csv(StringIO(content_str), delimiter=delimiter)
+                        # Convert column names to None for consistency
+                        df.columns = range(len(df.columns))
+                    else:
+                        print(f"[PARSE] No header detected in CSV file (delimiter: '{delimiter}')")
+                        df = pd.read_csv(StringIO(content_str), delimiter=delimiter, header=None)
+                    
                     # Check if we got more than 1 column
                     if df.shape[1] > 1:
+                        detected_delimiter = delimiter
                         break
-                except:
+                except Exception as parse_error:
+                    print(f"[PARSE] Failed with delimiter '{delimiter}': {parse_error}")
                     continue
             else:
-                # If all fail, default to comma
-                df = pd.read_csv(StringIO(content_str), delimiter=',', header=None)
+                # If all fail, default to comma with header detection
+                has_header = detect_signal_file_header(content_str, ',')
+                if has_header:
+                    print(f"[PARSE] Fallback: Detected header in CSV file (comma delimiter)")
+                    df = pd.read_csv(StringIO(content_str), delimiter=',')
+                    df.columns = range(len(df.columns))
+                else:
+                    print(f"[PARSE] Fallback: No header in CSV file (comma delimiter)")
+                    df = pd.read_csv(StringIO(content_str), delimiter=',', header=None)
+                    
         elif file_ext == 'xlsx':
-            # Excel files
-            df = pd.read_excel(BytesIO(contents), header=None, engine='openpyxl')
+            # Excel files - try to detect headers
+            df_test = pd.read_excel(BytesIO(contents), nrows=2, engine='openpyxl')
+            if len(df_test) >= 1:
+                # Check if first row (which became column names) looks like data
+                first_col = str(df_test.columns[0])
+                # More robust check: see if column name is purely numeric
+                is_numeric_header = first_col.replace('.', '', 1).replace('-', '', 1).replace('e', '', 1).replace('E', '', 1).replace('+', '', 1).isdigit()
+                
+                if is_numeric_header:
+                    # Likely no header, re-read without header
+                    print(f"[PARSE] No header detected in Excel file")
+                    df = pd.read_excel(BytesIO(contents), header=None, engine='openpyxl')
+                else:
+                    print(f"[PARSE] Detected header in Excel file")
+                    df = pd.read_excel(BytesIO(contents), engine='openpyxl')
+                    # Convert column names to numeric indices for consistency
+                    df.columns = range(len(df.columns))
+            else:
+                df = pd.read_excel(BytesIO(contents), header=None, engine='openpyxl')
         else:
             raise ValueError(f"Unsupported file format: {file_ext}")
 
         # Remove any completely empty rows/columns
         df = df.dropna(how='all', axis=0).dropna(how='all', axis=1)
 
+        print(f"[PARSE] Successfully parsed {filename}: shape={df.shape}")
         return df
     except Exception as e:
+        print(f"[PARSE ERROR] Failed to parse {filename}: {str(e)}")
         raise ValueError(f"Error parsing {file_ext} file: {str(e)}")
 
 def json_encoder(obj):
