@@ -290,11 +290,12 @@ export const downloadAllStats = async (
 // Types
 export interface UploadResponse {
   filename: string;
-  file_id: string;
-  columns: number;
+  file_id?: string;
+  columns: string[];  // Array of column names
   rows: number;
+  sample_data?: any[];  // Sample rows of data
   status: string;
-  message: string;
+  message?: string;
   upload_time?: string;
   compressed?: boolean;
   compression_method?: string;

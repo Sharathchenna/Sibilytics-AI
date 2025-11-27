@@ -40,6 +40,9 @@ import uuid
 # Import data visualization router
 from data_viz import router as data_viz_router
 
+# Import ANN router
+from ann_router import router as ann_router
+
 # File cache directory
 CACHE_DIR = Path("/tmp/upload_cache")
 CACHE_DIR.mkdir(exist_ok=True)
@@ -362,6 +365,9 @@ app.add_middleware(
 # Include data visualization router
 app.include_router(data_viz_router)
 
+# Include ANN router
+app.include_router(ann_router)
+
 def safe_float(value):
     """Convert value to float, handling inf and nan"""
     try:
@@ -484,15 +490,16 @@ async def upload_file(file: UploadFile = File(...)):
     try:
         # Read file content
         contents = await file.read()
-        
+
         # Parse as CSV with tab delimiter
         df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
-        
-        # Return column count for frontend to create selectors
+
+        # Return column names and sample data
         return {
             "filename": file.filename,
-            "columns": df.shape[1],
+            "columns": df.columns.tolist(),  # Return column names as array
             "rows": df.shape[0],
+            "sample_data": df.head(10).to_dict('records'),  # First 10 rows as sample
             "status": "success"
         }
     except Exception as e:
@@ -572,12 +579,13 @@ async def upload_file_with_progress(file: UploadFile = File(...)):
         df = parse_file_content(contents, file.filename)
         print(f"[UPLOAD] Parsed {file.filename} in {time.time() - parse_start:.2f}s")
 
-        # Prepare response with compression stats
+        # Prepare response with compression stats and sample data
         response_data = {
             "filename": file.filename,
             "file_id": file_id,
-            "columns": df.shape[1],
+            "columns": df.columns.tolist(),  # Return column names as array
             "rows": df.shape[0],
+            "sample_data": df.head(10).to_dict('records'),  # First 10 rows as sample
             "status": "success",
             "message": "File uploaded and cached successfully",
             "upload_time": f"{time.time() - start_time:.2f}s",
