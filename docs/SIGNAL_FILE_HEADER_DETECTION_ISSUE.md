@@ -250,3 +250,5 @@ Please test with your specific files to ensure the header detection works correc
 - [ ] Excel files without headers
 
 If you encounter any issues, check the backend logs for `[PARSE]` messages to see what the system detected.
+
+
