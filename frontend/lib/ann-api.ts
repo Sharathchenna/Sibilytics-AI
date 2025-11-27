@@ -69,7 +69,7 @@ export async function uploadANNDataset(file: File): Promise<ANNUploadResponse> {
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as { detail?: string };
     throw new Error(error.detail || 'Upload failed');
   }
 
@@ -108,7 +108,7 @@ export async function trainANNModel(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as { detail?: string };
     throw new Error(error.detail || 'Training failed');
   }
 
@@ -129,7 +129,7 @@ export async function predictANN(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as { detail?: string };
     throw new Error(error.detail || 'Prediction failed');
   }
 
@@ -154,7 +154,7 @@ export async function inverseSolveANN(
   });
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as { detail?: string };
     throw new Error(error.detail || 'Inverse solve failed');
   }
 
@@ -165,7 +165,7 @@ export async function listANNModels() {
   const response = await fetch(`${API_BASE_URL}/api/ann/models`);
 
   if (!response.ok) {
-    const error = await response.json();
+    const error = await response.json() as { detail?: string };
     throw new Error(error.detail || 'Failed to list models');
   }
 

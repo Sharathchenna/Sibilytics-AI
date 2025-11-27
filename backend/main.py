@@ -494,9 +494,18 @@ async def upload_file(file: UploadFile = File(...)):
         # Parse as CSV with tab delimiter
         df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
 
+        # Generate file ID for caching
+        file_hash = hashlib.sha256(contents).hexdigest()[:16]
+        file_id = f"{file_hash}_{file.filename}"
+        cache_path = CACHE_DIR / file_id
+
+        # Save to cache
+        cache_path.write_bytes(contents)
+
         # Return column names and sample data
         return {
             "filename": file.filename,
+            "file_id": file_id,
             "columns": df.columns.tolist(),  # Return column names as array
             "rows": df.shape[0],
             "sample_data": df.head(10).to_dict('records'),  # First 10 rows as sample
