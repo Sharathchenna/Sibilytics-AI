@@ -2,7 +2,17 @@
  * ANN (Artificial Neural Network) API functions
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const getApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:8000';
+    }
+  }
+  return 'https://api.sibilytics-ai.in';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export interface ANNUploadResponse {
   file_id: string;
