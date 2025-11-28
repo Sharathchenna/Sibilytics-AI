@@ -55,9 +55,8 @@ export interface ANNTrainResponse {
 }
 
 export interface ANNPredictResponse {
-  prediction: number;
+  predictions: Record<string, number>; // Changed to support multiple outputs
   input_values: Record<string, number>;
-  target_name: string;
   status: string;
 }
 

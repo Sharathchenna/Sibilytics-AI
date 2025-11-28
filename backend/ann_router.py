@@ -429,7 +429,14 @@ async def train_ann_model(
         # Evaluate
         y_pred_scaled = ann_model.model.predict(X_test_scaled, verbose=0)
         y_pred = ann_model.scaler_y.inverse_transform(y_pred_scaled)
-        y_true = ann_model.scaler_y.inverse_transform(y_test_scaled.reshape(-1, 1))
+
+        # Handle single vs multiple outputs for inverse transform
+        if n_outputs == 1:
+            # Single output - need to reshape from (n,) to (n, 1)
+            y_true = ann_model.scaler_y.inverse_transform(y_test_scaled.reshape(-1, 1))
+        else:
+            # Multiple outputs - already in correct shape (n, m)
+            y_true = ann_model.scaler_y.inverse_transform(y_test_scaled)
 
         mae = float(np.mean(np.abs(y_pred - y_true)))
         mse = float(mean_squared_error(y_true, y_pred))
@@ -462,11 +469,22 @@ async def train_ann_model(
 
         # Generate Predicted vs Actual scatter plot
         fig2, ax2 = plt.subplots(figsize=(8, 8))
-        ax2.scatter(y_true, y_pred, alpha=0.6, s=50)
-        ax2.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 'r--', lw=2, label='Perfect Prediction')
+
+        # For multiple outputs, show only the first output
+        if n_outputs == 1:
+            y_true_plot = y_true.flatten()
+            y_pred_plot = y_pred.flatten()
+            plot_title = 'Predicted vs Actual'
+        else:
+            y_true_plot = y_true[:, 0]
+            y_pred_plot = y_pred[:, 0]
+            plot_title = f'Predicted vs Actual (Output 1: {target_cols[0]})'
+
+        ax2.scatter(y_true_plot, y_pred_plot, alpha=0.6, s=50)
+        ax2.plot([y_true_plot.min(), y_true_plot.max()], [y_true_plot.min(), y_true_plot.max()], 'r--', lw=2, label='Perfect Prediction')
         ax2.set_xlabel('Actual Values', fontsize=12)
         ax2.set_ylabel('Predicted Values', fontsize=12)
-        ax2.set_title('Predicted vs Actual', fontsize=14, fontweight='bold')
+        ax2.set_title(plot_title, fontsize=14, fontweight='bold')
         ax2.legend(fontsize=10)
         ax2.grid(True, alpha=0.3)
         plt.tight_layout()
@@ -474,14 +492,16 @@ async def train_ann_model(
         predicted_vs_actual_plot = plot_to_base64(fig2)
 
         # Generate Residual plot
-        residuals = y_true.flatten() - y_pred.flatten()
+        # Use the same data as the predicted vs actual plot for consistency
+        residuals = y_true_plot - y_pred_plot
 
         fig3, ax3 = plt.subplots(figsize=(8, 6))
-        ax3.scatter(y_true, residuals, alpha=0.6, s=50)
+        ax3.scatter(y_true_plot, residuals, alpha=0.6, s=50)
         ax3.axhline(0, color='red', linestyle='--', lw=2, label='Zero Error')
         ax3.set_xlabel('Actual Values', fontsize=12)
         ax3.set_ylabel('Residuals', fontsize=12)
-        ax3.set_title('Residual Plot', fontsize=14, fontweight='bold')
+        residual_title = 'Residual Plot' if n_outputs == 1 else f'Residual Plot (Output 1: {target_cols[0]})'
+        ax3.set_title(residual_title, fontsize=14, fontweight='bold')
         ax3.legend(fontsize=10)
         ax3.grid(True, alpha=0.3)
         plt.tight_layout()
@@ -578,14 +598,26 @@ async def predict_ann(
         # Predict
         y_pred = ann_model.predict(X)
 
+        # Return all predictions with their target names
+        n_outputs = y_pred.shape[1] if len(y_pred.shape) > 1 else 1
+
+        if n_outputs == 1:
+            # Single output - keep backward compatibility
+            predictions = {ann_model.target_names[0]: float(y_pred[0, 0])}
+        else:
+            # Multiple outputs - return all as dict
+            predictions = {
+                ann_model.target_names[i]: float(y_pred[0, i])
+                for i in range(n_outputs)
+            }
+
         result = {
-            "prediction": float(y_pred[0, 0]),
+            "predictions": predictions,  # Changed from single prediction to dict of predictions
             "input_values": inputs,
-            "target_name": ann_model.target_name,
             "status": "success"
         }
 
-        print(f"[ANN PREDICT] Input: {inputs} → Output: {y_pred[0, 0]:.4f}")
+        print(f"[ANN PREDICT] Input: {inputs} → Output: {predictions}")
 
         return result
 
@@ -655,7 +687,7 @@ async def inverse_solve_ann(
         axes[0, 1].plot(steps_list, outputs, marker='o', markersize=4, color='green', alpha=0.7)
         axes[0, 1].axhline(desired_output, color='red', linestyle='--', lw=2, label='Target')
         axes[0, 1].set_xlabel('Optimization Step')
-        axes[0, 1].set_ylabel(f'{ann_model.target_name}')
+        axes[0, 1].set_ylabel(f'{ann_model.target_names[0]}')
         axes[0, 1].set_title('Output Convergence')
         axes[0, 1].legend()
         axes[0, 1].grid(True, alpha=0.3)
@@ -677,7 +709,7 @@ async def inverse_solve_ann(
             axes[1, 1].set_title(f'{ann_model.feature_names[1]} Convergence')
             axes[1, 1].grid(True, alpha=0.3)
 
-        plt.suptitle(f'Inverse Optimization for {ann_model.target_name} = {desired_output}',
+        plt.suptitle(f'Inverse Optimization for {ann_model.target_names[0]} = {desired_output}',
                      fontsize=16, fontweight='bold', y=0.995)
         plt.tight_layout()
 
@@ -727,7 +759,7 @@ async def evaluate_ann_model(model_id: str):
         return {
             "model_id": model_id,
             "feature_names": ann_model.feature_names,
-            "target_name": ann_model.target_name,
+            "target_name": ann_model.target_names[0],  # Use first target name
             "input_bounds": ann_model.input_bounds,
             "architecture": [layer.units for layer in ann_model.model.layers if hasattr(layer, 'units')],
             "status": "success"

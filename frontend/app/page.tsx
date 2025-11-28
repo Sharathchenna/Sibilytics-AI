@@ -215,15 +215,15 @@ export default function Home() {
               </a>
               <a href="#signal-processing" onClick={() => setMobileMenuOpen(false)}
                  className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
-                Signal Processing
+                Signal analysis & feature extraction
               </a>
               <a href="#svm-classification" onClick={() => setMobileMenuOpen(false)}
                  className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
-                SVM Classification
+                Machine Learning Module
               </a>
               <a href="#data-analysis" onClick={() => setMobileMenuOpen(false)}
                  className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
-                Data Analysis
+                Data Mining
               </a>
               <a href="#contact" onClick={() => setMobileMenuOpen(false)}
                  className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
@@ -649,9 +649,9 @@ export default function Home() {
               <ul className="space-y-3 text-sm mt-3">
                 <li><a href="#" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Home</a></li>
                 <li><a href="#solutions" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Solutions</a></li>
-                <li><a href="#signal-processing" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Signal Processing</a></li>
-                <li><a href="#svm-classification" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">SVM Classification</a></li>
-                <li><a href="#data-analysis" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Data Analysis</a></li>
+                <li><a href="#signal-processing" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Signal Processing & feature extraction</a></li>
+                <li><a href="#svm-classification" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Machine Learning Module</a></li>
+                <li><a href="#data-analysis" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Data Mining</a></li>
                 <li><a href="#contact" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Contact</a></li>
               </ul>
             </div>

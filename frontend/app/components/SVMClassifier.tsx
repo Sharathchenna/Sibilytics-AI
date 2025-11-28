@@ -47,6 +47,7 @@ export default function SVMClassifier() {
   const [annTrainResults, setAnnTrainResults] = useState<ANNTrainResponse | null>(null);
   const [annPredInputs, setAnnPredInputs] = useState<Record<string, string>>({});
   const [annPredResult, setAnnPredResult] = useState<ANNPredictResponse | null>(null);
+  const [isAnnPredicting, setIsAnnPredicting] = useState(false);
   const [annInverseTarget, setAnnInverseTarget] = useState<string>('');
   const [annInverseResult, setAnnInverseResult] = useState<ANNInverseResponse | null>(null);
   const [isAnnInverseSolving, setIsAnnInverseSolving] = useState(false);
@@ -128,6 +129,37 @@ export default function SVMClassifier() {
       setError(err instanceof Error ? err.message : 'Training failed');
     } finally {
       setIsTraining(false);
+    }
+  };
+
+  const handleANNPredict = async () => {
+    if (!annTrainResults) {
+      setError('Please train a model first');
+      return;
+    }
+
+    // Validate all inputs are provided
+    const missingInputs = annTrainResults.feature_columns.filter(col => !annPredInputs[col] || annPredInputs[col].trim() === '');
+    if (missingInputs.length > 0) {
+      setError(`Please enter values for: ${missingInputs.join(', ')}`);
+      return;
+    }
+
+    setIsAnnPredicting(true);
+    setError('');
+
+    try {
+      const inputValues: Record<string, number> = {};
+      annTrainResults.feature_columns.forEach(col => {
+        inputValues[col] = parseFloat(annPredInputs[col]);
+      });
+
+      const response = await predictANN(annTrainResults.model_id, inputValues);
+      setAnnPredResult(response);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Prediction failed');
+    } finally {
+      setIsAnnPredicting(false);
     }
   };
 
@@ -286,41 +318,28 @@ export default function SVMClassifier() {
 
           {/* Model Type Selector */}
           <div className="mb-6 flex justify-center">
-            <div className="inline-flex items-center gap-2 p-1.5 bg-slate-200 rounded-lg">
-              <button
-                onClick={() => {
-                  setModelType('svm');
+            <div className="w-full max-w-md">
+              <label className="block text-sm font-semibold text-slate-700 mb-2 text-center">
+                Select Model Type
+              </label>
+              <select
+                value={modelType}
+                onChange={(e) => {
+                  setModelType(e.target.value as 'svm' | 'ann');
                   // Reset state when switching
+                  setSelectedFile(null);
                   setUploadData(null);
+                  setAnnUploadData(null);
+                  setAnnTrainResults(null);
                   setTrainResults(null);
                   setShowResults(false);
                   setError('');
                 }}
-                className={`px-6 py-2.5 rounded-md font-semibold transition-all ${
-                  modelType === 'svm'
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'bg-transparent text-slate-700 hover:text-slate-900'
-                }`}
+                className="w-full px-6 py-3 border-2 border-slate-300 rounded-lg font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
               >
-                SVM Classification
-              </button>
-              <button
-                onClick={() => {
-                  setModelType('ann');
-                  // Reset state when switching
-                  setUploadData(null);
-                  setTrainResults(null);
-                  setShowResults(false);
-                  setError('');
-                }}
-                className={`px-6 py-2.5 rounded-md font-semibold transition-all ${
-                  modelType === 'ann'
-                    ? 'bg-purple-600 text-white shadow-md'
-                    : 'bg-transparent text-slate-700 hover:text-slate-900'
-                }`}
-              >
-                ANN Regression
-              </button>
+                <option value="svm">SVM Classification</option>
+                <option value="ann">ANN Regression</option>
+              </select>
             </div>
           </div>
 
@@ -829,6 +848,81 @@ export default function SVMClassifier() {
                       optimizer={annTrainResults.optimizer}
                     />
                   </div>
+                </div>
+              )}
+
+              {/* ANN Prediction Interface */}
+              {annTrainResults && (
+                <div className="mt-8 p-6 bg-blue-50 rounded-lg border border-blue-200">
+                  <h4 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <Play className="w-5 h-5 text-blue-600" />
+                    Make Predictions
+                  </h4>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {annTrainResults.feature_columns.map((col) => (
+                      <div key={col}>
+                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                          {col}
+                        </label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={annPredInputs[col] || ''}
+                          onChange={(e) => setAnnPredInputs({ ...annPredInputs, [col]: e.target.value })}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Enter value"
+                        />
+                      </div>
+                    ))}
+                    <div className="flex items-end">
+                      <button
+                        onClick={handleANNPredict}
+                        disabled={isAnnPredicting}
+                        className="w-full px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                      >
+                        {isAnnPredicting ? (
+                          <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Predicting...
+                          </>
+                        ) : (
+                          <>
+                            <Target className="w-4 h-4" />
+                            Predict
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {annPredResult && (
+                    <div className="mt-4 p-4 bg-white rounded-lg border border-blue-200">
+                      <div className="space-y-3">
+                        <div>
+                          <span className="text-sm text-gray-600 font-semibold mb-2 block">Predictions:</span>
+                          <div className="grid md:grid-cols-2 gap-3">
+                            {Object.entries(annPredResult.predictions).map(([targetName, value]) => (
+                              <div key={targetName} className="bg-blue-50 p-3 rounded-lg">
+                                <span className="text-xs text-gray-600">{targetName}</span>
+                                <p className="text-xl font-bold text-blue-600">{value.toFixed(4)}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="pt-2 border-t border-gray-200">
+                          <span className="text-xs text-gray-500 font-semibold">Input Values:</span>
+                          <div className="mt-1 grid grid-cols-2 gap-2">
+                            {Object.entries(annPredResult.input_values).map(([key, value]) => (
+                              <div key={key} className="text-sm">
+                                <span className="text-gray-600">{key}:</span>{' '}
+                                <span className="font-semibold">{value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </>
