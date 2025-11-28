@@ -370,7 +370,7 @@ export default function SVMClassifier() {
                   ) : (
                     <>
                       <strong>All columns must contain numeric values.</strong> ANN regression requires numeric features and numeric target values.
-                      Select 2+ feature columns and 1 target column for training.
+                      Select 2+ feature columns and 1+ target column for training.
                     </>
                   )}
                 </p>
