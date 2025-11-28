@@ -53,18 +53,18 @@ class ANNModel:
         self.scaler_y = StandardScaler()
         self.history = None
         self.feature_names = []
-        self.target_name = ""
+        self.target_names = []  # Changed to list for multiple outputs
         self.input_bounds = None
 
-    def build_model(self, n_features, architecture=[30, 10, 8], activation='relu', optimizer='adam'):
-        """Build ANN model"""
+    def build_model(self, n_features, n_outputs=1, architecture=[30, 10, 8], activation='relu', optimizer='adam'):
+        """Build ANN model - Same structure as professor's code"""
         model = keras.Sequential()
         model.add(layers.Dense(architecture[0], activation=activation, input_shape=(n_features,)))
 
         for units in architecture[1:]:
             model.add(layers.Dense(units, activation=activation))
 
-        model.add(layers.Dense(1))  # Output layer
+        model.add(layers.Dense(n_outputs))  # Support multiple outputs
         model.compile(optimizer=optimizer, loss='mse', metrics=['mae'])
 
         self.model = model
@@ -319,7 +319,7 @@ async def options_ann_train():
 async def train_ann_model(
     file_id: str = Form(...),
     feature_columns: str = Form(...),  # Comma-separated column names
-    target_column: str = Form(...),
+    target_columns: str = Form(...),  # Comma-separated target column names (supports multiple)
     test_size: float = Form(0.1),
     epochs: int = Form(350),
     batch_size: int = Form(4),  # Professor's exact batch_size
@@ -330,7 +330,8 @@ async def train_ann_model(
     use_bounds: bool = Form(False)  # Don't use bounds (professor's code doesn't have them)
 ):
     """
-    Train ANN model on uploaded dataset.
+    Train ANN model on uploaded dataset - Same structure as professor's code.
+    Supports multiple inputs and multiple outputs.
     Returns model_id, training metrics, and loss plot.
     """
     try:
@@ -341,10 +342,11 @@ async def train_ann_model(
 
         # Parse parameters
         feature_cols = [x.strip() for x in feature_columns.split(',')]
+        target_cols = [x.strip() for x in target_columns.split(',')]
         arch = [int(x.strip()) for x in architecture.split(',')]
 
         print(f"[ANN TRAIN] Features: {feature_cols}")
-        print(f"[ANN TRAIN] Target: {target_column}")
+        print(f"[ANN TRAIN] Targets: {target_cols}")
         print(f"[ANN TRAIN] Architecture: {arch}")
 
         # Load cached file
@@ -380,13 +382,13 @@ async def train_ann_model(
 
         print(f"[ANN TRAIN] Loaded dataset: {df.shape}")
 
-        # Extract features and target
+        # Extract features and targets (supports multiple outputs)
         X = df[feature_cols].values
-        y = df[target_column].values
+        y = df[target_cols].values  # Can be single or multiple columns
 
         print(f"[ANN TRAIN] X shape: {X.shape}, y shape: {y.shape}")
 
-        # Split data
+        # Split data - Same as professor's code
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=test_size, random_state=42
         )
@@ -394,22 +396,30 @@ async def train_ann_model(
         # Create and train model
         ann_model = ANNModel()
         ann_model.feature_names = feature_cols
-        ann_model.target_name = target_column
+        ann_model.target_names = target_cols  # Store as list
 
         # Compute input bounds if requested
         if use_bounds:
             ann_model.input_bounds = [(X[:, i].min(), X[:, i].max()) for i in range(X.shape[1])]
             print(f"[ANN TRAIN] Input bounds: {ann_model.input_bounds}")
 
-        # Normalize data
+        # Normalize data - Same as professor's code
         X_train_scaled = ann_model.scaler_X.fit_transform(X_train)
         X_test_scaled = ann_model.scaler_X.transform(X_test)
 
-        y_train_scaled = ann_model.scaler_y.fit_transform(y_train.reshape(-1, 1)).flatten()
-        y_test_scaled = ann_model.scaler_y.transform(y_test.reshape(-1, 1)).flatten()
+        # Handle single or multiple outputs
+        if len(target_cols) == 1:
+            # Single output - flatten like professor's code
+            y_train_scaled = ann_model.scaler_y.fit_transform(y_train.reshape(-1, 1)).flatten()
+            y_test_scaled = ann_model.scaler_y.transform(y_test.reshape(-1, 1)).flatten()
+        else:
+            # Multiple outputs - keep 2D shape
+            y_train_scaled = ann_model.scaler_y.fit_transform(y_train)
+            y_test_scaled = ann_model.scaler_y.transform(y_test)
 
-        # Build and train
-        ann_model.build_model(n_features=X.shape[1], architecture=arch, activation=activation, optimizer=optimizer)
+        # Build and train - Same structure as professor's code
+        n_outputs = len(target_cols)
+        ann_model.build_model(n_features=X.shape[1], n_outputs=n_outputs, architecture=arch, activation=activation, optimizer=optimizer)
 
         print(f"[ANN TRAIN] Training for {epochs} epochs...")
         t1 = time.time()
@@ -516,7 +526,8 @@ async def train_ann_model(
             "residual_plot": residual_plot,
             "residual_histogram": residual_histogram,
             "feature_columns": feature_cols,
-            "target_column": target_column,
+            "target_columns": target_cols,  # Return list of target columns
+            "n_outputs": n_outputs,  # Number of outputs
             "input_bounds": ann_model.input_bounds,
             "architecture": architecture,
             "activation": activation,

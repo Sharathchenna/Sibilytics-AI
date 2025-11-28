@@ -45,7 +45,8 @@ export interface ANNTrainResponse {
   residual_plot: string;
   residual_histogram: string;
   feature_columns: string[];
-  target_column: string;
+  target_columns: string[]; // Now supports multiple outputs
+  n_outputs: number; // Number of output columns
   input_bounds: number[][];
   architecture: string; // e.g., "30,10,8"
   activation: string; // e.g., "relu"
@@ -92,7 +93,7 @@ export async function uploadANNDataset(file: File): Promise<ANNUploadResponse> {
 export async function trainANNModel(
   fileId: string,
   featureColumns: string,
-  targetColumn: string,
+  targetColumns: string, // Changed to support multiple outputs
   testSize: number = 0.1,
   epochs: number = 350,
   batchSize: number = 4,
@@ -105,7 +106,7 @@ export async function trainANNModel(
   const formData = new FormData();
   formData.append('file_id', fileId);
   formData.append('feature_columns', featureColumns);
-  formData.append('target_column', targetColumn);
+  formData.append('target_columns', targetColumns); // Changed parameter name
   formData.append('test_size', testSize.toString());
   formData.append('epochs', epochs.toString());
   formData.append('batch_size', batchSize.toString());

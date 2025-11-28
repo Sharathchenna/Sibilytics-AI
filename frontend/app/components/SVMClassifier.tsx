@@ -43,7 +43,7 @@ export default function SVMClassifier() {
   // ANN-specific state
   const [annUploadData, setAnnUploadData] = useState<ANNUploadResponse | null>(null);
   const [annFeatureColumns, setAnnFeatureColumns] = useState<string[]>([]);
-  const [annTargetColumn, setAnnTargetColumn] = useState<string>('');
+  const [annTargetColumns, setAnnTargetColumns] = useState<string[]>([]); // Changed to array for multiple outputs
   const [annTrainResults, setAnnTrainResults] = useState<ANNTrainResponse | null>(null);
   const [annPredInputs, setAnnPredInputs] = useState<Record<string, string>>({});
   const [annPredResult, setAnnPredResult] = useState<ANNPredictResponse | null>(null);
@@ -76,10 +76,9 @@ export default function SVMClassifier() {
       const response = await uploadANNDataset(selectedFile);
       setAnnUploadData(response);
       setUploadStatus(`Dataset uploaded! ${response.rows} rows, ${response.columns.length} columns`);
-      if (response.columns.length >= 3) {
-        setAnnFeatureColumns([response.columns[0], response.columns[1]]);
-        setAnnTargetColumn(response.columns[response.columns.length - 1]);
-      }
+      // Don't auto-select - let user choose explicitly
+      setAnnFeatureColumns([]);
+      setAnnTargetColumns([]);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Upload failed');
     } finally {
@@ -88,18 +87,31 @@ export default function SVMClassifier() {
   };
 
   const handleANNTrain = async () => {
-    if (!annUploadData || annFeatureColumns.length === 0 || !annTargetColumn) {
-      setError('Please select feature and target columns');
+    if (!annUploadData) {
+      setError('Please upload a dataset first');
       return;
     }
+
+    // Validation
+    if (annFeatureColumns.length === 0) {
+      setError('Please select at least one input feature column');
+      return;
+    }
+    if (annTargetColumns.length === 0) {
+      setError('Please select at least one output target column');
+      return;
+    }
+
     setIsTraining(true);
     setError('');
     try {
       const architecture = annUseCustomArchitecture ? annArchitectureCustom : annArchitecturePreset;
+
+      // Backend now supports multiple outputs - professor's code structure
       const response = await trainANNModel(
         annUploadData.file_id,
         annFeatureColumns.join(','),
-        annTargetColumn,
+        annTargetColumns.join(','), // Pass all target columns
         annTestSize,
         annEpochs,
         annBatchSize,
@@ -423,23 +435,164 @@ export default function SVMClassifier() {
                     <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
                       <span className="text-purple-700 font-bold">2</span>
                     </div>
-                    <h3 className="text-2xl font-bold text-gray-800">Select Columns</h3>
+                    <h3 className="text-2xl font-bold text-gray-800">Select Input Features & Output Targets</h3>
                   </div>
-                  <div className="ml-13 space-y-4">
-                    <div>
-                      <label className="block text-sm font-semibold mb-2">Target Column (Output)</label>
-                      <select
-                        value={annTargetColumn}
-                        onChange={(e) => setAnnTargetColumn(e.target.value)}
-                        className="w-full px-4 py-2 border rounded-lg"
-                      >
-                        {annUploadData.columns.map((col) => (
-                          <option key={col} value={col}>{col}</option>
-                        ))}
-                      </select>
+
+                  {/* Header Detection Info */}
+                  {annUploadData.has_header === false && (
+                    <div className="ml-13 mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-sm font-semibold text-blue-800 mb-1">
+                            Column Headers Auto-Generated
+                          </p>
+                          <p className="text-sm text-blue-700">
+                            Your file doesn't have column headers. We've automatically generated column names (Column_1, Column_2, etc.) for easy selection.
+                            The data remains unchanged.
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-sm text-gray-600">Features: {annFeatureColumns.join(', ')}</p>
+                  )}
+
+                  <div className="ml-13 mb-4 p-3 bg-purple-50 border border-purple-300 rounded-lg">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-purple-800">
+                        <strong>Note:</strong> All columns must contain <strong>numeric values</strong> for ANN regression. Select your input features and output target(s) below.
+                      </p>
+                    </div>
                   </div>
+
+                  <div className="ml-13 grid md:grid-cols-2 gap-6">
+                    {/* Input Features Selection */}
+                    <div className="p-5 bg-blue-50 border-2 border-blue-200 rounded-lg">
+                      <h4 className="text-md font-bold text-blue-900 mb-3 flex items-center gap-2">
+                        <Target className="w-5 h-5" />
+                        Input Features
+                      </h4>
+                      <p className="text-xs text-blue-700 mb-3">Select columns to use as inputs (X)</p>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {annUploadData.columns.map((col) => (
+                          <label key={col} className="flex items-center gap-3 p-2 bg-white border border-blue-200 rounded hover:bg-blue-50 cursor-pointer transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={annFeatureColumns.includes(col)}
+                              disabled={annTargetColumns.includes(col)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setAnnFeatureColumns([...annFeatureColumns, col]);
+                                } else {
+                                  setAnnFeatureColumns(annFeatureColumns.filter(c => c !== col));
+                                }
+                              }}
+                              className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                            />
+                            <span className={`text-sm flex-1 ${annTargetColumns.includes(col) ? 'text-gray-400' : 'text-gray-700 font-medium'}`}>
+                              {col}
+                            </span>
+                            {annTargetColumns.includes(col) && (
+                              <span className="text-xs text-purple-600 bg-purple-100 px-2 py-0.5 rounded">Output</span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                      <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-800">
+                        <strong>{annFeatureColumns.length}</strong> feature{annFeatureColumns.length !== 1 ? 's' : ''} selected
+                      </div>
+                    </div>
+
+                    {/* Output Targets Selection */}
+                    <div className="p-5 bg-purple-50 border-2 border-purple-200 rounded-lg">
+                      <h4 className="text-md font-bold text-purple-900 mb-3 flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5" />
+                        Output Target(s)
+                      </h4>
+                      <p className="text-xs text-purple-700 mb-3">Select column(s) to predict (Y)</p>
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {annUploadData.columns.map((col) => (
+                          <label key={col} className="flex items-center gap-3 p-2 bg-white border border-purple-200 rounded hover:bg-purple-50 cursor-pointer transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={annTargetColumns.includes(col)}
+                              disabled={annFeatureColumns.includes(col)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setAnnTargetColumns([...annTargetColumns, col]);
+                                } else {
+                                  setAnnTargetColumns(annTargetColumns.filter(c => c !== col));
+                                }
+                              }}
+                              className="w-4 h-4 text-purple-600 rounded focus:ring-2 focus:ring-purple-500 disabled:opacity-50"
+                            />
+                            <span className={`text-sm flex-1 ${annFeatureColumns.includes(col) ? 'text-gray-400' : 'text-gray-700 font-medium'}`}>
+                              {col}
+                            </span>
+                            {annFeatureColumns.includes(col) && (
+                              <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">Input</span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                      <div className="mt-3 p-2 bg-purple-100 rounded text-xs text-purple-800">
+                        <strong>{annTargetColumns.length}</strong> target{annTargetColumns.length !== 1 ? 's' : ''} selected
+                      </div>
+                      {annTargetColumns.length > 1 && (
+                        <div className="mt-2 p-2 bg-amber-100 border border-amber-300 rounded text-xs text-amber-800 flex items-start gap-1">
+                          <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                          <span>Multi-output regression: Model will predict {annTargetColumns.length} values simultaneously</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Sample Data Preview */}
+                  {annUploadData.sample_data && annUploadData.sample_data.length > 0 && (
+                    <div className="ml-13 mt-6">
+                      <div className="flex items-center gap-2 mb-3">
+                        <h4 className="text-sm font-semibold text-gray-700">Sample Data Preview</h4>
+                        {!annUploadData.has_header && (
+                          <span className="px-2 py-1 bg-amber-100 text-amber-700 text-xs font-medium rounded-full">
+                            Auto-generated columns
+                          </span>
+                        )}
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200 border border-gray-200 rounded-lg">
+                          <thead className={annUploadData.has_header ? 'bg-purple-50' : 'bg-amber-50'}>
+                            <tr>
+                              {annUploadData.columns.map((col) => (
+                                <th key={col} className="px-4 py-2 text-left text-xs font-semibold text-gray-700 uppercase">
+                                  {col}
+                                  {!annUploadData.has_header && (
+                                    <span className="ml-1 text-amber-600">*</span>
+                                  )}
+                                  {annTargetColumns.includes(col) && (
+                                    <span className="ml-2 px-2 py-0.5 bg-purple-600 text-white text-xs rounded">Target</span>
+                                  )}
+                                  {annFeatureColumns.includes(col) && (
+                                    <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded">Feature</span>
+                                  )}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {annUploadData.sample_data.slice(0, 5).map((row: any, idx: number) => (
+                              <tr key={idx}>
+                                {annUploadData.columns.map((col) => (
+                                  <td key={col} className="px-4 py-2 text-sm text-gray-600">
+                                    {row[col]}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

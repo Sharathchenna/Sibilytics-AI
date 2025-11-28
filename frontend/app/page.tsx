@@ -169,7 +169,7 @@ export default function Home() {
             </a>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-6 ml-auto pl-12">
               <a href="#" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
                 Home
               </a>
@@ -177,13 +177,13 @@ export default function Home() {
                 Solutions
               </a>
               <a href="#signal-processing" className="font-medium transition-colors" style={{ color: '#9333ea' }}>
-                Signal Processing
+                Signal analysis & feature extraction
               </a>
               <a href="#svm-classification" className="font-medium transition-colors" style={{ color: '#9333ea' }}>
-                SVM Classification
+                Machine Learning Module
               </a>
               <a href="#data-analysis" className="font-medium transition-colors" style={{ color: '#9333ea' }}>
-                Data Analysis
+                Data Mining
               </a>
               <a href="#contact" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
                 Contact
