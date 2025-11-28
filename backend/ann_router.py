@@ -518,6 +518,9 @@ async def train_ann_model(
             "feature_columns": feature_cols,
             "target_column": target_column,
             "input_bounds": ann_model.input_bounds,
+            "architecture": architecture,
+            "activation": activation,
+            "optimizer": optimizer,
             "status": "success"
         }
 

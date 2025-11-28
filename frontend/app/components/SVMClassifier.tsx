@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, Brain, Loader2, CheckCircle, AlertCircle, Download, Play, Target, TrendingUp } from 'lucide-react';
 import { uploadSVMDataset, trainSVMModel, predictSVM, downloadSVMResults, downloadSVMPlot, downloadAllSVMPlots, type SVMUploadResponse, type SVMTrainResponse, type SVMPredictResponse } from '@/lib/api';
 import { uploadANNDataset, trainANNModel, predictANN, inverseSolveANN, type ANNUploadResponse, type ANNTrainResponse, type ANNPredictResponse, type ANNInverseResponse } from '@/lib/ann-api';
+import NeuralNetworkVisualization from './NeuralNetworkVisualization';
 
 export default function SVMClassifier() {
   // Model type selection: 'svm' or 'ann'
@@ -639,7 +640,7 @@ export default function SVMClassifier() {
                     </div>
                   </div>
                   {/* All 4 Plots from Professor's Code */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
                     {annTrainResults.loss_plot && (
                       <div className="bg-white p-4 rounded-lg shadow-sm">
                         <h5 className="font-semibold mb-2 text-purple-700">Training vs Validation Loss</h5>
@@ -664,6 +665,16 @@ export default function SVMClassifier() {
                         <img src={`data:image/png;base64,${annTrainResults.residual_histogram}`} alt="Residual Histogram" className="w-full" />
                       </div>
                     )}
+                  </div>
+                  {/* Neural Network Architecture Visualization */}
+                  <div className="mt-6">
+                    <h5 className="text-lg font-semibold mb-4 text-purple-700">Network Architecture</h5>
+                    <NeuralNetworkVisualization
+                      numInputs={annTrainResults.feature_columns.length}
+                      architecture={annTrainResults.architecture}
+                      activation={annTrainResults.activation}
+                      optimizer={annTrainResults.optimizer}
+                    />
                   </div>
                 </div>
               )}

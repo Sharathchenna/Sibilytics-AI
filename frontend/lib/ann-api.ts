@@ -47,6 +47,9 @@ export interface ANNTrainResponse {
   feature_columns: string[];
   target_column: string;
   input_bounds: number[][];
+  architecture: string; // e.g., "30,10,8"
+  activation: string; // e.g., "relu"
+  optimizer: string; // e.g., "adam"
   status: string;
 }
 
