@@ -222,7 +222,7 @@ export default function NeuralNetworkVisualization({
     ctx.fillText(`Optimizer: ${optimizer.toUpperCase()}`, col2X, infoBoxY + 50);
     ctx.fillText(`Total Layers: ${layers.length}`, col2X, infoBoxY + 25);
 
-  }, [numInputs, architecture, activation, optimizer]);
+  }, [numInputs, numOutputs, architecture, activation, optimizer]);
 
   // Helper function to draw rounded rectangles
   function roundRect(

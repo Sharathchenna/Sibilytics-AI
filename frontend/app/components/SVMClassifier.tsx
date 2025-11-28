@@ -812,31 +812,59 @@ export default function SVMClassifier() {
                     </div>
                   </div>
                   {/* All 4 Plots from Professor's Code */}
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
-                    {annTrainResults.loss_plot && (
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <h5 className="font-semibold mb-2 text-purple-700">Training vs Validation Loss</h5>
-                        <img src={`data:image/png;base64,${annTrainResults.loss_plot}`} alt="Training Loss" className="w-full" />
-                      </div>
-                    )}
-                    {annTrainResults.predicted_vs_actual_plot && (
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <h5 className="font-semibold mb-2 text-purple-700">Predicted vs Actual</h5>
-                        <img src={`data:image/png;base64,${annTrainResults.predicted_vs_actual_plot}`} alt="Predicted vs Actual" className="w-full" />
-                      </div>
-                    )}
-                    {annTrainResults.residual_plot && (
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <h5 className="font-semibold mb-2 text-purple-700">Residual Plot</h5>
-                        <img src={`data:image/png;base64,${annTrainResults.residual_plot}`} alt="Residual Plot" className="w-full" />
-                      </div>
-                    )}
-                    {annTrainResults.residual_histogram && (
-                      <div className="bg-white p-4 rounded-lg shadow-sm">
-                        <h5 className="font-semibold mb-2 text-purple-700">Histogram of Residuals</h5>
-                        <img src={`data:image/png;base64,${annTrainResults.residual_histogram}`} alt="Residual Histogram" className="w-full" />
-                      </div>
-                    )}
+                  <div className="mb-6">
+                    {/* Download All Plots Button */}
+                    <div className="mb-4 flex justify-end">
+                      <button
+                        onClick={() => {
+                          const plots = [
+                            { data: annTrainResults.loss_plot, name: 'training_loss.png' },
+                            { data: annTrainResults.predicted_vs_actual_plot, name: 'predicted_vs_actual.png' },
+                            { data: annTrainResults.residual_plot, name: 'residual_plot.png' },
+                            { data: annTrainResults.residual_histogram, name: 'residual_histogram.png' }
+                          ];
+                          plots.forEach(plot => {
+                            if (plot.data) {
+                              const link = document.createElement('a');
+                              link.href = `data:image/png;base64,${plot.data}`;
+                              link.download = plot.name;
+                              link.click();
+                            }
+                          });
+                        }}
+                        className="px-6 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-all flex items-center gap-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        Download All Plots
+                      </button>
+                    </div>
+
+                    <div className="space-y-6">
+                      {annTrainResults.loss_plot && (
+                        <div className="bg-white p-6 rounded-lg shadow-sm">
+                          <h5 className="font-semibold mb-3 text-purple-700 text-lg">Training vs Validation Loss</h5>
+                          <img src={`data:image/png;base64,${annTrainResults.loss_plot}`} alt="Training Loss" className="w-full h-auto" />
+                        </div>
+                      )}
+                      {annTrainResults.predicted_vs_actual_plot && (
+                        <div className="bg-white p-6 rounded-lg shadow-sm">
+                          <h5 className="font-semibold mb-3 text-purple-700 text-lg">Predicted vs Actual</h5>
+                          <img src={`data:image/png;base64,${annTrainResults.predicted_vs_actual_plot}`} alt="Predicted vs Actual" className="w-full h-auto" />
+                        </div>
+                      )}
+                      {annTrainResults.residual_plot && (
+                        <div className="bg-white p-6 rounded-lg shadow-sm">
+                          <h5 className="font-semibold mb-3 text-purple-700 text-lg">Residual Plot</h5>
+                          <img src={`data:image/png;base64,${annTrainResults.residual_plot}`} alt="Residual Plot" className="w-full h-auto" />
+                        </div>
+                      )}
+                      {annTrainResults.residual_histogram && (
+                        <div className="bg-white p-6 rounded-lg shadow-sm">
+                          <h5 className="font-semibold mb-3 text-purple-700 text-lg">Histogram of Residuals</h5>
+                          <img src={`data:image/png;base64,${annTrainResults.residual_histogram}`} alt="Residual Histogram" className="w-full h-auto" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {/* Neural Network Architecture Visualization */}
                   <div className="mt-6">

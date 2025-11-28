@@ -468,54 +468,122 @@ async def train_ann_model(
         loss_plot = plot_to_base64(fig)
 
         # Generate Predicted vs Actual scatter plot
-        fig2, ax2 = plt.subplots(figsize=(8, 8))
-
-        # For multiple outputs, show only the first output
         if n_outputs == 1:
+            # Single output - one plot
+            fig2, ax2 = plt.subplots(figsize=(8, 8))
             y_true_plot = y_true.flatten()
             y_pred_plot = y_pred.flatten()
-            plot_title = 'Predicted vs Actual'
-        else:
-            y_true_plot = y_true[:, 0]
-            y_pred_plot = y_pred[:, 0]
-            plot_title = f'Predicted vs Actual (Output 1: {target_cols[0]})'
 
-        ax2.scatter(y_true_plot, y_pred_plot, alpha=0.6, s=50)
-        ax2.plot([y_true_plot.min(), y_true_plot.max()], [y_true_plot.min(), y_true_plot.max()], 'r--', lw=2, label='Perfect Prediction')
-        ax2.set_xlabel('Actual Values', fontsize=12)
-        ax2.set_ylabel('Predicted Values', fontsize=12)
-        ax2.set_title(plot_title, fontsize=14, fontweight='bold')
-        ax2.legend(fontsize=10)
-        ax2.grid(True, alpha=0.3)
-        plt.tight_layout()
+            ax2.scatter(y_true_plot, y_pred_plot, alpha=0.6, s=50)
+            ax2.plot([y_true_plot.min(), y_true_plot.max()], [y_true_plot.min(), y_true_plot.max()], 'r--', lw=2, label='Perfect Prediction')
+            ax2.set_xlabel('Actual Values', fontsize=12)
+            ax2.set_ylabel('Predicted Values', fontsize=12)
+            ax2.set_title('Predicted vs Actual', fontsize=14, fontweight='bold')
+            ax2.legend(fontsize=10)
+            ax2.grid(True, alpha=0.3)
+            plt.tight_layout()
+        else:
+            # Multiple outputs - show all outputs in subplots
+            ncols = min(n_outputs, 2)
+            nrows = (n_outputs + 1) // 2
+            fig2, axes = plt.subplots(nrows, ncols, figsize=(8 * ncols, 8 * nrows))
+            if n_outputs == 2:
+                axes = axes.flatten() if nrows > 1 else [axes[0], axes[1]]
+            else:
+                axes = axes.flatten()
+
+            for i in range(n_outputs):
+                ax = axes[i] if n_outputs > 1 else axes
+                y_true_i = y_true[:, i]
+                y_pred_i = y_pred[:, i]
+
+                ax.scatter(y_true_i, y_pred_i, alpha=0.6, s=50)
+                ax.plot([y_true_i.min(), y_true_i.max()], [y_true_i.min(), y_true_i.max()], 'r--', lw=2, label='Perfect Prediction')
+                ax.set_xlabel('Actual Values', fontsize=12)
+                ax.set_ylabel('Predicted Values', fontsize=12)
+                ax.set_title(f'Predicted vs Actual: {target_cols[i]}', fontsize=14, fontweight='bold')
+                ax.legend(fontsize=10)
+                ax.grid(True, alpha=0.3)
+
+            plt.tight_layout()
 
         predicted_vs_actual_plot = plot_to_base64(fig2)
 
         # Generate Residual plot
-        # Use the same data as the predicted vs actual plot for consistency
-        residuals = y_true_plot - y_pred_plot
+        if n_outputs == 1:
+            # Single output - one plot
+            residuals = y_true.flatten() - y_pred.flatten()
 
-        fig3, ax3 = plt.subplots(figsize=(8, 6))
-        ax3.scatter(y_true_plot, residuals, alpha=0.6, s=50)
-        ax3.axhline(0, color='red', linestyle='--', lw=2, label='Zero Error')
-        ax3.set_xlabel('Actual Values', fontsize=12)
-        ax3.set_ylabel('Residuals', fontsize=12)
-        residual_title = 'Residual Plot' if n_outputs == 1 else f'Residual Plot (Output 1: {target_cols[0]})'
-        ax3.set_title(residual_title, fontsize=14, fontweight='bold')
-        ax3.legend(fontsize=10)
-        ax3.grid(True, alpha=0.3)
-        plt.tight_layout()
+            fig3, ax3 = plt.subplots(figsize=(8, 6))
+            ax3.scatter(y_true.flatten(), residuals, alpha=0.6, s=50)
+            ax3.axhline(0, color='red', linestyle='--', lw=2, label='Zero Error')
+            ax3.set_xlabel('Actual Values', fontsize=12)
+            ax3.set_ylabel('Residuals', fontsize=12)
+            ax3.set_title('Residual Plot', fontsize=14, fontweight='bold')
+            ax3.legend(fontsize=10)
+            ax3.grid(True, alpha=0.3)
+            plt.tight_layout()
+        else:
+            # Multiple outputs - show all outputs in subplots
+            ncols = min(n_outputs, 2)
+            nrows = (n_outputs + 1) // 2
+            fig3, axes = plt.subplots(nrows, ncols, figsize=(8 * ncols, 6 * nrows))
+            if n_outputs == 2:
+                axes = axes.flatten() if nrows > 1 else [axes[0], axes[1]]
+            else:
+                axes = axes.flatten()
+
+            for i in range(n_outputs):
+                ax = axes[i] if n_outputs > 1 else axes
+                y_true_i = y_true[:, i]
+                y_pred_i = y_pred[:, i]
+                residuals_i = y_true_i - y_pred_i
+
+                ax.scatter(y_true_i, residuals_i, alpha=0.6, s=50)
+                ax.axhline(0, color='red', linestyle='--', lw=2, label='Zero Error')
+                ax.set_xlabel('Actual Values', fontsize=12)
+                ax.set_ylabel('Residuals', fontsize=12)
+                ax.set_title(f'Residual Plot: {target_cols[i]}', fontsize=14, fontweight='bold')
+                ax.legend(fontsize=10)
+                ax.grid(True, alpha=0.3)
+
+            plt.tight_layout()
 
         residual_plot = plot_to_base64(fig3)
 
         # Generate Histogram of Residuals
-        fig4, ax4 = plt.subplots(figsize=(8, 6))
-        ax4.hist(residuals, bins=30, edgecolor='black', alpha=0.7, color='steelblue')
-        ax4.set_xlabel('Residual', fontsize=12)
-        ax4.set_ylabel('Frequency', fontsize=12)
-        ax4.set_title('Histogram of Residuals', fontsize=14, fontweight='bold')
-        ax4.grid(True, alpha=0.3, axis='y')
-        plt.tight_layout()
+        if n_outputs == 1:
+            # Single output - one histogram
+            fig4, ax4 = plt.subplots(figsize=(8, 6))
+            ax4.hist(residuals, bins=30, edgecolor='black', alpha=0.7, color='steelblue')
+            ax4.set_xlabel('Residual', fontsize=12)
+            ax4.set_ylabel('Frequency', fontsize=12)
+            ax4.set_title('Histogram of Residuals', fontsize=14, fontweight='bold')
+            ax4.grid(True, alpha=0.3, axis='y')
+            plt.tight_layout()
+        else:
+            # Multiple outputs - show all outputs in subplots
+            ncols = min(n_outputs, 2)
+            nrows = (n_outputs + 1) // 2
+            fig4, axes = plt.subplots(nrows, ncols, figsize=(8 * ncols, 6 * nrows))
+            if n_outputs == 2:
+                axes = axes.flatten() if nrows > 1 else [axes[0], axes[1]]
+            else:
+                axes = axes.flatten()
+
+            for i in range(n_outputs):
+                ax = axes[i] if n_outputs > 1 else axes
+                y_true_i = y_true[:, i]
+                y_pred_i = y_pred[:, i]
+                residuals_i = y_true_i - y_pred_i
+
+                ax.hist(residuals_i, bins=30, edgecolor='black', alpha=0.7, color='steelblue')
+                ax.set_xlabel('Residual', fontsize=12)
+                ax.set_ylabel('Frequency', fontsize=12)
+                ax.set_title(f'Histogram of Residuals: {target_cols[i]}', fontsize=14, fontweight='bold')
+                ax.grid(True, alpha=0.3, axis='y')
+
+            plt.tight_layout()
 
         residual_histogram = plot_to_base64(fig4)
 
