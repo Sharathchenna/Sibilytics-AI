@@ -842,25 +842,81 @@ export default function SVMClassifier() {
                     <div className="space-y-6">
                       {annTrainResults.loss_plot && (
                         <div className="bg-white p-6 rounded-lg shadow-sm">
-                          <h5 className="font-semibold mb-3 text-purple-700 text-lg">Training vs Validation Loss</h5>
+                          <div className="flex justify-between items-center mb-3">
+                            <h5 className="font-semibold text-purple-700 text-lg">Training vs Validation Loss</h5>
+                            <button
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = `data:image/png;base64,${annTrainResults.loss_plot}`;
+                                link.download = 'training_loss.png';
+                                link.click();
+                              }}
+                              className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm font-semibold hover:bg-purple-200 transition-all flex items-center gap-1"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              Download
+                            </button>
+                          </div>
                           <img src={`data:image/png;base64,${annTrainResults.loss_plot}`} alt="Training Loss" className="w-full h-auto" />
                         </div>
                       )}
                       {annTrainResults.predicted_vs_actual_plot && (
                         <div className="bg-white p-6 rounded-lg shadow-sm">
-                          <h5 className="font-semibold mb-3 text-purple-700 text-lg">Predicted vs Actual</h5>
+                          <div className="flex justify-between items-center mb-3">
+                            <h5 className="font-semibold text-purple-700 text-lg">Predicted vs Actual</h5>
+                            <button
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = `data:image/png;base64,${annTrainResults.predicted_vs_actual_plot}`;
+                                link.download = 'predicted_vs_actual.png';
+                                link.click();
+                              }}
+                              className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm font-semibold hover:bg-purple-200 transition-all flex items-center gap-1"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              Download
+                            </button>
+                          </div>
                           <img src={`data:image/png;base64,${annTrainResults.predicted_vs_actual_plot}`} alt="Predicted vs Actual" className="w-full h-auto" />
                         </div>
                       )}
                       {annTrainResults.residual_plot && (
                         <div className="bg-white p-6 rounded-lg shadow-sm">
-                          <h5 className="font-semibold mb-3 text-purple-700 text-lg">Residual Plot</h5>
+                          <div className="flex justify-between items-center mb-3">
+                            <h5 className="font-semibold text-purple-700 text-lg">Residual Plot</h5>
+                            <button
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = `data:image/png;base64,${annTrainResults.residual_plot}`;
+                                link.download = 'residual_plot.png';
+                                link.click();
+                              }}
+                              className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm font-semibold hover:bg-purple-200 transition-all flex items-center gap-1"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              Download
+                            </button>
+                          </div>
                           <img src={`data:image/png;base64,${annTrainResults.residual_plot}`} alt="Residual Plot" className="w-full h-auto" />
                         </div>
                       )}
                       {annTrainResults.residual_histogram && (
                         <div className="bg-white p-6 rounded-lg shadow-sm">
-                          <h5 className="font-semibold mb-3 text-purple-700 text-lg">Histogram of Residuals</h5>
+                          <div className="flex justify-between items-center mb-3">
+                            <h5 className="font-semibold text-purple-700 text-lg">Histogram of Residuals</h5>
+                            <button
+                              onClick={() => {
+                                const link = document.createElement('a');
+                                link.href = `data:image/png;base64,${annTrainResults.residual_histogram}`;
+                                link.download = 'residual_histogram.png';
+                                link.click();
+                              }}
+                              className="px-3 py-1.5 bg-purple-100 text-purple-700 rounded-lg text-sm font-semibold hover:bg-purple-200 transition-all flex items-center gap-1"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              Download
+                            </button>
+                          </div>
                           <img src={`data:image/png;base64,${annTrainResults.residual_histogram}`} alt="Residual Histogram" className="w-full h-auto" />
                         </div>
                       )}

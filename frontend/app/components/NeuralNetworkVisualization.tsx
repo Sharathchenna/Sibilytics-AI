@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { Download } from 'lucide-react';
 
 interface NeuralNetworkVisualizationProps {
   numInputs: number;
@@ -18,6 +19,22 @@ export default function NeuralNetworkVisualization({
   optimizer = 'adam'
 }: NeuralNetworkVisualizationProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const handleDownload = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Convert canvas to blob and download
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'neural_network_architecture.png';
+      link.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -248,6 +265,15 @@ export default function NeuralNetworkVisualization({
 
   return (
     <div className="bg-gradient-to-br from-purple-50 via-white to-purple-50 p-6 rounded-xl border-2 border-purple-300 shadow-xl">
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={handleDownload}
+          className="px-4 py-2 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
+        >
+          <Download className="w-4 h-4" />
+          Download Architecture
+        </button>
+      </div>
       <canvas
         ref={canvasRef}
         width={1100}
