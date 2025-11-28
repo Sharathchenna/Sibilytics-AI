@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 
 interface NeuralNetworkVisualizationProps {
   numInputs: number;
+  numOutputs?: number;
   architecture: string;
   activation?: string;
   optimizer?: string;
@@ -11,6 +12,7 @@ interface NeuralNetworkVisualizationProps {
 
 export default function NeuralNetworkVisualization({
   numInputs,
+  numOutputs = 1,
   architecture,
   activation = 'relu',
   optimizer = 'adam'
@@ -26,7 +28,7 @@ export default function NeuralNetworkVisualization({
 
     // Parse architecture
     const hiddenLayers = architecture.split(',').map(n => parseInt(n.trim()));
-    const layers = [numInputs, ...hiddenLayers, 1];
+    const layers = [numInputs, ...hiddenLayers, numOutputs];
 
     // Canvas dimensions - adjusted for better fit
     const width = canvas.width;
@@ -173,7 +175,7 @@ export default function NeuralNetworkVisualization({
         ctx.fillText('Output', x, labelY);
         ctx.font = '14px system-ui';
         ctx.fillStyle = colors.subtext;
-        ctx.fillText('1 neuron', x, labelY + 20);
+        ctx.fillText(`${layerSize} neuron${layerSize > 1 ? 's' : ''}`, x, labelY + 20);
       } else {
         ctx.fillText(`Hidden ${l}`, x, labelY);
         ctx.font = '14px system-ui';

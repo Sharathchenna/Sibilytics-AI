@@ -843,6 +843,7 @@ export default function SVMClassifier() {
                     <h5 className="text-lg font-semibold mb-4 text-purple-700">Network Architecture</h5>
                     <NeuralNetworkVisualization
                       numInputs={annTrainResults.feature_columns.length}
+                      numOutputs={annTrainResults.target_columns.length}
                       architecture={annTrainResults.architecture}
                       activation={annTrainResults.activation}
                       optimizer={annTrainResults.optimizer}
