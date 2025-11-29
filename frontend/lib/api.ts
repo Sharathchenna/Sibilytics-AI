@@ -799,32 +799,65 @@ export const encodeCategorical = async (
 
 // Download cleaned dataset
 export const downloadCleanedDataset = async (fileId: string): Promise<void> => {
+  console.log('[Download] Starting download for file_id:', fileId);
+  console.log('[Download] API URL:', `${API_BASE_URL}/api/data-viz/download-cleaned`);
+
   const formData = new FormData();
   formData.append('file_id', fileId);
 
+  console.log('[Download] Sending POST request...');
   const response = await fetch(`${API_BASE_URL}/api/data-viz/download-cleaned`, {
     method: 'POST',
     body: formData,
   });
 
+  console.log('[Download] Response status:', response.status);
+  console.log('[Download] Response headers:', Object.fromEntries(response.headers.entries()));
+
   if (!response.ok) {
-    throw new Error(`Download failed: ${response.statusText}`);
+    const errorText = await response.text();
+    console.error('[Download Error] Status:', response.status);
+    console.error('[Download Error] Response:', errorText);
+    throw new Error(`Download failed (${response.status}): ${errorText || response.statusText}`);
   }
 
   const blob = await response.blob();
-  const contentDisposition = response.headers.get('Content-Disposition');
-  const filename = contentDisposition
-    ? contentDisposition.split('filename=')[1].replace(/"/g, '')
-    : 'cleaned_data.csv';
+  console.log('[Download] Blob size:', blob.size, 'bytes');
 
+  // Parse Content-Disposition header more robustly
+  let filename = 'cleaned_data.csv';
+  const contentDisposition = response.headers.get('Content-Disposition');
+  console.log('[Download] Content-Disposition header:', contentDisposition);
+
+  if (contentDisposition) {
+    // Try to extract filename from header
+    const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+    if (filenameMatch && filenameMatch[1]) {
+      filename = filenameMatch[1].replace(/['"]/g, '');
+      console.log('[Download] Extracted filename:', filename);
+    }
+  }
+
+  console.log('[Download] Creating download link with filename:', filename);
+
+  // Create download link
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
   a.download = filename;
+  a.style.display = 'none';
   document.body.appendChild(a);
+  console.log('[Download] Triggering download...');
   a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+
+  // Cleanup
+  setTimeout(() => {
+    console.log('[Download] Cleaning up download link');
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+
+  console.log('[Download] Download completed successfully');
 };
 
 // Data Viz Types

@@ -597,13 +597,19 @@ async def options_download_cleaned():
 @router.post("/download-cleaned")
 async def download_cleaned_dataset(file_id: str = Form(...)):
     """Download the cleaned dataset."""
+    print(f"[DOWNLOAD REQUEST] file_id: {file_id}")
     try:
         cache_path = CACHE_DIR / file_id
+        print(f"[DOWNLOAD] Looking for file at: {cache_path}")
+        print(f"[DOWNLOAD] File exists: {cache_path.exists()}")
+
         if not cache_path.exists():
+            print(f"[DOWNLOAD ERROR] File not found: {file_id}")
             raise HTTPException(status_code=404, detail=f"File not found: {file_id}")
-        
+
         contents = cache_path.read_bytes()
         filename = file_id.split('_', 2)[2] if '_' in file_id else file_id
+        print(f"[DOWNLOAD] Extracted filename: {filename}")
         
         # Determine media type
         if filename.lower().endswith('.xlsx'):
@@ -613,11 +619,13 @@ async def download_cleaned_dataset(file_id: str = Form(...)):
         
         output = BytesIO(contents)
         output.seek(0)
-        
+
+        print(f"[DOWNLOAD] Sending file: cleaned_{filename}, size: {len(contents)} bytes, media_type: {media_type}")
+
         return StreamingResponse(
             output,
             media_type=media_type,
-            headers={"Content-Disposition": f"attachment; filename=cleaned_{filename}"}
+            headers={"Content-Disposition": f'attachment; filename="cleaned_{filename}"'}
         )
         
     except Exception as e:

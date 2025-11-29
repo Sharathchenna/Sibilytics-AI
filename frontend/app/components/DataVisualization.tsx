@@ -47,6 +47,7 @@ export default function DataVisualization() {
   const [isFiltering, setIsFiltering] = useState(false);
   const [isGeneratingSurface, setIsGeneratingSurface] = useState(false);
   const [isEncoding, setIsEncoding] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Form inputs
   const [xColumn, setXColumn] = useState<string>('');
@@ -285,29 +286,83 @@ export default function DataVisualization() {
   };
 
   const handleDownload = async () => {
-    if (!uploadData) return;
+    console.log('[handleDownload] Button clicked!');
+    console.log('[handleDownload] uploadData:', uploadData);
+
+    if (!uploadData) {
+      console.error('[handleDownload] uploadData is null/undefined - cannot download');
+      setError('No file uploaded. Please upload a file first.');
+      return;
+    }
+
+    console.log('[handleDownload] file_id:', uploadData.file_id);
+    setIsDownloading(true);
+    setError('');
 
     try {
       await downloadCleanedDataset(uploadData.file_id);
       setUploadStatus('Dataset downloaded successfully!');
       setTimeout(() => setUploadStatus(''), 3000);
     } catch (err) {
+      console.error('[Download Error]', err);
       setError(err instanceof Error ? err.message : 'Download failed');
+    } finally {
+      setIsDownloading(false);
     }
   };
 
   // Download plot as PNG
   const downloadPlotAsPNG = (plotId: string, filename: string) => {
-    const plotElement = document.querySelector(`#${plotId} .plotly`) as any;
-    if (plotElement && plotElement._fullLayout) {
+    console.log('[downloadPlotAsPNG] Button clicked for:', plotId, filename);
+
+    // Try multiple selectors to find the plot element
+    const container = document.querySelector(`#${plotId}`);
+    console.log('[downloadPlotAsPNG] Container found:', !!container);
+
+    if (!container) {
+      console.error('[downloadPlotAsPNG] Container not found for id:', plotId);
+      setError('Plot container not found. Please ensure the plot is visible.');
+      return;
+    }
+
+    // The plot element is the first child div with class js-plotly-plot
+    let plotElement = container.querySelector('.js-plotly-plot') as any;
+    if (!plotElement) {
+      plotElement = container.querySelector('.plotly') as any;
+    }
+    if (!plotElement) {
+      plotElement = container.querySelector('div[class*="plotly"]') as any;
+    }
+
+    console.log('[downloadPlotAsPNG] Plot element found:', !!plotElement);
+    console.log('[downloadPlotAsPNG] Plot element classes:', plotElement?.className);
+    console.log('[downloadPlotAsPNG] Has _fullLayout:', !!(plotElement && plotElement._fullLayout));
+    console.log('[downloadPlotAsPNG] Has data:', !!(plotElement && plotElement.data));
+    console.log('[downloadPlotAsPNG] Element keys:', plotElement ? Object.keys(plotElement).filter(k => k.startsWith('_') || k === 'data') : []);
+
+    if (plotElement) {
+      console.log('[downloadPlotAsPNG] Importing Plotly...');
       import('plotly.js-dist-min').then((Plotly) => {
+        console.log('[downloadPlotAsPNG] Plotly loaded, downloading image...');
         Plotly.downloadImage(plotElement, {
           format: 'png',
           width: 1920,
           height: 1080,
           filename: filename
+        }).then(() => {
+          console.log('[downloadPlotAsPNG] Download completed successfully');
+        }).catch((err: any) => {
+          console.error('[downloadPlotAsPNG] Download failed:', err);
+          setError('Failed to download plot: ' + err.message);
         });
+      }).catch((err) => {
+        console.error('[downloadPlotAsPNG] Error importing Plotly:', err);
+        setError('Failed to load Plotly library for download');
       });
+    } else {
+      console.error('[downloadPlotAsPNG] Plot element not found or not ready');
+      console.error('[downloadPlotAsPNG] Available children:', container.children);
+      setError('Plot not found or not ready. Please wait for the plot to fully load.');
     }
   };
 
@@ -1252,11 +1307,24 @@ export default function DataVisualization() {
 
               <div className="ml-13">
                 <button
-                  onClick={handleDownload}
-                  className="px-8 py-4 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-3"
+                  onClick={() => {
+                    console.log('DOWNLOAD BUTTON CLICKED!');
+                    handleDownload();
+                  }}
+                  disabled={isDownloading}
+                  className="px-8 py-4 bg-green-600 text-white rounded-lg font-bold text-lg hover:bg-green-700 transition-all shadow-lg hover:shadow-xl flex items-center gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <Download className="w-6 h-6" />
-                  Download Cleaned Dataset
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="w-6 h-6 animate-spin" />
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-6 h-6" />
+                      Download Cleaned Dataset
+                    </>
+                  )}
                 </button>
               </div>
             </div>
