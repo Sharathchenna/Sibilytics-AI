@@ -4,7 +4,7 @@ import Image from "next/image";
 import SignalProcessor from "./components/SignalProcessor";
 import SVMClassifier from "./components/SVMClassifier";
 import DataVisualization from "./components/DataVisualization";
-import { Menu, X, Mail, ArrowRight, MapPin, Loader2, CheckCircle, Activity, Waves, BarChart3, Download, Image as ImageIcon, Calculator, Brain } from "lucide-react";
+import { Menu, X, Mail, ArrowRight, MapPin, Loader2, CheckCircle, Activity, Waves, BarChart3, Download, Image as ImageIcon, Calculator, Brain, AlertCircle } from "lucide-react";
 
 export default function Home() {
   const [formData, setFormData] = useState({
@@ -185,6 +185,9 @@ export default function Home() {
               <a href="#data-analysis" className="font-medium transition-colors" style={{ color: '#9333ea' }}>
                 Data Mining
               </a>
+              <a href="#data-acquisition" className="font-medium transition-colors" style={{ color: '#9333ea' }}>
+                Data Acquisition
+              </a>
               <a href="#contact" className="text-slate-700 hover:text-emerald-600 font-medium transition-colors">
                 Contact
               </a>
@@ -224,6 +227,10 @@ export default function Home() {
               <a href="#data-analysis" onClick={() => setMobileMenuOpen(false)}
                  className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
                 Data Mining
+              </a>
+              <a href="#data-acquisition" onClick={() => setMobileMenuOpen(false)}
+                 className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
+                Data Acquisition
               </a>
               <a href="#contact" onClick={() => setMobileMenuOpen(false)}
                  className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
@@ -466,6 +473,60 @@ export default function Home() {
       {/* Data Analysis Section */}
       <DataVisualization />
 
+      {/* Data Acquisition Software Section */}
+      <div id="data-acquisition" className="py-20 bg-slate-50 relative z-10">
+        <div className="max-w-7xl mx-auto px-4">
+          {/* Header */}
+          <div className="text-center mb-12">
+            <div className="inline-block mb-4">
+              <span className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold">
+                Data Acquisition
+              </span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+              Data Acquisition Software
+            </h2>
+          </div>
+
+          {/* Compact Content Box */}
+          <div className="bg-white rounded-xl shadow-md p-6 border border-slate-200 max-w-4xl mx-auto">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-blue-600 rounded-lg">
+                <Download className="w-6 h-6 text-white" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">Signal Acquisition System</h3>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-gray-700 text-base leading-relaxed">
+                This data acquisition software developed by <strong className="text-blue-600">SibilyticsAI</strong> can record any signal such as 
+                <strong> voltage, current, force, acceleration, pressure, sound, temperature,</strong> etc. 
+                The only requirement is that the sensor must be connected through any 
+                <strong className="text-blue-600"> National Instruments (NI) DAQ device</strong>.
+              </p>
+              
+              <div className="bg-amber-50 rounded-lg p-4 border-l-4 border-amber-500">
+                <p className="text-gray-700 text-sm leading-relaxed">
+                  Please use the link below to download the software and the instructions. 
+                  <strong className="text-amber-700"> Kindly read the instructions carefully</strong> to ensure effective signal acquisition.
+                </p>
+              </div>
+
+              <div className="flex justify-center pt-4">
+                <a
+                  href="https://pub-4b511d5c17ef4b7584e1f710b59f759e.r2.dev/Signal%20acquisition-%20SibilyticsAI.zip"
+                  download
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg font-semibold hover:from-blue-700 hover:to-indigo-700 hover:scale-105 shadow-md hover:shadow-lg transition-all"
+                >
+                  <Download className="w-5 h-5" />
+                  Download Software
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Get in Touch Section */}
       <div id="contact" className="py-20 bg-gradient-to-b from-white to-gray-50 relative z-10">
         <div className="max-w-7xl mx-auto px-4">
@@ -652,6 +713,7 @@ export default function Home() {
                 <li><a href="#signal-processing" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Signal Processing & feature extraction</a></li>
                 <li><a href="#svm-classification" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Machine Learning Module</a></li>
                 <li><a href="#data-analysis" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Data Mining</a></li>
+                <li><a href="#data-acquisition" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Data Acquisition</a></li>
                 <li><a href="#contact" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Contact</a></li>
               </ul>
             </div>
