@@ -218,14 +218,19 @@ export function applyCustomTheme(userLayout?: Layout): Layout {
  * Create styled trace with emerald theme
  * Applies consistent styling to individual traces
  */
-export function createStyledTrace(data: any, overrides?: any) {
+export function createStyledTrace(data: Record<string, unknown>, overrides?: Record<string, unknown>) {
+  const dataLine = (data.line ?? {}) as Record<string, unknown>;
+  const dataMarker = (data.marker ?? {}) as Record<string, unknown>;
+  const overridesLine = ((overrides?.line ?? {}) as Record<string, unknown>);
+  const overridesMarker = ((overrides?.marker ?? {}) as Record<string, unknown>);
+
   return {
     ...data,
     line: {
       color: colors.primary,
       width: 2,
-      ...data.line,
-      ...overrides?.line,
+      ...dataLine,
+      ...overridesLine,
     },
     marker: {
       color: colors.primary,
@@ -234,8 +239,8 @@ export function createStyledTrace(data: any, overrides?: any) {
         color: colors.background,
         width: 1,
       },
-      ...data.marker,
-      ...overrides?.marker,
+      ...dataMarker,
+      ...overridesMarker,
     },
     ...overrides,
   };
@@ -264,7 +269,7 @@ export const contourColorscale: [number, string][] = [
   [1, '#059669'],    // emerald-600
 ];
 
-export default {
+const plotlyTheme = {
   layout: customLayout,
   config: customConfig,
   colors,
@@ -274,3 +279,5 @@ export default {
   heatmapColorscale,
   contourColorscale,
 };
+
+export default plotlyTheme;

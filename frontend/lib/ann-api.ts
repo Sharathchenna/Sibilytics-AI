@@ -19,8 +19,8 @@ export interface ANNUploadResponse {
   filename: string;
   columns: string[];
   rows: number;
-  sample_data: any[];
-  column_stats: Record<string, any>;
+  sample_data: Record<string, unknown>[];
+  column_stats: Record<string, unknown>;
   has_header: boolean;
   status: string;
 }
@@ -65,8 +65,8 @@ export interface ANNInverseResponse {
   predicted_output: number;
   error: number;
   final_loss: number;
-  [key: string]: any; // For found_cr, found_cf, etc.
-  optimization_history: any[];
+  [key: string]: string | number | boolean | unknown[] | undefined; // For found_cr, found_cf, etc.
+  optimization_history: unknown[];
   convergence_plot: string;
   optimization_time: string;
   status: string;

@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { ChevronDown, Menu, X, Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface DropdownItem {
     label: string;
@@ -64,9 +65,11 @@ export default function Navbar() {
                 <div className="flex justify-between items-center h-14 px-4">
                     {/* Logo */}
                     <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
-                        <img
+                        <Image
                             src="/footer-logo.png"
                             alt="Sibilytics Logo"
+                            width={36}
+                            height={36}
                             className="h-9 w-9 object-contain"
                         />
                         <span className="text-white font-semibold text-lg tracking-tight">sibilytics<span className="text-emerald-400">.ai</span></span>

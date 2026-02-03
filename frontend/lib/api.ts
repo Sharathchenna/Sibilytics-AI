@@ -18,15 +18,15 @@ export const compressFile = async (file: File): Promise<File> => {
     // Browser doesn't support compression, return original file
     return file;
   }
-  
+
   try {
     const stream = file.stream();
     const compressedStream = stream.pipeThrough(
       new CompressionStream('gzip')
     );
     const compressedBlob = await new Response(compressedStream).blob();
-    return new File([compressedBlob], file.name + '.gz', { 
-      type: 'application/gzip' 
+    return new File([compressedBlob], file.name + '.gz', {
+      type: 'application/gzip'
     });
   } catch (error) {
     console.warn('Compression failed, using original file:', error);
@@ -90,7 +90,7 @@ export const uploadFile = async (
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             const response = JSON.parse(xhr.responseText);
-            
+
             if (onProgress) {
               onProgress({
                 percentage: 100,
@@ -101,7 +101,8 @@ export const uploadFile = async (
             }
 
             resolve(response);
-          } catch (error) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (_error) {
             reject(new Error('Failed to parse server response'));
           }
         } else {
@@ -254,7 +255,7 @@ export const downloadStatistics = (statistics: Record<string, number>, filename:
 
 // Download consolidated statistics from multiple files as CSV
 export const downloadAllStats = async (
-  allStats: Array<{ filename: string; [key: string]: number | string }>
+  allStats: Array<{ filename: string;[key: string]: number | string }>
 ): Promise<void> => {
   try {
     const response = await fetch(`${API_BASE_URL}/api/download-all-stats`, {
@@ -293,7 +294,7 @@ export interface UploadResponse {
   file_id: string;  // Required - both upload endpoints return it
   columns: string[];  // Array of column names
   rows: number;
-  sample_data?: any[];  // Sample rows of data
+  sample_data?: Record<string, unknown>[];  // Sample rows of data
   status: string;
   message?: string;
   upload_time?: string;
@@ -326,9 +327,9 @@ export interface ProcessRawResponse {
 
 export interface PlotData {
   type: string;
-  data: any;
-  layout: any;
-  metadata?: any;
+  data: Record<string, unknown>;
+  layout: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface BatchPlotsResponse {
@@ -516,10 +517,10 @@ export interface SVMUploadResponse {
   filename: string;
   columns: string[];
   rows: number;
-  sample_data: Record<string, any>[];
+  sample_data: Record<string, unknown>[];
   unique_values?: {
     [column: string]: {
-      values: any[];
+      values: (string | number | boolean | null)[];
       count: number;
       dtype: string;
     };
@@ -534,7 +535,7 @@ export interface SVMTrainResponse {
     [testSize: string]: {
       kernels: {
         [kernel: string]: {
-          best_params: Record<string, any>;
+          best_params: Record<string, string | number | boolean>;
           auc_score: number;
           accuracy: number;
           precision: number;
@@ -565,7 +566,7 @@ export interface SVMTrainResponse {
   best_model: {
     kernel: string;
     test_size: number;
-    params: Record<string, any>;
+    params: Record<string, string | number | boolean>;
     auc: number;
   };
   plots: {
@@ -884,7 +885,7 @@ export interface DataVizUploadResponse {
       max: number | null;
     };
   };
-  sample_data: Record<string, any>[];
+  sample_data: Record<string, unknown>[];
   status: string;
 }
 

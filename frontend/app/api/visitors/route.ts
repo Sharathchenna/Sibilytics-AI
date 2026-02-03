@@ -20,7 +20,9 @@ export async function POST(request: NextRequest) {
     let kv: KVNamespace | undefined;
 
     // Method 1: Check if available on process.env (OpenNext Cloudflare approach)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((process.env as any).VISITOR_COUNT) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       kv = (process.env as any).VISITOR_COUNT;
       console.log('KV found on process.env');
     }
@@ -32,11 +34,14 @@ export async function POST(request: NextRequest) {
 
     console.log('KV binding:', {
       available: !!kv,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       hasGet: kv && typeof (kv as any).get === 'function',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       hasPut: kv && typeof (kv as any).put === 'function',
       type: kv ? typeof kv : 'undefined'
     });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (!kv || typeof (kv as any).get !== 'function') {
       // If KV is not available or doesn't have the right methods
       console.error('KV namespace not properly configured');
@@ -48,8 +53,8 @@ export async function POST(request: NextRequest) {
 
     // Get visitor's IP address from Cloudflare headers
     const ip = request.headers.get('cf-connecting-ip') ||
-               request.headers.get('x-forwarded-for') ||
-               'unknown';
+      request.headers.get('x-forwarded-for') ||
+      'unknown';
 
     // Get session ID from request body (sent from frontend localStorage)
     const body = await request.json() as { sessionId?: string };
@@ -95,8 +100,11 @@ export async function POST(request: NextRequest) {
         message: wasCounted ? 'New unique visitor counted' : 'Already counted in last 24h',
         debug: {
           kvFound: kv ? 'yes' : 'no',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           kvSource: (process.env as any).VISITOR_COUNT ? 'process.env' : globalThis.VISITOR_COUNT ? 'globalThis' : 'not found',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           hasGetMethod: kv && typeof (kv as any).get === 'function',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           hasPutMethod: kv && typeof (kv as any).put === 'function',
           currentCountFromKV: currentCount,
           visitorKeyChecked: visitorKey.substring(0, 30) + '...',

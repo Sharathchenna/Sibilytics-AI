@@ -65,18 +65,23 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
     const plotData = plotsData.plots[plotType];
     if (!plotData) return;
 
-    const { data, type } = plotData;
+    const { type } = plotData;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = plotData.data as any;
     let csvContent = '';
 
     if (type === 'scatter') {
       if (data.traces) {
         // Multiple traces (FFT, Wavelet)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const headers = ['x', ...data.traces.map((t: any) => t.name)];
         csvContent = headers.join(',') + '\n';
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const maxLength = Math.max(...data.traces.map((t: any) => t.x.length));
         for (let i = 0; i < maxLength; i++) {
           const row = [data.traces[0].x[i]];
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           data.traces.forEach((trace: any) => {
             row.push(trace.y[i] !== undefined ? trace.y[i] : '');
           });
@@ -119,7 +124,8 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
     URL.revokeObjectURL(url);
   };
 
-  const downloadAllCSVs = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _downloadAllCSVs = () => {
     allPlotCategories.forEach((cat, index) => {
       setTimeout(() => downloadCSV(cat.id as PlotType), 300 * index);
     });
@@ -173,15 +179,17 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
     const plotData = plotsData.plots[plotType];
     if (!plotData) return null;
 
-    const { data, layout, type } = plotData;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { layout, type, data } = plotData as { layout: any; type: string; data: any };
     const axisLabels = getAxisLabels(plotType);
 
-    // Convert API data format to Plotly format
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let plotlyData: any[] = [];
 
     if (type === 'scatter') {
       if (data.traces) {
         // Multiple traces (FFT, Wavelet)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         plotlyData = data.traces.map((trace: any) => ({
           x: trace.x,
           y: trace.y,
@@ -189,7 +197,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
           mode: 'lines',
           name: trace.name,
           line: { color: trace.color, width: 2 },
-          hovertemplate: 
+          hovertemplate:
             '<b>%{fullData.name}</b><br>' +
             axisLabels.xaxis + ': %{x:.4f}<br>' +
             axisLabels.yaxis + ': %{y:.4f}' +
@@ -204,7 +212,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
           mode: 'lines',
           name: data.name,
           line: { color: data.color, width: 2 },
-          hovertemplate: 
+          hovertemplate:
             '<b>%{fullData.name}</b><br>' +
             axisLabels.xaxis + ': %{x:.6f}<br>' +
             axisLabels.yaxis + ': %{y:.6f}' +
@@ -218,7 +226,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
         type: 'bar',
         name: data.traces?.[0]?.name || data.name,
         marker: { color: data.traces?.[0]?.color || data.color },
-        hovertemplate: 
+        hovertemplate:
           '<b>%{fullData.name}</b><br>' +
           axisLabels.xaxis + ': %{x}<br>' +
           axisLabels.yaxis + ': %{y:.4f}' +
@@ -231,7 +239,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
         z: data.z,
         type: 'heatmap',
         colorscale: data.colorscale || 'Viridis',
-        hovertemplate: 
+        hovertemplate:
           axisLabels.xaxis + ': %{x:.4f}<br>' +
           axisLabels.yaxis + ': %{y:.4f}<br>' +
           'Intensity: %{z:.4f}' +
@@ -253,9 +261,9 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
       hovermode: 'closest',
       hoverlabel: {
         bgcolor: '#ffffff',
-        font: { 
-          color: '#0f172a', 
-          size: 12, 
+        font: {
+          color: '#0f172a',
+          size: 12,
           family: 'Arial, sans-serif'
         },
         bordercolor: '#059669',
@@ -523,7 +531,7 @@ export default function PlotDisplay({ plotsData }: PlotDisplayProps) {
 
       {/* Download All Buttons */}
       <div className="mt-8 flex justify-center gap-4">
-        
+
         <button
           onClick={() => {
             allPlotCategories.forEach((cat, index) => {

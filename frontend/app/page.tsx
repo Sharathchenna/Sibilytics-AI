@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import { ArrowRight, Activity, Waves, BarChart3, Download, Brain } from "lucide-react";
+import { ArrowRight, Activity, BarChart3, Download, Brain } from "lucide-react";
 
 export default function Home() {
   const [visitorCount, setVisitorCount] = useState<number | null>(null);

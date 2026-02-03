@@ -1,6 +1,7 @@
 'use client';
 import { Mail, Activity } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface FooterProps {
     visitorCount?: number | null;
@@ -14,9 +15,11 @@ export default function Footer({ visitorCount }: FooterProps) {
                     {/* Company Info */}
                     <div className="md:col-span-2">
                         <div className="flex items-center gap-3 mb-6">
-                            <img
+                            <Image
                                 src="/footer-logo.png"
                                 alt="Sibilytics.ai"
+                                width={48}
+                                height={48}
                                 className="h-12 w-12 object-contain"
                             />
                             <span className="text-white font-bold text-2xl tracking-tight">sibilytics<span className="text-emerald-400">.ai</span></span>

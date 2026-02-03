@@ -95,7 +95,7 @@ export default function DataVisualization() {
   const handleUpload = async () => {
     console.log('[DataViz] Upload button clicked');
     console.log('[DataViz] Selected file:', selectedFile);
-    
+
     if (!selectedFile) {
       console.log('[DataViz] No file selected, returning');
       return;
@@ -111,7 +111,7 @@ export default function DataVisualization() {
       console.log('[DataViz] Upload response:', response);
       setUploadData(response);
       setUploadStatus(`Dataset uploaded successfully! ${response.rows} rows, ${response.columns.length} columns`);
-      
+
       // Auto-select first numeric columns
       if (response.numeric_columns.length >= 2) {
         setXColumn(response.numeric_columns[0]);
@@ -121,7 +121,7 @@ export default function DataVisualization() {
           setZColumn(response.numeric_columns[2]);
         }
       }
-      
+
       // Auto-select first categorical column for encoding
       if (response.categorical_columns.length > 0) {
         setEncodeColumn(response.categorical_columns[0]);
@@ -160,13 +160,13 @@ export default function DataVisualization() {
 
     try {
       const response = await handleNullValues(uploadData.file_id, column, method);
-      
+
       // Refresh upload data
       const updatedData = { ...uploadData };
       updatedData.null_summary = response.null_summary;
       updatedData.rows = response.new_row_count;
       setUploadData(updatedData);
-      
+
       setUploadStatus(response.message);
       setTimeout(() => setUploadStatus(''), 3000);
     } catch (err) {
@@ -216,11 +216,11 @@ export default function DataVisualization() {
 
     try {
       await removeCorrelatedFeatures(uploadData.file_id, columns.join(','));
-      
+
       // Refresh correlation data
       const response = await calculateCorrelation(uploadData.file_id, corrThreshold);
       setCorrelationData(response);
-      
+
       setUploadStatus(`Removed ${columns.length} column(s)`);
       setTimeout(() => setUploadStatus(''), 3000);
     } catch (err) {
@@ -326,12 +326,13 @@ export default function DataVisualization() {
     }
 
     // The plot element is the first child div with class js-plotly-plot
-    let plotElement = container.querySelector('.js-plotly-plot') as any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let plotElement: any = container.querySelector('.js-plotly-plot');
     if (!plotElement) {
-      plotElement = container.querySelector('.plotly') as any;
+      plotElement = container.querySelector('.plotly');
     }
     if (!plotElement) {
-      plotElement = container.querySelector('div[class*="plotly"]') as any;
+      plotElement = container.querySelector('div[class*="plotly"]');
     }
 
     console.log('[downloadPlotAsPNG] Plot element found:', !!plotElement);
@@ -344,14 +345,14 @@ export default function DataVisualization() {
       console.log('[downloadPlotAsPNG] Importing Plotly...');
       import('plotly.js-dist-min').then((Plotly) => {
         console.log('[downloadPlotAsPNG] Plotly loaded, downloading image...');
-        Plotly.downloadImage(plotElement, {
+        Plotly.downloadImage(plotElement as HTMLElement, {
           format: 'png',
           width: 1920,
           height: 1080,
           filename: filename
         }).then(() => {
           console.log('[downloadPlotAsPNG] Download completed successfully');
-        }).catch((err: any) => {
+        }).catch((err: Error) => {
           console.error('[downloadPlotAsPNG] Download failed:', err);
           setError('Failed to download plot: ' + err.message);
         });
@@ -610,7 +611,7 @@ export default function DataVisualization() {
                     <BarChart3 className="w-5 h-5 text-blue-600" />
                     Scatter Plot (Column vs Column)
                   </h4>
-                  
+
                   <div className="grid md:grid-cols-3 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">X-Axis Column</label>
@@ -625,7 +626,7 @@ export default function DataVisualization() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Y-Axis Column</label>
                       <select
@@ -639,7 +640,7 @@ export default function DataVisualization() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div className="flex items-end">
                       <button
                         onClick={handleGenerateScatter}
@@ -708,7 +709,7 @@ export default function DataVisualization() {
                     <BarChart3 className="w-5 h-5 text-green-600" />
                     Histogram Analysis
                   </h4>
-                  
+
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Select Column</label>
@@ -723,7 +724,7 @@ export default function DataVisualization() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div className="flex items-end">
                       <button
                         onClick={handleGenerateHistogram}
@@ -762,7 +763,7 @@ export default function DataVisualization() {
                           <Plot
                             data={[
                               {
-                                x: histogramData.bin_edges.slice(0, -1).map((edge, i) => 
+                                x: histogramData.bin_edges.slice(0, -1).map((edge, i) =>
                                   (edge + histogramData.bin_edges[i + 1]) / 2
                                 ),
                                 y: histogramData.hist,
@@ -782,7 +783,7 @@ export default function DataVisualization() {
                           />
                         </div>
                       </div>
-                      
+
                       {/* Statistics */}
                       <div className="grid md:grid-cols-4 gap-4">
                         <div className="p-3 bg-white rounded-lg border border-green-200">
@@ -812,7 +813,7 @@ export default function DataVisualization() {
                     <BarChart3 className="w-5 h-5 text-purple-600" />
                     Correlation Analysis
                   </h4>
-                  
+
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -832,7 +833,7 @@ export default function DataVisualization() {
                         <span>1.0</span>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-end">
                       <button
                         onClick={handleCalculateCorrelation}
@@ -869,11 +870,10 @@ export default function DataVisualization() {
                                   <span className="font-semibold text-gray-800">{pair.column1}</span>
                                   <span className="text-gray-500">↔</span>
                                   <span className="font-semibold text-gray-800">{pair.column2}</span>
-                                  <span className={`px-2 py-1 rounded text-xs font-bold ${
-                                    Math.abs(pair.correlation) >= 0.9 ? 'bg-red-100 text-red-700' :
+                                  <span className={`px-2 py-1 rounded text-xs font-bold ${Math.abs(pair.correlation) >= 0.9 ? 'bg-red-100 text-red-700' :
                                     Math.abs(pair.correlation) >= 0.8 ? 'bg-orange-100 text-orange-700' :
-                                    'bg-yellow-100 text-yellow-700'
-                                  }`}>
+                                      'bg-yellow-100 text-yellow-700'
+                                    }`}>
                                     {pair.correlation.toFixed(3)}
                                   </span>
                                 </div>
@@ -890,7 +890,7 @@ export default function DataVisualization() {
                           </div>
                         </div>
                       )}
-                      
+
                       {correlationData.highly_correlated.length === 0 && (
                         <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                           <p className="text-green-800 font-medium">
@@ -952,19 +952,19 @@ export default function DataVisualization() {
                                   size: 10
                                 },
                                 showscale: true,
-                              } as any,
+                              } as unknown as Partial<Plotly.PlotData>,
                             ]}
                             layout={{
-                              title: { 
+                              title: {
                                 text: 'Correlation Heatmap',
                                 font: { size: 18 }
                               },
-                              xaxis: { 
+                              xaxis: {
                                 title: { text: '' },
                                 tickangle: -45,
                                 side: 'bottom'
                               },
-                              yaxis: { 
+                              yaxis: {
                                 title: { text: '' },
                                 autorange: 'reversed'
                               },
@@ -986,7 +986,7 @@ export default function DataVisualization() {
                     <BarChart3 className="w-5 h-5 text-orange-600" />
                     Filter Data by X Interval
                   </h4>
-                  
+
                   <div className="grid md:grid-cols-5 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">X Column</label>
@@ -1001,7 +1001,7 @@ export default function DataVisualization() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Y Column</label>
                       <select
@@ -1015,7 +1015,7 @@ export default function DataVisualization() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">X Min</label>
                       <input
@@ -1027,7 +1027,7 @@ export default function DataVisualization() {
                         placeholder="Min value"
                       />
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">X Max</label>
                       <input
@@ -1039,7 +1039,7 @@ export default function DataVisualization() {
                         placeholder="Max value"
                       />
                     </div>
-                    
+
                     <div className="flex items-end">
                       <button
                         onClick={handleFilterInterval}
@@ -1115,7 +1115,7 @@ export default function DataVisualization() {
                     <BarChart3 className="w-5 h-5 text-indigo-600" />
                     3D Surface Plot
                   </h4>
-                  
+
                   <div className="grid md:grid-cols-4 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">X Column</label>
@@ -1130,7 +1130,7 @@ export default function DataVisualization() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Y Column</label>
                       <select
@@ -1144,7 +1144,7 @@ export default function DataVisualization() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Z Column</label>
                       <select
@@ -1158,7 +1158,7 @@ export default function DataVisualization() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div className="flex items-end">
                       <button
                         onClick={handleGenerateSurface}
@@ -1235,7 +1235,7 @@ export default function DataVisualization() {
                     <RefreshCw className="w-5 h-5 text-teal-600" />
                     Convert Text to Numerical
                   </h4>
-                  
+
                   <div className="grid md:grid-cols-3 gap-4 mb-4">
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Categorical Column</label>
@@ -1250,7 +1250,7 @@ export default function DataVisualization() {
                         ))}
                       </select>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-semibold text-gray-700 mb-2">Encoding Method</label>
                       <select
@@ -1263,7 +1263,7 @@ export default function DataVisualization() {
                         <option value="frequency">Frequency Encoding</option>
                       </select>
                     </div>
-                    
+
                     <div className="flex items-end">
                       <button
                         onClick={handleEncodeCategorical}
@@ -1284,7 +1284,7 @@ export default function DataVisualization() {
                       </button>
                     </div>
                   </div>
-                  
+
                   <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
                     <p className="text-sm text-blue-800">
                       <strong>Note:</strong> Encoding will convert text categories to numbers. Original column will be preserved as {encodeColumn}_original
