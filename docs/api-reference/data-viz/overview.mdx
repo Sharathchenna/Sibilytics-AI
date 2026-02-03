@@ -1,0 +1,308 @@
+---
+title: "Data Visualization API"
+description: "Upload datasets, generate visualizations, and clean data"
+---
+
+## Overview
+
+The Data Visualization API provides tools for exploratory data analysis, visualization, null handling, and data transformation.
+
+---
+
+## Upload Dataset
+
+Upload a dataset for visualization and analysis.
+
+<Card title="POST /api/data-viz/upload" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/data-viz/upload \
+  -F "file=@data.csv"
+```
+
+### Response
+
+```json
+{
+  "dataset_id": "viz_abc123",
+  "filename": "data.csv",
+  "columns": ["age", "income", "category", "score"],
+  "rows": 1000,
+  "dtypes": {
+    "age": "int64",
+    "income": "float64",
+    "category": "object",
+    "score": "float64"
+  },
+  "null_counts": {
+    "age": 0,
+    "income": 15,
+    "category": 3,
+    "score": 0
+  },
+  "sample_data": [
+    [25, 50000.0, "A", 85.5],
+    [32, null, "B", 92.3]
+  ]
+}
+```
+
+---
+
+## Generate Scatter Plot
+
+Create a scatter plot comparing two columns.
+
+<Card title="POST /api/data-viz/scatter-plot" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/data-viz/scatter-plot \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset_id": "viz_abc123",
+    "x_column": "age",
+    "y_column": "income",
+    "color_by": "category"
+  }'
+```
+
+### Response
+
+```json
+{
+  "plot": {
+    "data": [...],
+    "layout": {...}
+  },
+  "correlation": 0.72
+}
+```
+
+---
+
+## Generate Histogram
+
+Create a histogram with distribution statistics.
+
+<Card title="POST /api/data-viz/histogram" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/data-viz/histogram \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset_id": "viz_abc123",
+    "column": "income",
+    "bins": 30
+  }'
+```
+
+### Response
+
+```json
+{
+  "plot": {
+    "data": [...],
+    "layout": {...}
+  },
+  "statistics": {
+    "mean": 52345.67,
+    "median": 48000.00,
+    "std": 15234.56,
+    "skewness": 0.45,
+    "kurtosis": 2.8
+  }
+}
+```
+
+---
+
+## Correlation Heatmap
+
+Generate a correlation matrix heatmap.
+
+<Card title="POST /api/data-viz/correlation" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/data-viz/correlation \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset_id": "viz_abc123",
+    "columns": ["age", "income", "score"]
+  }'
+```
+
+### Response
+
+```json
+{
+  "plot": {
+    "data": [...],
+    "layout": {...}
+  },
+  "correlation_matrix": {
+    "age": {"age": 1.0, "income": 0.72, "score": 0.45},
+    "income": {"age": 0.72, "income": 1.0, "score": 0.58},
+    "score": {"age": 0.45, "score": 0.58, "score": 1.0}
+  }
+}
+```
+
+---
+
+## 3D Surface Plot
+
+Create a 3D surface visualization.
+
+<Card title="POST /api/data-viz/surface-plot" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/data-viz/surface-plot \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset_id": "viz_abc123",
+    "x_column": "age",
+    "y_column": "income",
+    "z_column": "score"
+  }'
+```
+
+---
+
+## Handle Null Values
+
+Apply null handling strategies to clean data.
+
+<Card title="POST /api/data-viz/handle-nulls" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/data-viz/handle-nulls \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset_id": "viz_abc123",
+    "column": "income",
+    "strategy": "mean"
+  }'
+```
+
+### Strategies
+
+| Strategy | Description |
+|----------|-------------|
+| `mean` | Replace nulls with column mean |
+| `median` | Replace nulls with column median |
+| `mode` | Replace nulls with most frequent value |
+| `std` | Replace nulls with standard deviation |
+| `min` | Replace nulls with minimum value |
+| `max` | Replace nulls with maximum value |
+| `delete_rows` | Remove rows containing nulls |
+| `delete_column` | Remove the entire column |
+
+### Response
+
+```json
+{
+  "dataset_id": "viz_abc123",
+  "column": "income",
+  "strategy_applied": "mean",
+  "values_replaced": 15,
+  "replacement_value": 52345.67,
+  "new_null_count": 0
+}
+```
+
+---
+
+## Encode Categorical
+
+Transform categorical columns to numeric.
+
+<Card title="POST /api/data-viz/encode-categorical" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/data-viz/encode-categorical \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset_id": "viz_abc123",
+    "column": "category",
+    "method": "label"
+  }'
+```
+
+### Encoding Methods
+
+| Method | Description | Example |
+|--------|-------------|---------|
+| `label` | Integer encoding | A→0, B→1, C→2 |
+| `onehot` | Binary columns | category_A, category_B |
+| `frequency` | Frequency-based | A(30%)→0.3 |
+
+### Response
+
+```json
+{
+  "dataset_id": "viz_abc123",
+  "column": "category",
+  "method": "label",
+  "mapping": {"A": 0, "B": 1, "C": 2},
+  "new_columns": ["category"]
+}
+```
+
+---
+
+## Download Cleaned Data
+
+Download the processed dataset.
+
+<Card title="POST /api/data-viz/download-cleaned" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/data-viz/download-cleaned \
+  -H "Content-Type: application/json" \
+  -d '{"dataset_id": "viz_abc123"}' \
+  --output cleaned_data.csv
+```
+
+---
+
+## Error Responses
+
+### Dataset Not Found
+
+```json
+{
+  "detail": "Dataset 'viz_abc123' not found or expired"
+}
+```
+
+### Invalid Column
+
+```json
+{
+  "detail": "Column 'invalid_col' not found in dataset"
+}
+```
+
+### Non-Numeric Column
+
+```json
+{
+  "detail": "Column 'category' is not numeric. Cannot compute mean."
+}
+```

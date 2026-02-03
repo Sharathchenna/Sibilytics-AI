@@ -1,0 +1,181 @@
+---
+title: "Cloudflare Deployment"
+description: "Deploy the frontend to Cloudflare Pages"
+---
+
+## Overview
+
+Cloudflare Pages provides fast, free hosting for Next.js applications with global CDN distribution.
+
+<Card title="Cloudflare Pages" icon="cloud" horizontal>
+  Free tier includes unlimited bandwidth and 500 builds/month.
+</Card>
+
+---
+
+## Prerequisites
+
+- Cloudflare account
+- GitHub repository connected
+- Backend already deployed (see [Backend Deployment](/deployment/backend-deployment))
+
+---
+
+## Deployment Steps
+
+<Steps>
+  <Step title="Connect GitHub">
+    1. Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
+    2. Navigate to **Pages**
+    3. Click **Create a project** → **Connect to Git**
+    4. Select your GitHub repository
+  </Step>
+  <Step title="Configure Build">
+    Set the following build settings:
+    
+    | Setting | Value |
+    |---------|-------|
+    | **Framework preset** | Next.js |
+    | **Build command** | `npm run build` |
+    | **Build output directory** | `.next` |
+    | **Root directory** | `frontend` |
+  </Step>
+  <Step title="Environment Variables">
+    Add the following environment variable:
+    
+    | Variable | Value |
+    |----------|-------|
+    | `NEXT_PUBLIC_API_URL` | `https://api.yourdomain.com` |
+  </Step>
+  <Step title="Deploy">
+    Click **Save and Deploy**. First deployment takes 2-5 minutes.
+  </Step>
+  <Step title="Custom Domain (Optional)">
+    1. Go to **Custom domains** tab
+    2. Add your domain (e.g., `sibilytics-ai.in`)
+    3. Cloudflare will auto-configure DNS
+  </Step>
+</Steps>
+
+---
+
+## GitHub Actions Deployment
+
+Automate deployments with GitHub Actions:
+
+```yaml
+# .github/workflows/deploy.yml
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          
+      - name: Install dependencies
+        run: cd frontend && npm ci
+        
+      - name: Build
+        run: cd frontend && npm run build
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.API_URL }}
+          
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/pages-action@v1
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          projectName: sibilytics-ai
+          directory: frontend/.next
+```
+
+---
+
+## Environment Variables
+
+| Variable | Production Value | Description |
+|----------|------------------|-------------|
+| `NEXT_PUBLIC_API_URL` | `https://api.sibilytics-ai.in` | Backend API endpoint |
+| `NODE_ENV` | `production` | Auto-set by Cloudflare |
+
+---
+
+## DNS Configuration
+
+If using Cloudflare for DNS, the configuration is automatic. Otherwise:
+
+### For apex domain (sibilytics-ai.in)
+
+| Type | Name | Content |
+|------|------|---------|
+| CNAME | @ | your-project.pages.dev |
+
+### For subdomain (www.sibilytics-ai.in)
+
+| Type | Name | Content |
+|------|------|---------|
+| CNAME | www | your-project.pages.dev |
+
+---
+
+## SSL/HTTPS
+
+Cloudflare Pages automatically provisions SSL certificates. No configuration needed.
+
+<Tip>
+  Ensure your backend also has SSL (most hosting platforms provide this automatically).
+</Tip>
+
+---
+
+## Build Settings Reference
+
+| Setting | Value |
+|---------|-------|
+| **Framework** | Next.js |
+| **Node version** | 18 (recommended) |
+| **Build command** | `npm run build` |
+| **Output directory** | `.next` |
+| **Root directory** | `frontend` |
+| **Install command** | `npm install` |
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion icon="circle-exclamation" title="Build Fails">
+    1. Check build logs in Cloudflare dashboard
+    2. Verify `package.json` scripts are correct
+    3. Test build locally: `npm run build`
+  </Accordion>
+  <Accordion icon="circle-exclamation" title="API Errors in Production">
+    1. Verify `NEXT_PUBLIC_API_URL` is set correctly
+    2. Check backend is accessible from browser
+    3. Confirm CORS settings on backend
+  </Accordion>
+  <Accordion icon="circle-exclamation" title="Custom Domain Not Working">
+    1. Wait for DNS propagation (up to 48 hours)
+    2. Check DNS records in Cloudflare
+    3. Verify domain ownership
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Live URLs
+
+After deployment, your site will be available at:
+
+- **Cloudflare subdomain**: `https://sibilytics-ai.pages.dev`
+- **Custom domain**: `https://sibilytics-ai.in`

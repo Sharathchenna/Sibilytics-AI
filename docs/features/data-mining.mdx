@@ -1,0 +1,196 @@
+---
+title: "Data Mining"
+description: "Data visualization, cleaning, and transformation tools"
+---
+
+## Overview
+
+The Data Mining module provides comprehensive tools for exploratory data analysis, visualization, null handling, and data transformation.
+
+<Card
+  title="Try Data Mining"
+  icon="chart-mixed"
+  href="https://sibilytics-ai.in"
+  horizontal
+>
+  Upload any CSV and explore your data visually.
+</Card>
+
+## Features
+
+<CardGroup cols={2}>
+  <Card title="Data Analysis" icon="magnifying-glass-chart">
+    Automatic null detection, data type identification, and basic statistics.
+  </Card>
+  <Card title="Visualizations" icon="chart-scatter">
+    Scatter plots, histograms, correlation heatmaps, and 3D surface plots.
+  </Card>
+  <Card title="Null Handling" icon="eraser">
+    Multiple strategies: mean, median, mode, delete rows, or delete column.
+  </Card>
+  <Card title="Transformations" icon="shuffle">
+    Categorical encoding: Label, One-Hot, and Frequency encoding.
+  </Card>
+</CardGroup>
+
+---
+
+## Data Analysis
+
+When you upload a dataset, Sibilytics AI automatically analyzes:
+
+| Analysis | Description |
+|----------|-------------|
+| **Null Summary** | Count of null values per column |
+| **Data Types** | Numeric vs categorical detection |
+| **Sample Preview** | First 10 rows of data |
+| **Basic Statistics** | Mean, median, std, min, max per column |
+
+---
+
+## Visualization Types
+
+### Scatter Plot
+
+Compare two numeric columns with interactive points.
+
+- **X-Axis**: Select any numeric column
+- **Y-Axis**: Select any numeric column
+- **Color By**: Optional categorical column for grouping
+- **Export**: Download as PNG
+
+### Histogram
+
+Analyze distribution of a single column with computed statistics.
+
+- **Bins**: Configurable number of bins
+- **Statistics**: Skewness and Kurtosis displayed
+- **Density**: Optional kernel density overlay
+
+### Correlation Heatmap
+
+Visualize relationships between all numeric columns.
+
+- **Method**: Pearson correlation
+- **Scale**: -1 (negative) to +1 (positive)
+- **Insight**: Identify highly correlated features
+
+### 3D Surface Plot
+
+Visualize relationships between three numeric columns.
+
+- **X, Y, Z Axes**: Select three columns
+- **Interactive**: Rotate and zoom the 3D plot
+- **Use case**: Understanding multi-dimensional relationships
+
+### Filtered Plot
+
+View data within a specific interval.
+
+- **Select column**: Choose the filtering column
+- **Set interval**: Min and max values
+- **Plot filtered**: Visualize the subset
+
+---
+
+## Null Value Handling
+
+Multiple strategies available for handling missing values:
+
+| Strategy | Description | Best For |
+|----------|-------------|----------|
+| **Replace with Mean** | Fill nulls with column average | Numeric, normal distribution |
+| **Replace with Median** | Fill nulls with column median | Numeric, skewed distribution |
+| **Replace with Mode** | Fill nulls with most frequent value | Categorical data |
+| **Replace with Std Dev** | Fill nulls with standard deviation | Edge case handling |
+| **Replace with Max/Min** | Fill nulls with extrema | Boundary value analysis |
+| **Delete Rows** | Remove rows containing nulls | Small % of nulls |
+| **Delete Column** | Remove entire column | High % of nulls |
+
+<Warning>
+  Deleting rows or columns permanently modifies your working dataset. Download the original first if needed.
+</Warning>
+
+---
+
+## Categorical Encoding
+
+Transform categorical (text) data into numeric format for machine learning.
+
+### Label Encoding
+
+Assigns integer values to each category.
+
+```
+Category → Number
+Apple    → 0
+Banana   → 1
+Cherry   → 2
+```
+
+**Best for**: Ordinal data (has natural order like Small < Medium < Large)
+
+### One-Hot Encoding
+
+Creates binary columns for each category.
+
+```
+Fruit   →   Fruit_Apple  Fruit_Banana  Fruit_Cherry
+Apple   →       1            0             0
+Banana  →       0            1             0
+Cherry  →       0            0             1
+```
+
+**Best for**: Nominal data (no order) with few unique values
+
+### Frequency Encoding
+
+Replaces categories with their frequency in the dataset.
+
+```
+Category (freq) → Number
+Apple (30%)     → 0.30
+Banana (50%)    → 0.50
+Cherry (20%)    → 0.20
+```
+
+**Best for**: High cardinality categorical features
+
+---
+
+## Workflow
+
+<Steps>
+  <Step title="Upload Dataset">
+    Upload a CSV file with your data.
+  </Step>
+  <Step title="Review Analysis">
+    Check null summary, data types, and sample rows.
+  </Step>
+  <Step title="Handle Nulls">
+    Apply null handling strategies to clean your data.
+  </Step>
+  <Step title="Encode Categoricals">
+    Transform text columns to numeric format.
+  </Step>
+  <Step title="Visualize">
+    Create scatter plots, histograms, and correlation heatmaps.
+  </Step>
+  <Step title="Export">
+    Download the cleaned dataset and visualizations.
+  </Step>
+</Steps>
+
+---
+
+## Export Options
+
+| Export | Format | Description |
+|--------|--------|-------------|
+| **Cleaned Dataset** | CSV | Dataset after null handling and encoding |
+| **Plots** | PNG | Individual visualization images |
+| **Filtered Data** | CSV | Subset of data within specified interval |
+
+<Note>
+  All operations are performed on a working copy. Your original file is never modified.
+</Note>

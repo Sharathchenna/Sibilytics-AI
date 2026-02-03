@@ -1,0 +1,102 @@
+---
+title: "Introduction"
+description: "Welcome to Sibilytics AI - Feature Extraction and ML-based Prediction Platform"
+---
+
+## What is Sibilytics AI?
+
+**Sibilytics AI** is an advanced web-based platform designed for feature extraction from sensor and denoised signals, which can subsequently be used for machine learning-based analyses such as classification, clustering, and prediction.
+
+<Card
+  title="Live Demo"
+  icon="rocket"
+  href="https://sibilytics-ai.in"
+  horizontal
+>
+  Try out Sibilytics AI right now - no signup required!
+</Card>
+
+## Platform Modules
+
+The platform provides three major modules:
+
+<Columns cols={3}>
+  <Card
+    title="Signal Processing"
+    icon="wave-square"
+    href="/features/signal-processing"
+  >
+    Wavelet decomposition for denoising and extracting statistical features from sensor data.
+  </Card>
+  <Card
+    title="Machine Learning"
+    icon="brain"
+    href="/features/machine-learning"
+  >
+    SVM Classification and ANN Regression with hyperparameter optimization.
+  </Card>
+  <Card
+    title="Data Mining"
+    icon="chart-mixed"
+    href="/features/data-mining"
+  >
+    Data visualization, cleaning, and correlation analysis tools.
+  </Card>
+</Columns>
+
+## Key Capabilities
+
+<AccordionGroup>
+  <Accordion icon="bolt" title="High Performance">
+    Processes signal files with **800,000+ data points in under 10 seconds** using the LTTB downsampling algorithm.
+  </Accordion>
+  <Accordion icon="file" title="Multi-format Support">
+    Supports multiple file formats including `.txt`, `.lvm`, `.csv`, and `.xlsx` with auto-detection of headers and delimiters.
+  </Accordion>
+  <Accordion icon="wave-pulse" title="13 Wavelet Types">
+    Implements 13 different Biorthogonal wavelet types with up to 20 decomposition levels.
+  </Accordion>
+  <Accordion icon="chart-line" title="Comprehensive Visualization">
+    Generates time-domain, frequency-domain, spectrogram, and wavelet decomposition plots.
+  </Accordion>
+</AccordionGroup>
+
+## Quick Start
+
+Get up and running with Sibilytics AI in minutes.
+
+<CardGroup cols={2}>
+  <Card title="Use the Web App" icon="globe" href="https://sibilytics-ai.in">
+    Start analyzing your signals immediately with our cloud-hosted platform.
+  </Card>
+  <Card title="Run Locally" icon="laptop-code" href="/quickstart">
+    Clone and run Sibilytics AI on your own machine.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Integrate Sibilytics AI into your own applications.
+  </Card>
+  <Card title="Deployment Guide" icon="server" href="/deployment/backend-deployment">
+    Deploy your own instance to the cloud.
+  </Card>
+</CardGroup>
+
+## Technology Stack
+
+<Columns cols={2}>
+  <Card title="Frontend" icon="browser">
+    - **Next.js 14** - React framework with SSR
+    - **TypeScript** - Type-safe JavaScript
+    - **Tailwind CSS** - Utility-first styling
+    - **Plotly.js** - Interactive visualizations
+  </Card>
+  <Card title="Backend" icon="server">
+    - **FastAPI** - High-performance Python API
+    - **PyWavelets** - Wavelet transformations
+    - **Scikit-learn** - Machine learning (SVM)
+    - **TensorFlow/Keras** - Deep learning (ANN)
+  </Card>
+</Columns>
+
+<Note>
+  **Need help?** Check out the [API documentation](https://api.sibilytics-ai.in/docs) or explore our [quickstart guide](/quickstart).
+</Note>

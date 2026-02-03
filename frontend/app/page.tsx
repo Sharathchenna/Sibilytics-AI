@@ -146,11 +146,11 @@ export default function Home() {
       {/* Translucent Logo Watermark Overlay */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
         <Image
-          src="/logo1.png"
+          src="/logo-new.jpg"
           alt="Sybilytics Background"
           width={800}
           height={800}
-          className="w-[60%] max-w-4xl h-auto object-contain opacity-[0.03]"
+          className="w-[60%] max-w-4xl h-auto object-contain opacity-[0.05]"
           priority
         />
       </div>
@@ -162,9 +162,9 @@ export default function Home() {
             {/* Logo */}
             <a href="#" className="flex items-center hover:opacity-80 transition-opacity py-2">
               <img
-                src="/logo.svg"
+                src="/footer-logo-new.png"
                 alt="Sybilytics.ai"
-                className="w-32 h-auto object-contain sm:w-36 md:w-40 lg:w-44"
+                className="h-8 w-auto object-contain sm:h-9 md:h-10"
               />
             </a>
 
@@ -209,31 +209,31 @@ export default function Home() {
           <div className="md:hidden border-t border-gray-200 shadow-lg animate-fade-in" style={{ backgroundColor: '#FDFEFE' }}>
             <div className="px-4 py-4 space-y-3">
               <a href="#" onClick={() => setMobileMenuOpen(false)}
-                 className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
+                className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
                 Home
               </a>
               <a href="#solutions" onClick={() => setMobileMenuOpen(false)}
-                 className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
+                className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
                 Solutions
               </a>
               <a href="#signal-processing" onClick={() => setMobileMenuOpen(false)}
-                 className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
+                className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
                 Signal analysis & feature extraction
               </a>
               <a href="#svm-classification" onClick={() => setMobileMenuOpen(false)}
-                 className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
+                className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
                 Machine Learning Module
               </a>
               <a href="#data-analysis" onClick={() => setMobileMenuOpen(false)}
-                 className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
+                className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
                 Data Mining
               </a>
               <a href="#data-acquisition" onClick={() => setMobileMenuOpen(false)}
-                 className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
+                className="block hover:bg-purple-50 font-medium py-2 px-4 rounded-lg transition-colors" style={{ color: '#9333ea' }}>
                 Data Acquisition
               </a>
               <a href="#contact" onClick={() => setMobileMenuOpen(false)}
-                 className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
+                className="block text-gray-700 hover:text-emerald-600 hover:bg-emerald-50 font-medium py-2 px-4 rounded-lg transition-colors">
                 Contact
               </a>
               <div className="flex items-center justify-center gap-4 pt-3 border-t border-gray-200">
@@ -271,12 +271,12 @@ export default function Home() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
               <a href="#signal-processing"
-                 className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-emerald-700 shadow-sm hover:shadow-md transition-all">
+                className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-emerald-700 shadow-sm hover:shadow-md transition-all">
                 Try It Now
                 <ArrowRight className="w-5 h-5" />
               </a>
               <a href="#solutions"
-                 className="inline-flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-300 px-8 py-4 rounded-lg font-semibold text-lg hover:border-slate-400 hover:bg-slate-50 transition-all">
+                className="inline-flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-300 px-8 py-4 rounded-lg font-semibold text-lg hover:border-slate-400 hover:bg-slate-50 transition-all">
                 Explore Solutions
               </a>
             </div>
@@ -345,7 +345,7 @@ export default function Home() {
 
             <div className="mt-8 text-center">
               <a href="#solutions"
-                 className="inline-block bg-emerald-600 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-emerald-700 hover:scale-105 shadow-lg hover:shadow-xl transition-all">
+                className="inline-block bg-emerald-600 text-white px-10 py-4 rounded-lg font-bold text-lg hover:bg-emerald-700 hover:scale-105 shadow-lg hover:shadow-xl transition-all">
                 Explore Features
               </a>
             </div>
@@ -496,18 +496,18 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-slate-900">Signal Acquisition System</h3>
             </div>
-            
+
             <div className="space-y-4">
               <p className="text-gray-700 text-base leading-relaxed">
-                This data acquisition software developed by <strong className="text-blue-600">SibilyticsAI</strong> can record any signal such as 
-                <strong> voltage, current, force, acceleration, pressure, sound, temperature,</strong> etc. 
-                The only requirement is that the sensor must be connected through any 
+                This data acquisition software developed by <strong className="text-blue-600">SibilyticsAI</strong> can record any signal such as
+                <strong> voltage, current, force, acceleration, pressure, sound, temperature,</strong> etc.
+                The only requirement is that the sensor must be connected through any
                 <strong className="text-blue-600"> National Instruments (NI) DAQ device</strong>.
               </p>
-              
+
               <div className="bg-amber-50 rounded-lg p-4 border-l-4 border-amber-500">
                 <p className="text-gray-700 text-sm leading-relaxed">
-                  Please use the link below to download the software and the instructions. 
+                  Please use the link below to download the software and the instructions.
                   <strong className="text-amber-700"> Kindly read the instructions carefully</strong> to ensure effective signal acquisition.
                 </p>
               </div>
@@ -649,8 +649,8 @@ export default function Home() {
 
                 <div className="space-y-6">
                   <div className="flex items-start gap-4">
-                    
-                    
+
+
                   </div>
 
                   <div className="flex items-start gap-4">
@@ -667,7 +667,7 @@ export default function Home() {
                 </div>
 
                 <a href="https://www.google.com/maps/place/BITS+Pilani+Hyderabad+Campus" target="_blank" rel="noopener noreferrer"
-                   className="mt-8 w-full bg-white text-emerald-600 py-3 rounded-lg font-bold hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2">
+                  className="mt-8 w-full bg-white text-emerald-600 py-3 rounded-lg font-bold hover:bg-emerald-50 transition-colors flex items-center justify-center gap-2">
                   <MapPin className="w-5 h-5" />
                   View on Google Maps
                 </a>
@@ -685,9 +685,9 @@ export default function Home() {
             <div className="md:col-span-2">
               <div className="flex items-center mb-6">
                 <img
-                  src="/logo-footer.png"
+                  src="/footer-logo-new.png"
                   alt="Sybilytics.ai"
-                  className="w-40 h-auto object-contain sm:w-44 md:w-48 lg:w-52"
+                  className="h-16 w-auto object-contain sm:h-18 md:h-20 lg:h-24"
                 />
               </div>
               <p className="text-white text-sm leading-relaxed mb-6">

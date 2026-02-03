@@ -1,0 +1,112 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Sibilytics AI",
+  "colors": {
+    "primary": "#6366F1",
+    "light": "#818CF8",
+    "dark": "#4F46E5"
+  },
+  "favicon": "/favicon.svg",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "index",
+              "quickstart",
+              "architecture"
+            ]
+          },
+          {
+            "group": "Features",
+            "pages": [
+              "features/signal-processing",
+              "features/machine-learning",
+              "features/data-mining"
+            ]
+          },
+          {
+            "group": "Deployment",
+            "pages": [
+              "deployment/local-development",
+              "deployment/backend-deployment",
+              "deployment/cloudflare"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "API Documentation",
+            "pages": [
+              "api-reference/introduction"
+            ]
+          },
+          {
+            "group": "Signal Processing",
+            "pages": [
+              "api-reference/signal/upload",
+              "api-reference/signal/process",
+              "api-reference/signal/plots"
+            ]
+          },
+          {
+            "group": "Machine Learning",
+            "pages": [
+              "api-reference/ml/svm",
+              "api-reference/ml/ann"
+            ]
+          },
+          {
+            "group": "Data Visualization",
+            "pages": [
+              "api-reference/data-viz/overview"
+            ]
+          }
+        ]
+      }
+    ],
+    "global": {
+      "anchors": [
+        {
+          "anchor": "Live Demo",
+          "href": "https://sibilytics-ai.in",
+          "icon": "rocket"
+        },
+        {
+          "anchor": "API Docs",
+          "href": "https://api.sibilytics-ai.in/docs",
+          "icon": "code"
+        }
+      ]
+    }
+  },
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "GitHub",
+        "href": "https://github.com/your-username/sibilytics-ai"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Try Demo",
+      "href": "https://sibilytics-ai.in"
+    }
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/your-username/sibilytics-ai"
+    }
+  }
+}

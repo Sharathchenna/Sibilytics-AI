@@ -22,7 +22,7 @@ export const metadata: Metadata = {
       { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
       { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
     ],
-    apple: '/logo.png',
+    apple: '/logo-new.jpg',
     shortcut: '/favicon-32x32.png',
   },
   openGraph: {
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     siteName: "Sibilytics AI",
     images: [
       {
-        url: '/logo.png',
+        url: '/logo-new.jpg',
         width: 1200,
         height: 630,
         alt: 'Sibilytics AI - Signal Processing Platform',
@@ -44,7 +44,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Sibilytics AI - Signal Processing Platform",
     description: "Wavelet-based feature extraction from sensor signals with comprehensive visualization tools.",
-    images: ['/logo.png'],
+    images: ['/logo-new.jpg'],
   },
 };
 

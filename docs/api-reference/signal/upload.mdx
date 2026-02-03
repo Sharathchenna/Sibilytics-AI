@@ -1,0 +1,161 @@
+---
+title: "Upload Signal Files"
+description: "Upload and parse signal files for processing"
+---
+
+## Upload with Progress
+
+Upload a signal file with progress tracking support.
+
+<Card title="POST /api/upload-with-progress" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/upload-with-progress \
+  -F "file=@your-signal.csv"
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `file` | File | Yes | Signal file (.csv, .txt, .lvm, .xlsx) |
+
+### Response
+
+```json
+{
+  "file_id": "abc123def456",
+  "filename": "signal.csv",
+  "columns": ["Time", "Amplitude", "Frequency"],
+  "rows": 10000,
+  "has_header": true,
+  "sample_data": [
+    [0.001, 0.234, 50.0],
+    [0.002, 0.456, 50.1]
+  ]
+}
+```
+
+### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `file_id` | string | Unique ID for subsequent operations |
+| `filename` | string | Original filename |
+| `columns` | array | Column names (auto-generated if no header) |
+| `rows` | integer | Total number of data rows |
+| `has_header` | boolean | Whether header was detected |
+| `sample_data` | array | First few rows of data |
+
+---
+
+## Basic Upload
+
+Simple file upload without progress tracking.
+
+<Card title="POST /api/upload" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/upload \
+  -F "file=@your-signal.csv"
+```
+
+### Response
+
+Same structure as upload with progress.
+
+---
+
+## Supported File Formats
+
+| Extension | Delimiter | Notes |
+|-----------|-----------|-------|
+| `.csv` | Comma | Most common format |
+| `.txt` | Tab or Space | Auto-detected |
+| `.lvm` | Tab | LabVIEW measurement files |
+| `.xlsx` | N/A | Excel files (first sheet) |
+| `.csv.gz` | Comma | Gzip-compressed CSV |
+
+---
+
+## Header Detection
+
+The API automatically detects whether your file has a header row by:
+
+1. Checking if first row contains non-numeric values
+2. Analyzing column patterns
+3. Comparing first row vs subsequent rows
+
+If no header is detected, columns are named: `Column_0`, `Column_1`, etc.
+
+---
+
+## Gzip Compression
+
+For large files, you can upload gzip-compressed files:
+
+```bash
+# Compress your file
+gzip -c signal.csv > signal.csv.gz
+
+# Upload compressed file
+curl -X POST https://api.sibilytics-ai.in/api/upload-with-progress \
+  -F "file=@signal.csv.gz"
+```
+
+<Tip>
+  Compression can reduce upload time by 50-90% for large text files.
+</Tip>
+
+---
+
+## File Caching
+
+Uploaded files are cached on the server with their `file_id`. Benefits:
+
+- No need to re-upload for processing
+- Faster subsequent operations
+- Cache cleared on server restart
+
+Use `file_id` in subsequent calls:
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/process \
+  -F "file_id=abc123def456" \
+  -F "time_column=0" \
+  -F "signal_column=1" \
+  -F "wavelet_type=bior3.5" \
+  -F "n_levels=5"
+```
+
+---
+
+## Error Responses
+
+### Invalid File Format
+
+```json
+{
+  "detail": "Unsupported file format. Supported: .csv, .txt, .lvm, .xlsx"
+}
+```
+
+### Empty File
+
+```json
+{
+  "detail": "File is empty or contains no valid data"
+}
+```
+
+### Parsing Error
+
+```json
+{
+  "detail": "Could not parse file: [specific error message]"
+}
+```

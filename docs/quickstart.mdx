@@ -1,0 +1,141 @@
+---
+title: "Quickstart"
+description: "Get Sibilytics AI running locally in minutes"
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+<CardGroup cols={2}>
+  <Card title="Python 3.11+" icon="python">
+    Required for the FastAPI backend
+  </Card>
+  <Card title="Node.js 18+" icon="node-js">
+    Required for the Next.js frontend
+  </Card>
+</CardGroup>
+
+## Local Development Setup
+
+Get your local development environment running with these steps:
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/your-username/sibilytics-ai.git
+cd sibilytics-ai
+```
+
+### Step 2: Start the Backend
+
+<AccordionGroup>
+  <Accordion icon="terminal" title="Backend Setup">
+    ```bash
+    # Navigate to backend directory
+    cd backend
+
+    # Create virtual environment
+    python -m venv venv
+
+    # Activate virtual environment
+    # On macOS/Linux:
+    source venv/bin/activate
+    # On Windows:
+    .\venv\Scripts\activate
+
+    # Install dependencies
+    pip install -r requirements.txt
+
+    # Start the server
+    uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    ```
+    
+    <Tip>The backend will be available at `http://localhost:8000`</Tip>
+  </Accordion>
+</AccordionGroup>
+
+### Step 3: Start the Frontend
+
+<AccordionGroup>
+  <Accordion icon="browser" title="Frontend Setup">
+    Open a new terminal window:
+    
+    ```bash
+    # Navigate to frontend directory
+    cd frontend
+
+    # Install dependencies
+    npm install
+
+    # Start the development server
+    npm run dev
+    ```
+    
+    <Tip>The frontend will be available at `http://localhost:3000`</Tip>
+  </Accordion>
+</AccordionGroup>
+
+### Step 4: Verify Installation
+
+Once both servers are running, verify the installation:
+
+<Steps>
+  <Step title="Check Backend Health">
+    Open `http://localhost:8000` in your browser. You should see:
+    ```json
+    {"message": "Feature Extraction API", "status": "healthy"}
+    ```
+  </Step>
+  <Step title="Check API Docs">
+    Visit `http://localhost:8000/docs` for interactive Swagger documentation.
+  </Step>
+  <Step title="Open Frontend">
+    Navigate to `http://localhost:3000` to access the full Sibilytics AI interface.
+  </Step>
+</Steps>
+
+## Using Docker (Alternative)
+
+If you prefer Docker, you can run the entire stack with Docker Compose:
+
+```bash
+# Start both frontend and backend
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+## Test File Formats
+
+Sibilytics AI supports multiple file formats for signal processing:
+
+| Format | Extension | Description |
+|--------|-----------|-------------|
+| CSV | `.csv` | Comma-separated values |
+| Text | `.txt` | Tab or space-delimited |
+| LabVIEW | `.lvm` | LabVIEW measurement files |
+| Excel | `.xlsx` | Microsoft Excel files |
+| Compressed | `.csv.gz` | Gzip-compressed CSV |
+
+<Tip>
+  Sample test files are included in the repository root directory for testing.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Signal Processing" icon="wave-square" href="/features/signal-processing">
+    Learn about wavelet decomposition and feature extraction.
+  </Card>
+  <Card title="Machine Learning" icon="brain" href="/features/machine-learning">
+    Explore SVM classification and ANN regression.
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/introduction">
+    Integrate Sibilytics AI into your applications.
+  </Card>
+  <Card title="Deploy to Cloud" icon="cloud" href="/deployment/backend-deployment">
+    Deploy your own production instance.
+  </Card>
+</CardGroup>

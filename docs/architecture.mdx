@@ -1,0 +1,134 @@
+---
+title: "System Architecture"
+description: "Understanding the Sibilytics AI platform architecture"
+---
+
+## High-Level Architecture
+
+Sibilytics AI follows a modern client-server architecture with a React-based frontend and a Python backend.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        CLIENT (Browser)                          │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                    Next.js Frontend                          ││
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐ ││
+│  │  │   Signal     │ │     ML       │ │    Data Mining       │ ││
+│  │  │  Processor   │ │   Module     │ │      Module          │ ││
+│  │  └──────────────┘ └──────────────┘ └──────────────────────┘ ││
+│  └─────────────────────────────────────────────────────────────┘│
+└─────────────────────────────────────────────────────────────────┘
+                                │
+                    HTTP/HTTPS (REST API)
+                                │
+┌─────────────────────────────────────────────────────────────────┐
+│                      SERVER (Backend)                            │
+│  ┌─────────────────────────────────────────────────────────────┐│
+│  │                   FastAPI Application                        ││
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐ ││
+│  │  │   Signal     │ │    SVM       │ │     ANN              │ ││
+│  │  │  Processing  │ │   Router     │ │    Router            │ ││
+│  │  └──────────────┘ └──────────────┘ └──────────────────────┘ ││
+│  │  ┌──────────────────────────────────────────────────────────┐││
+│  │  │              Data Visualization Router                    │││
+│  │  └──────────────────────────────────────────────────────────┘││
+│  └─────────────────────────────────────────────────────────────┘│
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────────────────┐ │
+│  │   PyWavelets │ │  Scikit-     │ │     TensorFlow/         │ │
+│  │    (DWT)     │ │   learn      │ │       Keras             │ │
+│  └──────────────┘ └──────────────┘ └──────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Data Flow
+
+<Steps>
+  <Step title="Upload">
+    Signal files are uploaded through the web interface with progress tracking and gzip compression support.
+  </Step>
+  <Step title="Parse">
+    Files are parsed with auto-detection of headers, delimiters, and data types.
+  </Step>
+  <Step title="Cache">
+    Parsed data is cached on the server to avoid re-uploading for subsequent operations.
+  </Step>
+  <Step title="Process">
+    Wavelet decomposition is applied for signal denoising with configurable parameters.
+  </Step>
+  <Step title="Extract">
+    Statistical features (mean, std, skewness, entropy, etc.) are extracted from signals.
+  </Step>
+  <Step title="Visualize">
+    Interactive plots are generated using Plotly.js for time-domain, frequency-domain, and spectrogram analysis.
+  </Step>
+</Steps>
+
+## Backend Structure
+
+```
+backend/
+├── main.py              # FastAPI app, signal processing, SVM
+├── ann_router.py        # ANN endpoints
+├── data_viz.py          # Data visualization endpoints
+├── requirements.txt     # Python dependencies
+├── Dockerfile           # Container configuration
+└── docker-compose.yml   # Production deployment
+```
+
+## Frontend Structure
+
+```
+frontend/app/
+├── page.tsx                    # Main landing page
+├── layout.tsx                  # Root layout
+├── globals.css                 # Global styles
+├── components/
+│   ├── SignalProcessor.tsx     # Signal processing UI
+│   ├── SVMClassifier.tsx       # ML module (SVM + ANN)
+│   ├── DataVisualization.tsx   # Data mining UI
+│   ├── PlotDisplay.tsx         # Plot rendering
+│   ├── NeuralNetworkVisualization.tsx  # ANN architecture viz
+│   └── ui/                     # Reusable UI components
+└── lib/
+    ├── api.ts                  # API functions
+    ├── ann-api.ts              # ANN-specific API
+    └── plotly-theme.ts         # Plotly configuration
+```
+
+## Technology Stack
+
+### Frontend
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| Next.js | 14.x | React framework with SSR |
+| React | 18.x | UI component library |
+| TypeScript | 5.x | Type-safe JavaScript |
+| Tailwind CSS | 3.x | Utility-first CSS |
+| Plotly.js | 5.24 | Interactive visualizations |
+| Lucide React | - | Icon library |
+
+### Backend
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| FastAPI | 0.115.0 | High-performance API framework |
+| Python | 3.11+ | Backend language |
+| Uvicorn | 0.34.0 | ASGI server |
+| PyWavelets | 1.7.0 | Wavelet transformations |
+| NumPy | 2.1.3 | Numerical computing |
+| Pandas | 2.2.3 | Data manipulation |
+| Scikit-learn | 1.5.2 | Machine learning (SVM) |
+| TensorFlow/Keras | 2.x | Deep learning (ANN) |
+| Matplotlib | 3.9.2 | Plot generation |
+| SciPy | 1.14.1 | Scientific computing |
+
+### Infrastructure
+
+| Technology | Purpose |
+|------------|---------|
+| Docker | Containerization |
+| Docker Compose | Multi-container orchestration |
+| Cloudflare Workers | Visitor counter |
+| Oracle Cloud | Server deployment |
+| Traefik | Reverse proxy & SSL |

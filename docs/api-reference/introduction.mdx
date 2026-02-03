@@ -1,0 +1,161 @@
+---
+title: "API Introduction"
+description: "Overview of the Sibilytics AI REST API"
+---
+
+## Base URL
+
+All API endpoints are available at:
+
+```
+https://api.sibilytics-ai.in
+```
+
+For local development:
+
+```
+http://localhost:8000
+```
+
+---
+
+## Interactive Documentation
+
+Sibilytics AI provides two interactive documentation interfaces:
+
+<CardGroup cols={2}>
+  <Card title="Swagger UI" icon="file-code" href="https://api.sibilytics-ai.in/docs">
+    Interactive API explorer with built-in testing.
+  </Card>
+  <Card title="ReDoc" icon="book" href="https://api.sibilytics-ai.in/redoc">
+    Clean, readable API documentation.
+  </Card>
+</CardGroup>
+
+---
+
+## Authentication
+
+Currently, the API is **open** and does not require authentication. Rate limiting may be enforced in production.
+
+<Note>
+  Authentication may be added in future versions for multi-tenant deployments.
+</Note>
+
+---
+
+## Request/Response Format
+
+### Content Types
+
+| Type | Description |
+|------|-------------|
+| `application/json` | JSON request/response bodies |
+| `multipart/form-data` | File uploads |
+
+### Response Format
+
+All successful responses follow this structure:
+
+```json
+{
+  "data": { ... },
+  "message": "Success message",
+  "status": "success"
+}
+```
+
+Error responses:
+
+```json
+{
+  "detail": "Error description"
+}
+```
+
+---
+
+## API Modules
+
+The API is organized into four main modules:
+
+<CardGroup cols={2}>
+  <Card title="Signal Processing" icon="wave-square" href="/api-reference/signal/upload">
+    Upload signals, process with wavelet decomposition, extract features.
+  </Card>
+  <Card title="SVM Classification" icon="sitemap" href="/api-reference/ml/svm">
+    Train SVM models, make predictions, download results.
+  </Card>
+  <Card title="ANN Regression" icon="network-wired" href="/api-reference/ml/ann">
+    Train neural networks, forward prediction, inverse solving.
+  </Card>
+  <Card title="Data Visualization" icon="chart-mixed" href="/api-reference/data-viz/overview">
+    Upload datasets, generate plots, handle null values.
+  </Card>
+</CardGroup>
+
+---
+
+## Quick Examples
+
+### Health Check
+
+```bash
+curl https://api.sibilytics-ai.in/
+```
+
+Response:
+```json
+{
+  "message": "Feature Extraction API",
+  "status": "healthy"
+}
+```
+
+### Upload a Signal File
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/upload-with-progress \
+  -F "file=@signal.csv"
+```
+
+### Process Signal
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/process \
+  -F "file_id=abc123" \
+  -F "time_column=0" \
+  -F "signal_column=1" \
+  -F "wavelet_type=bior3.5" \
+  -F "n_levels=5"
+```
+
+---
+
+## HTTP Status Codes
+
+| Code | Meaning |
+|------|---------|
+| `200` | Success |
+| `400` | Bad Request - Invalid parameters |
+| `404` | Not Found - Resource doesn't exist |
+| `422` | Validation Error - Check request format |
+| `500` | Server Error - Something went wrong |
+
+---
+
+## Rate Limiting
+
+Currently no rate limiting is enforced. For production deployments with heavy traffic, consider adding rate limiting at the reverse proxy level.
+
+---
+
+## CORS
+
+The API allows cross-origin requests from:
+
+- `http://localhost:3000`
+- `http://localhost:3001`
+- `https://sibilytics-ai.in`
+
+Additional origins can be configured in the backend.

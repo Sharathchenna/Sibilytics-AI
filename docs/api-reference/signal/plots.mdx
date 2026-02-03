@@ -1,0 +1,215 @@
+---
+title: "Generate Plots"
+description: "Generate and download signal visualizations"
+---
+
+## Batch Plot Generation
+
+Generate all visualization plots for a processed signal.
+
+<Card title="POST /api/plots/batch" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/plots/batch \
+  -F "file_id=abc123" \
+  -F "time_column=0" \
+  -F "signal_column=1" \
+  -F "wavelet_type=bior3.5" \
+  -F "n_levels=5"
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `file_id` | string | Yes | Cached file ID from upload |
+| `time_column` | integer | Yes | Column index for time |
+| `signal_column` | integer | Yes | Column index for signal |
+| `wavelet_type` | string | Yes | Wavelet type |
+| `n_levels` | integer | Yes | Decomposition levels |
+
+### Response
+
+```json
+{
+  "plots": {
+    "time_domain": {
+      "raw": { "data": [...], "layout": {...} },
+      "denoised": { "data": [...], "layout": {...} }
+    },
+    "fft": {
+      "raw": { "data": [...], "layout": {...} },
+      "denoised": { "data": [...], "layout": {...} },
+      "approx": { "data": [...], "layout": {...} },
+      "detail": { "data": [...], "layout": {...} }
+    },
+    "spectrogram": {
+      "raw": { "data": [...], "layout": {...} },
+      "denoised": { "data": [...], "layout": {...} }
+    },
+    "wavelet": {
+      "approx": { "data": [...], "layout": {...} },
+      "detail": { "data": [...], "layout": {...} }
+    },
+    "correlation": {
+      "approx": { "data": [...], "layout": {...} },
+      "detail": { "data": [...], "layout": {...} }
+    }
+  }
+}
+```
+
+<Note>
+  Plot data is in Plotly.js format and can be rendered directly with Plotly.
+</Note>
+
+---
+
+## Generated Plot Types
+
+### Time-Domain Plots
+
+| Plot | Description |
+|------|-------------|
+| `time_domain.raw` | Original signal waveform |
+| `time_domain.denoised` | Signal after wavelet denoising |
+
+### Frequency-Domain (FFT) Plots
+
+| Plot | Description |
+|------|-------------|
+| `fft.raw` | FFT of original signal |
+| `fft.denoised` | FFT of denoised signal |
+| `fft.approx` | FFT of approximation coefficients |
+| `fft.detail` | FFT of detail coefficients |
+
+### Spectrogram (STFT) Plots
+
+| Plot | Description |
+|------|-------------|
+| `spectrogram.raw` | Time-frequency analysis of raw signal |
+| `spectrogram.denoised` | Time-frequency analysis of denoised signal |
+
+### Wavelet Coefficient Plots
+
+| Plot | Description |
+|------|-------------|
+| `wavelet.approx` | Approximation coefficients |
+| `wavelet.detail` | Detail coefficients (all levels) |
+
+### Correlation Plots
+
+| Plot | Description |
+|------|-------------|
+| `correlation.approx` | Pearson correlation for approximation |
+| `correlation.detail` | Pearson correlation for detail |
+
+---
+
+## LTTB Downsampling
+
+For large signals (800,000+ points), plots use LTTB downsampling:
+
+- **Target**: 15,000 points
+- **Algorithm**: Largest-Triangle-Three-Buckets
+- **Benefit**: Fast rendering while preserving visual features
+
+<Tip>
+  Statistics are calculated on the full dataset before downsampling.
+</Tip>
+
+---
+
+## Download All Statistics
+
+Download consolidated statistics from multiple files as CSV.
+
+<Card title="POST /api/download-all-stats" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/download-all-stats \
+  -H "Content-Type: application/json" \
+  -d '[
+    {"filename": "file1.lvm", "Mean": 0.5, "Std Dev": 0.1},
+    {"filename": "file2.lvm", "Mean": 0.6, "Std Dev": 0.2}
+  ]' \
+  --output stats.csv
+```
+
+### Request Body
+
+Array of statistics objects:
+
+```json
+[
+  {
+    "filename": "file1.lvm",
+    "Mean": 0.5,
+    "Std Dev": 0.1,
+    "Skewness": -0.2,
+    "Kurtosis": 2.5
+  },
+  {
+    "filename": "file2.lvm",
+    "Mean": 0.6,
+    "Std Dev": 0.2,
+    "Skewness": 0.1,
+    "Kurtosis": 2.8
+  }
+]
+```
+
+### Response
+
+CSV file download with all statistics consolidated.
+
+```csv
+filename,Mean,Std Dev,Skewness,Kurtosis
+file1.lvm,0.5,0.1,-0.2,2.5
+file2.lvm,0.6,0.2,0.1,2.8
+```
+
+---
+
+## Rendering Plots (Client-Side)
+
+Use the returned Plotly data in your frontend:
+
+```javascript
+import Plotly from 'plotly.js';
+
+// Fetch plots from API
+const response = await fetch('/api/plots/batch', { ... });
+const { plots } = await response.json();
+
+// Render time-domain plot
+Plotly.newPlot(
+  'time-domain-chart',
+  plots.time_domain.raw.data,
+  plots.time_domain.raw.layout
+);
+```
+
+---
+
+## Error Responses
+
+### File Not Cached
+
+```json
+{
+  "detail": "File ID 'abc123' expired. Please re-upload."
+}
+```
+
+### Processing Error
+
+```json
+{
+  "detail": "Error generating plots: [specific message]"
+}
+```

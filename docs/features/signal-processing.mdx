@@ -1,0 +1,163 @@
+---
+title: "Signal Processing"
+description: "Wavelet decomposition and feature extraction from sensor signals"
+---
+
+## Overview
+
+The Signal Processing module enables you to upload sensor data files, apply wavelet decomposition for denoising, and extract comprehensive statistical features.
+
+<Card
+  title="Try Signal Processing"
+  icon="wave-square"
+  href="https://sibilytics-ai.in"
+  horizontal
+>
+  Upload your signal file and see results in seconds.
+</Card>
+
+## Supported File Formats
+
+| Format | Extension | Delimiter | Notes |
+|--------|-----------|-----------|-------|
+| CSV | `.csv` | Comma | Most common format |
+| Text | `.txt` | Tab/Space | Auto-detected |
+| LabVIEW | `.lvm` | Tab | Special header handling |
+| Excel | `.xlsx` | N/A | First sheet is used |
+| Compressed | `.csv.gz` | Comma | 50-90% bandwidth savings |
+
+<Tip>
+  Headers are auto-detected! You don't need to manually specify if your file has headers.
+</Tip>
+
+## Wavelet Decomposition
+
+Sibilytics AI uses **Biorthogonal wavelets** for signal denoising, which are ideal for signal analysis due to their linear phase property.
+
+### Available Wavelet Types
+
+<Columns cols={3}>
+  <Card title="bior1.x">
+    - bior1.3
+    - bior1.5
+  </Card>
+  <Card title="bior2.x">
+    - bior2.2
+    - bior2.4
+    - bior2.6
+  </Card>
+  <Card title="bior3.x">
+    - bior3.1
+    - bior3.3
+    - bior3.5
+    - bior3.7
+    - bior3.9
+  </Card>
+</Columns>
+
+Additional wavelets: `bior4.4`, `bior5.5`, `bior6.8`
+
+### Decomposition Levels
+
+You can configure **1 to 20 decomposition levels**. Higher levels provide more denoising but may remove signal details.
+
+<AccordionGroup>
+  <Accordion icon="lightbulb" title="How to choose the right level?">
+    - **Low levels (1-5)**: Preserve signal details, light denoising
+    - **Medium levels (6-12)**: Good balance for most applications
+    - **High levels (13-20)**: Aggressive denoising, may blur features
+    
+    Start with level 5-8 and adjust based on your results.
+  </Accordion>
+</AccordionGroup>
+
+## Extracted Features
+
+The platform extracts 13+ statistical features from both raw and denoised signals:
+
+| Feature | Description | Formula |
+|---------|-------------|---------|
+| **Mean** | Average value | Σx / n |
+| **Median** | Middle value | Sorted middle element |
+| **Standard Deviation** | Spread measure | √(Σ(x-μ)² / n) |
+| **Variance** | Squared spread | Σ(x-μ)² / n |
+| **Min/Max** | Range bounds | Extrema |
+| **Skewness** | Asymmetry measure | Third moment |
+| **Kurtosis** | Tail heaviness | Fourth moment |
+| **Entropy** | Information content | -Σp·log(p) |
+| **RMS** | Root Mean Square | √(Σx² / n) |
+| **Peak-to-Peak** | Amplitude range | max - min |
+| **Crest Factor** | Peak to RMS ratio | peak / RMS |
+| **MSE** | Mean Squared Error | Σ(x-x̂)² / n |
+| **SNR** | Signal-to-Noise Ratio | 10·log₁₀(Ps/Pn) |
+
+## Generated Visualizations
+
+<CardGroup cols={2}>
+  <Card title="Time-Domain Plots" icon="chart-line">
+    - Raw signal waveform
+    - Denoised signal waveform
+    - Overlay comparison
+  </Card>
+  <Card title="Frequency-Domain (FFT)" icon="wave-pulse">
+    - FFT of raw signal
+    - FFT of denoised signal
+    - Approximation & detail coefficients FFT
+  </Card>
+  <Card title="Spectrogram (STFT)" icon="grid">
+    - Raw signal spectrogram
+    - Denoised signal spectrogram
+    - Time-frequency analysis
+  </Card>
+  <Card title="Wavelet Coefficients" icon="chart-mixed">
+    - Approximation coefficients
+    - Detail coefficients (all levels)
+    - Correlation analysis
+  </Card>
+</CardGroup>
+
+## LTTB Downsampling
+
+For large files (800,000+ data points), Sibilytics AI uses the **Largest-Triangle-Three-Buckets (LTTB)** algorithm to downsample data for visualization while preserving visual features.
+
+<AccordionGroup>
+  <Accordion icon="bolt" title="Why LTTB?">
+    - **O(n) time complexity** - Fast even for huge datasets
+    - **Preserves visual features** - Peaks and valleys are retained
+    - **Target: 15,000 points** - Optimal for Plotly rendering
+    - **Original data preserved** - Statistics use full dataset
+  </Accordion>
+</AccordionGroup>
+
+## Workflow
+
+<Steps>
+  <Step title="Upload Signal File">
+    Select your `.csv`, `.txt`, `.lvm`, or `.xlsx` file. Files are automatically parsed with header detection.
+  </Step>
+  <Step title="Select Columns">
+    Choose which column contains time data and which contains the signal amplitude.
+  </Step>
+  <Step title="Configure Wavelet">
+    Select the wavelet type and decomposition level based on your denoising needs.
+  </Step>
+  <Step title="Process Signal">
+    Click "Process" to extract features and generate visualizations.
+  </Step>
+  <Step title="Download Results">
+    Export statistics as CSV and download plots as PNG images.
+  </Step>
+</Steps>
+
+## Batch Processing
+
+Process multiple files at once and download consolidated statistics:
+
+1. Upload multiple signal files
+2. Configure wavelet settings (applied to all files)
+3. Click "Process All"
+4. Download consolidated CSV with all file statistics
+
+<Note>
+  Batch processing results include filename in each row for easy identification.
+</Note>

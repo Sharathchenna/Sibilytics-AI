@@ -1,0 +1,194 @@
+---
+title: "Process Signal"
+description: "Apply wavelet decomposition and extract features"
+---
+
+## Process Signal (Denoised)
+
+Process a signal with wavelet decomposition to denoise and extract features.
+
+<Card title="POST /api/process" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/process \
+  -F "file_id=abc123" \
+  -F "time_column=0" \
+  -F "signal_column=1" \
+  -F "wavelet_type=bior3.5" \
+  -F "n_levels=5"
+```
+
+Or upload file directly:
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/process \
+  -F "file=@signal.csv" \
+  -F "time_column=0" \
+  -F "signal_column=1" \
+  -F "wavelet_type=bior3.5" \
+  -F "n_levels=5"
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `file` | File | No* | Signal file to process |
+| `file_id` | string | No* | Cached file ID from upload |
+| `time_column` | integer | Yes | Column index for time data (0-indexed) |
+| `signal_column` | integer | Yes | Column index for signal amplitude |
+| `wavelet_type` | string | Yes | Wavelet type (e.g., "bior3.5") |
+| `n_levels` | integer | Yes | Decomposition levels (1-20) |
+
+<Note>
+  *Either `file` or `file_id` must be provided.
+</Note>
+
+### Response
+
+```json
+{
+  "raw_stats": {
+    "mean": 0.00234,
+    "median": 0.00156,
+    "std_dev": 0.15678,
+    "variance": 0.02458,
+    "min": -0.5234,
+    "max": 0.4891,
+    "skewness": -0.234,
+    "kurtosis": 2.456,
+    "entropy": 3.567,
+    "rms": 0.156,
+    "peak_to_peak": 1.0125,
+    "crest_factor": 3.23
+  },
+  "denoised_stats": {
+    "mean": 0.00231,
+    "median": 0.00148,
+    "std_dev": 0.08942,
+    "variance": 0.00800,
+    "min": -0.2891,
+    "max": 0.2756,
+    "skewness": -0.198,
+    "kurtosis": 2.123,
+    "entropy": 2.891,
+    "rms": 0.089,
+    "peak_to_peak": 0.5647,
+    "crest_factor": 3.10,
+    "mse": 0.00123,
+    "snr_db": 18.45
+  },
+  "wavelet_type": "bior3.5",
+  "n_levels": 5,
+  "original_points": 800000,
+  "processing_time_ms": 2340
+}
+```
+
+---
+
+## Process Raw Signal
+
+Get statistics for raw signal without denoising.
+
+<Card title="POST /api/process-raw" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/process-raw \
+  -F "file_id=abc123" \
+  -F "time_column=0" \
+  -F "signal_column=1"
+```
+
+### Parameters
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `file` | File | No* | Signal file to process |
+| `file_id` | string | No* | Cached file ID |
+| `time_column` | integer | Yes | Column index for time |
+| `signal_column` | integer | Yes | Column index for signal |
+
+### Response
+
+```json
+{
+  "stats": {
+    "mean": 0.00234,
+    "median": 0.00156,
+    "std_dev": 0.15678,
+    "min": -0.5234,
+    "max": 0.4891,
+    "skewness": -0.234,
+    "kurtosis": 2.456,
+    "entropy": 3.567,
+    "rms": 0.156,
+    "peak_to_peak": 1.0125
+  }
+}
+```
+
+---
+
+## Available Wavelet Types
+
+| Family | Types |
+|--------|-------|
+| bior1.x | bior1.3, bior1.5 |
+| bior2.x | bior2.2, bior2.4, bior2.6 |
+| bior3.x | bior3.1, bior3.3, bior3.5, bior3.7, bior3.9 |
+| bior4.x | bior4.4 |
+| bior5.x | bior5.5 |
+| bior6.x | bior6.8 |
+
+---
+
+## Statistical Features Explained
+
+| Feature | Description |
+|---------|-------------|
+| `mean` | Average value of the signal |
+| `median` | Middle value when sorted |
+| `std_dev` | Standard deviation (spread) |
+| `variance` | Square of standard deviation |
+| `min` / `max` | Minimum and maximum values |
+| `skewness` | Asymmetry of distribution |
+| `kurtosis` | Tail heaviness of distribution |
+| `entropy` | Information content/randomness |
+| `rms` | Root Mean Square value |
+| `peak_to_peak` | Difference between max and min |
+| `crest_factor` | Peak value divided by RMS |
+| `mse` | Mean Squared Error (denoised only) |
+| `snr_db` | Signal-to-Noise Ratio in dB (denoised only) |
+
+---
+
+## Error Responses
+
+### Invalid Column Index
+
+```json
+{
+  "detail": "Column index 5 out of range. File has 4 columns."
+}
+```
+
+### Invalid Wavelet Type
+
+```json
+{
+  "detail": "Invalid wavelet type: 'invalid'. Use one of: bior1.3, bior1.5, ..."
+}
+```
+
+### File Not Found
+
+```json
+{
+  "detail": "File ID 'abc123' not found in cache. Please re-upload."
+}
+```

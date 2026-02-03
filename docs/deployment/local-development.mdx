@@ -1,0 +1,191 @@
+---
+title: "Local Development"
+description: "Set up Sibilytics AI on your local machine"
+---
+
+## Prerequisites
+
+<CardGroup cols={2}>
+  <Card title="Python 3.11+" icon="python">
+    Download from [python.org](https://python.org)
+  </Card>
+  <Card title="Node.js 18+" icon="node-js">
+    Download from [nodejs.org](https://nodejs.org)
+  </Card>
+</CardGroup>
+
+## Backend Setup
+
+### 1. Navigate to Backend Directory
+
+```bash
+cd backend
+```
+
+### 2. Create Virtual Environment
+
+```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate (macOS/Linux)
+source venv/bin/activate
+
+# Activate (Windows)
+.\venv\Scripts\activate
+```
+
+### 3. Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+<Note>
+  This installs FastAPI, PyWavelets, TensorFlow, Scikit-learn, and other dependencies.
+</Note>
+
+### 4. Start Backend Server
+
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+<Tip>
+  The `--reload` flag enables auto-reload on code changes during development.
+</Tip>
+
+### 5. Verify Backend
+
+- **Health Check**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+---
+
+## Frontend Setup
+
+### 1. Navigate to Frontend Directory
+
+```bash
+cd frontend
+```
+
+### 2. Install Dependencies
+
+```bash
+npm install
+```
+
+### 3. Start Development Server
+
+```bash
+npm run dev
+```
+
+### 4. Access the App
+
+Open http://localhost:3000 in your browser.
+
+---
+
+## Environment Variables
+
+### Backend (Optional)
+
+Create a `.env` file in the `backend/` directory:
+
+```env
+# CORS origins (comma-separated)
+CORS_ORIGINS=http://localhost:3000,http://localhost:3001
+
+# Cache directory
+CACHE_DIR=/tmp/upload_cache
+
+# Model storage
+MODEL_DIR=/tmp/svm_models
+```
+
+### Frontend
+
+Create a `.env.local` file in the `frontend/` directory:
+
+```env
+# Backend API URL
+NEXT_PUBLIC_API_URL=http://localhost:8000
+```
+
+---
+
+## Docker Development
+
+Run both services with Docker Compose:
+
+```bash
+docker-compose up -d
+```
+
+### Compose File Structure
+
+```yaml
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+    
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+```
+
+---
+
+## Common Issues
+
+<AccordionGroup>
+  <Accordion icon="circle-exclamation" title="Port Already in Use">
+    Change the port:
+    ```bash
+    # Backend
+    uvicorn main:app --port 8001
+    
+    # Frontend
+    npm run dev -- -p 3001
+    ```
+  </Accordion>
+  <Accordion icon="circle-exclamation" title="TensorFlow/Keras Import Errors">
+    On Apple Silicon (M1/M2):
+    ```bash
+    pip install tensorflow-macos tensorflow-metal
+    ```
+  </Accordion>
+  <Accordion icon="circle-exclamation" title="CORS Errors">
+    Ensure the frontend URL is in the `allow_origins` list in `main.py`:
+    ```python
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:3001",
+    ]
+    ```
+  </Accordion>
+</AccordionGroup>
+
+---
+
+## Quick Commands
+
+| Task | Command |
+|------|---------|
+| Start backend | `uvicorn main:app --reload` |
+| Start frontend | `npm run dev` |
+| Run tests | `python test_api.py` |
+| Build frontend | `npm run build` |
+| Docker up | `docker-compose up -d` |
+| Docker logs | `docker-compose logs -f` |

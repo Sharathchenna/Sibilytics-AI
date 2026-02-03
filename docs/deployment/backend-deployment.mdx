@@ -1,0 +1,201 @@
+---
+title: "Backend Deployment"
+description: "Deploy the Sibilytics AI backend to the cloud"
+---
+
+## Overview
+
+Deploy the FastAPI backend to make your Sibilytics AI instance accessible on the internet. This guide covers multiple deployment options.
+
+---
+
+## Option 1: Railway (Recommended)
+
+<Card title="Railway" icon="train" horizontal>
+  Easiest deployment with $5/month free credit (500 hours).
+</Card>
+
+### Steps
+
+<Steps>
+  <Step title="Install Railway CLI">
+    ```bash
+    curl -fsSL https://railway.app/install.sh | sh
+    ```
+  </Step>
+  <Step title="Login to Railway">
+    ```bash
+    railway login
+    ```
+  </Step>
+  <Step title="Deploy Backend">
+    ```bash
+    cd backend
+    railway init
+    railway up
+    ```
+  </Step>
+  <Step title="Get Your URL">
+    ```bash
+    railway domain
+    ```
+    You'll get something like: `https://your-app.up.railway.app`
+  </Step>
+  <Step title="Update DNS (Optional)">
+    Point your custom domain to Railway in Cloudflare DNS.
+  </Step>
+</Steps>
+
+---
+
+## Option 2: Render.com
+
+<Card title="Render" icon="server" horizontal>
+  Free tier with 750 hours/month. Spins down after inactivity.
+</Card>
+
+### Steps
+
+1. Go to https://render.com
+2. Click **New +** → **Web Service**
+3. Connect your GitHub repository
+4. Configure:
+   - **Name**: `sibilytics-backend`
+   - **Root Directory**: `backend`
+   - **Docker**: Yes (auto-detected from Dockerfile)
+5. Click **Create Web Service**
+6. Get your URL: `https://sibilytics-backend.onrender.com`
+
+---
+
+## Option 3: Fly.io
+
+<Card title="Fly.io" icon="plane" horizontal>
+  Free tier with 3 VMs. Good global edge network.
+</Card>
+
+### Steps
+
+```bash
+# Install flyctl
+curl -L https://fly.io/install.sh | sh
+
+# Login
+flyctl auth login
+
+# Deploy
+cd backend
+flyctl launch
+flyctl deploy
+
+# Get URL
+flyctl info
+```
+
+---
+
+## Option 4: DigitalOcean App Platform
+
+<Card title="DigitalOcean" icon="droplet" horizontal>
+  Starts at $5/month. More control and reliability.
+</Card>
+
+### Steps
+
+1. Go to https://cloud.digitalocean.com/apps
+2. Click **Create App**
+3. Select GitHub repository
+4. Configure:
+   - **Source Directory**: `/backend`
+   - **Type**: Web Service
+   - **Dockerfile Path**: `/backend/Dockerfile`
+   - **HTTP Port**: 8000
+5. Choose plan and deploy
+
+---
+
+## DNS Configuration (Cloudflare)
+
+Once deployed, point `api.yourdomain.com` to your backend:
+
+### CNAME Record (for hosted platforms)
+
+| Type | Name | Target | Proxy |
+|------|------|--------|-------|
+| CNAME | api | your-app.up.railway.app | DNS only (grey) |
+
+### A Record (for IP address)
+
+| Type | Name | IPv4 | Proxy |
+|------|------|------|-------|
+| A | api | 123.45.67.89 | Proxied (orange) |
+
+---
+
+## Verification
+
+After deployment, verify your backend is running:
+
+```bash
+# Health check
+curl https://api.yourdomain.com/
+# Expected: {"message":"Feature Extraction API","status":"healthy"}
+
+# Test CORS
+curl https://api.yourdomain.com/api/data-viz/upload -X OPTIONS
+# Expected: 200 OK
+```
+
+---
+
+## Environment Variables
+
+Set these on your deployment platform:
+
+| Variable | Value | Description |
+|----------|-------|-------------|
+| `CORS_ORIGINS` | `https://yourdomain.com` | Allowed frontend origins |
+
+### Platform-specific commands
+
+```bash
+# Railway
+railway variables set CORS_ORIGINS=https://sibilytics-ai.in
+
+# Fly.io
+flyctl secrets set CORS_ORIGINS=https://sibilytics-ai.in
+```
+
+---
+
+## Cost Comparison
+
+| Platform | Free Tier | Paid | Notes |
+|----------|-----------|------|-------|
+| **Railway** | $5 credit/month | $5+ | Easy, 500 hrs free |
+| **Render** | 750 hrs/month | $7+ | Spins down on idle |
+| **Fly.io** | 3 VMs free | $1.94+ | Global edge network |
+| **DigitalOcean** | Trial credit | $5+ | More control |
+
+---
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion icon="circle-exclamation" title="503 Service Unavailable">
+    1. Check backend is running: `curl https://api.yourdomain.com/`
+    2. Verify DNS propagation: `dig api.yourdomain.com`
+    3. Check deployment logs on your platform
+  </Accordion>
+  <Accordion icon="circle-exclamation" title="CORS Errors">
+    Ensure your frontend domain is in `allow_origins` in `main.py`:
+    ```python
+    allow_origins=["https://yourdomain.com"]
+    ```
+  </Accordion>
+  <Accordion icon="circle-exclamation" title="Deployment Fails">
+    1. Check Dockerfile includes all files
+    2. Verify all dependencies in `requirements.txt`
+    3. Check platform-specific logs
+  </Accordion>
+</AccordionGroup>

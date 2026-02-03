@@ -1,0 +1,285 @@
+---
+title: "ANN Regression API"
+description: "Train neural networks for regression and inverse problem solving"
+---
+
+## Overview
+
+The ANN API provides endpoints for training neural network regression models, making forward predictions, and solving inverse problems.
+
+---
+
+## Upload Dataset
+
+Upload a regression dataset.
+
+<Card title="POST /api/ann/upload-dataset" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/ann/upload-dataset \
+  -F "file=@data.csv"
+```
+
+### Response
+
+```json
+{
+  "dataset_id": "ann_abc123",
+  "filename": "data.csv",
+  "columns": ["feature1", "feature2", "feature3", "target"],
+  "rows": 1000,
+  "numeric_columns": [0, 1, 2, 3],
+  "stats": {
+    "feature1": {"min": 0.1, "max": 10.5, "mean": 5.2},
+    "target": {"min": 0.0, "max": 100.0, "mean": 45.3}
+  }
+}
+```
+
+---
+
+## Train ANN Model
+
+Train a neural network regression model.
+
+<Card title="POST /api/ann/train" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/ann/train \
+  -H "Content-Type: application/json" \
+  -d '{
+    "dataset_id": "ann_abc123",
+    "input_columns": [0, 1, 2],
+    "output_columns": [3],
+    "hidden_layers": [30, 10, 8],
+    "activation": "relu",
+    "optimizer": "adam",
+    "epochs": 350,
+    "batch_size": 16,
+    "test_size": 0.2,
+    "validation_split": 0.2
+  }'
+```
+
+### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `dataset_id` | string | Yes | - | Dataset ID from upload |
+| `input_columns` | array | Yes | - | Feature column indices |
+| `output_columns` | array | Yes | - | Target column indices |
+| `hidden_layers` | array | No | [30, 10, 8] | Neurons per hidden layer |
+| `activation` | string | No | "relu" | Activation function |
+| `optimizer` | string | No | "adam" | Optimizer type |
+| `epochs` | integer | No | 350 | Training epochs |
+| `batch_size` | integer | No | 16 | Batch size |
+| `test_size` | float | No | 0.2 | Test set proportion |
+| `validation_split` | float | No | 0.2 | Validation proportion |
+
+### Activation Functions
+
+- `relu` - Rectified Linear Unit (recommended)
+- `tanh` - Hyperbolic tangent
+- `sigmoid` - Sigmoid function
+- `elu` - Exponential Linear Unit
+
+### Optimizers
+
+- `adam` - Adam optimizer (recommended)
+- `sgd` - Stochastic Gradient Descent
+- `rmsprop` - RMSprop
+
+### Response
+
+```json
+{
+  "model_id": "model_ann_xyz789",
+  "metrics": {
+    "mae": 0.0312,
+    "rmse": 0.0456,
+    "r2_score": 0.9734
+  },
+  "training_history": {
+    "loss": [0.5, 0.3, 0.1, ...],
+    "val_loss": [0.55, 0.35, 0.15, ...]
+  },
+  "training_time_seconds": 45.2,
+  "epochs_completed": 350
+}
+```
+
+---
+
+## Forward Prediction
+
+Make predictions on new input data.
+
+<Card title="POST /api/ann/predict" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/ann/predict \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_id": "model_ann_xyz789",
+    "inputs": [5.1, 3.5, 1.4]
+  }'
+```
+
+### Response
+
+```json
+{
+  "prediction": [45.67],
+  "input_values": [5.1, 3.5, 1.4]
+}
+```
+
+---
+
+## Inverse Problem Solving
+
+Find inputs that produce a desired output.
+
+<Card title="POST /api/ann/inverse-solve" horizontal />
+
+### Request
+
+```bash
+curl -X POST https://api.sibilytics-ai.in/api/ann/inverse-solve \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model_id": "model_ann_xyz789",
+    "desired_output": [50.0],
+    "initial_guess": [5.0, 3.0, 1.5],
+    "learning_rate": 0.01,
+    "max_steps": 1000,
+    "tolerance": 0.001
+  }'
+```
+
+### Parameters
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `model_id` | string | Yes | - | Trained model ID |
+| `desired_output` | array | Yes | - | Target output values |
+| `initial_guess` | array | No | Random | Starting input values |
+| `learning_rate` | float | No | 0.01 | Optimization step size |
+| `max_steps` | integer | No | 1000 | Maximum iterations |
+| `tolerance` | float | No | 0.001 | Convergence threshold |
+
+### Response
+
+```json
+{
+  "optimal_inputs": [5.23, 3.41, 1.52],
+  "achieved_output": [49.98],
+  "final_loss": 0.0004,
+  "steps_taken": 456,
+  "converged": true,
+  "convergence_history": [0.5, 0.3, 0.1, 0.01, 0.001, ...]
+}
+```
+
+---
+
+## Get Model Evaluation
+
+Retrieve evaluation metrics and plots for a trained model.
+
+<Card title="GET /api/ann/evaluate/{model_id}" horizontal />
+
+### Request
+
+```bash
+curl https://api.sibilytics-ai.in/api/ann/evaluate/model_ann_xyz789
+```
+
+### Response
+
+```json
+{
+  "model_id": "model_ann_xyz789",
+  "metrics": {
+    "mae": 0.0312,
+    "rmse": 0.0456,
+    "r2_score": 0.9734
+  },
+  "plots": {
+    "loss_curve": { "data": [...], "layout": {...} },
+    "predicted_vs_actual": { "data": [...], "layout": {...} },
+    "residuals": { "data": [...], "layout": {...} },
+    "residual_histogram": { "data": [...], "layout": {...} }
+  },
+  "architecture": {
+    "input_size": 3,
+    "hidden_layers": [30, 10, 8],
+    "output_size": 1,
+    "activation": "relu",
+    "total_parameters": 1089
+  }
+}
+```
+
+---
+
+## Metrics Explained
+
+| Metric | Description | Ideal Value |
+|--------|-------------|-------------|
+| **MAE** | Mean Absolute Error - Average prediction error | Lower is better |
+| **RMSE** | Root Mean Squared Error - Penalizes large errors | Lower is better |
+| **R² Score** | Coefficient of Determination - Variance explained | Closer to 1.0 |
+
+---
+
+## Network Architecture Visualization
+
+The API returns network architecture details that can be visualized:
+
+```json
+{
+  "architecture": {
+    "input_size": 3,
+    "hidden_layers": [30, 10, 8],
+    "output_size": 1,
+    "activation": "relu"
+  }
+}
+```
+
+Represents: `Input(3) → Dense(30) → Dense(10) → Dense(8) → Output(1)`
+
+---
+
+## Error Responses
+
+### Model Not Found
+
+```json
+{
+  "detail": "Model 'model_ann_xyz789' not found or expired"
+}
+```
+
+### Invalid Input Dimensions
+
+```json
+{
+  "detail": "Expected 3 input features, got 5"
+}
+```
+
+### Inverse Solve Failed
+
+```json
+{
+  "detail": "Inverse solve did not converge after 1000 steps"
+}
+```

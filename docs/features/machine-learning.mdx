@@ -1,0 +1,229 @@
+---
+title: "Machine Learning"
+description: "SVM Classification and ANN Regression with hyperparameter optimization"
+---
+
+## Overview
+
+Sibilytics AI provides two powerful machine learning capabilities: **SVM Classification** for categorizing data and **ANN Regression** for predicting continuous values.
+
+<Columns cols={2}>
+  <Card title="SVM Classification" icon="sitemap" href="#svm-classification">
+    Multi-kernel support with grid search optimization for classification tasks.
+  </Card>
+  <Card title="ANN Regression" icon="network-wired" href="#ann-regression">
+    Deep neural networks for regression with inverse problem solving capability.
+  </Card>
+</Columns>
+
+---
+
+## SVM Classification
+
+Support Vector Machine (SVM) classification with automatic hyperparameter tuning using Grid Search cross-validation.
+
+### Supported Kernels
+
+| Kernel | Description | Best For |
+|--------|-------------|----------|
+| **RBF** | Radial Basis Function | Non-linear data, most versatile |
+| **Linear** | Linear separation | Linearly separable data |
+| **Polynomial** | Polynomial boundaries | Complex non-linear patterns |
+| **Sigmoid** | Sigmoid function | Neural network-like behavior |
+
+### Hyperparameters
+
+<AccordionGroup>
+  <Accordion icon="sliders" title="C Values (Regularization)">
+    Controls the trade-off between smooth decision boundary and classifying training points correctly.
+    - **Low C (1-3)**: Smoother boundary, more generalization
+    - **High C (7-9)**: Tighter boundary, may overfit
+    
+    Default range: `[1, 2, 3, 4, 5, 6, 7, 8, 9]`
+  </Accordion>
+  <Accordion icon="expand" title="Gamma Values">
+    Defines influence reach of a single training example.
+    - **Low gamma**: Far reach, smoother boundary
+    - **High gamma**: Close reach, more complex boundary
+    
+    Default range: `[0.00001, 0.0001, 0.001, 0.01, 0.1]`
+  </Accordion>
+  <Accordion icon="repeat" title="Cross-Validation Folds">
+    Number of folds for k-fold cross-validation.
+    
+    Options: `2, 3, 4, 5, 10` folds
+  </Accordion>
+</AccordionGroup>
+
+### Outputs
+
+<CardGroup cols={2}>
+  <Card title="ROC Curves" icon="chart-line">
+    Receiver Operating Characteristic curves for each kernel showing true vs false positive rates.
+  </Card>
+  <Card title="Confusion Matrix" icon="table">
+    Visual matrix showing actual vs predicted classifications.
+  </Card>
+  <Card title="Decision Boundary" icon="border-all">
+    2D visualization of how the SVM separates classes.
+  </Card>
+  <Card title="Metrics Export" icon="file-excel">
+    Excel file with AUC, Accuracy, Precision, Recall, F1-Score for all configurations.
+  </Card>
+</CardGroup>
+
+### SVM Metrics
+
+| Metric | Description |
+|--------|-------------|
+| **AUC** | Area Under ROC Curve (0-1, higher is better) |
+| **Accuracy** | Percentage of correct predictions |
+| **Precision** | True positives / (True positives + False positives) |
+| **Recall** | True positives / (True positives + False negatives) |
+| **F1-Score** | Harmonic mean of Precision and Recall |
+
+---
+
+## ANN Regression
+
+Artificial Neural Network for regression tasks with configurable architecture and inverse problem solving.
+
+### Network Architecture
+
+The default architecture is:
+```
+Input Layer → Dense(30, ReLU) → Dense(10, ReLU) → Dense(8, ReLU) → Output Layer
+```
+
+<Tip>
+  The architecture is visualized in the UI, showing each layer, neurons, and activations.
+</Tip>
+
+### Configuration Options
+
+| Parameter | Options | Default |
+|-----------|---------|---------|
+| **Hidden Layers** | Configurable | 30-10-8 |
+| **Activation** | ReLU, Tanh, Sigmoid, ELU | ReLU |
+| **Optimizer** | Adam, SGD, RMSprop | Adam |
+| **Epochs** | 100-1000 | 350 |
+| **Batch Size** | 4, 8, 16, 32 | 16 |
+| **Test Size** | 10%, 20%, 30% | 20% |
+| **Validation Split** | 10%-30% | 20% |
+
+### Training Visualizations
+
+<CardGroup cols={2}>
+  <Card title="Loss Curves" icon="chart-line">
+    Training vs Validation loss over epochs to detect overfitting.
+  </Card>
+  <Card title="Predicted vs Actual" icon="chart-scatter">
+    Scatter plot comparing model predictions to actual values.
+  </Card>
+  <Card title="Residual Plot" icon="chart-mixed">
+    Distribution of prediction errors across the range.
+  </Card>
+  <Card title="Architecture Diagram" icon="network-wired">
+    Interactive visualization of the neural network structure.
+  </Card>
+</CardGroup>
+
+### Regression Metrics
+
+| Metric | Description | Ideal Value |
+|--------|-------------|-------------|
+| **MAE** | Mean Absolute Error | Lower is better |
+| **RMSE** | Root Mean Squared Error | Lower is better |
+| **R² Score** | Coefficient of Determination | Closer to 1.0 |
+
+### Inverse Problem Solving
+
+A unique feature of Sibilytics AI is **inverse problem solving** - given a desired output, find the inputs that produce it.
+
+<AccordionGroup>
+  <Accordion icon="rotate-left" title="How it works">
+    1. Train a forward model (inputs → output)
+    2. Specify desired output value
+    3. Algorithm uses gradient descent to find inputs
+    4. Visualize convergence over optimization steps
+    
+    Uses TensorFlow's `GradientTape` for automatic differentiation.
+  </Accordion>
+</AccordionGroup>
+
+**Use cases:**
+- Find machining parameters for desired surface finish
+- Determine process inputs for target quality
+- Reverse engineering optimization
+
+---
+
+## Workflow
+
+### SVM Classification Workflow
+
+<Steps>
+  <Step title="Upload Dataset">
+    Upload a CSV file with features and a target classification column.
+  </Step>
+  <Step title="Select Columns">
+    Choose feature columns and the target label column.
+  </Step>
+  <Step title="Configure Training">
+    Select kernels to evaluate, C values, gamma values, and CV folds.
+  </Step>
+  <Step title="Train Models">
+    Grid search evaluates all combinations and selects the best model per kernel.
+  </Step>
+  <Step title="Review Results">
+    Compare kernel performance, view ROC curves, and confusion matrices.
+  </Step>
+  <Step title="Make Predictions">
+    Use the best model to predict new data with probability distributions.
+  </Step>
+</Steps>
+
+### ANN Regression Workflow
+
+<Steps>
+  <Step title="Upload Dataset">
+    Upload a CSV file with input features and output target(s).
+  </Step>
+  <Step title="Configure Model">
+    Set architecture, activation functions, and training parameters.
+  </Step>
+  <Step title="Train Model">
+    Model trains with real-time loss curve visualization.
+  </Step>
+  <Step title="Evaluate Results">
+    Review MAE, RMSE, R² score and diagnostic plots.
+  </Step>
+  <Step title="Forward Prediction">
+    Input values and get predicted outputs.
+  </Step>
+  <Step title="Inverse Solve (Optional)">
+    Specify desired outputs to find required inputs.
+  </Step>
+</Steps>
+
+---
+
+## Example Results
+
+### SVM Performance (Iris Dataset)
+
+| Kernel | Accuracy | Precision | Recall | F1-Score | AUC |
+|--------|----------|-----------|--------|----------|-----|
+| RBF | 96.67% | 97.00% | 96.67% | 96.67% | 98.33% |
+| Linear | 93.33% | 94.00% | 93.33% | 93.33% | 96.11% |
+| Polynomial | 90.00% | 91.00% | 90.00% | 90.00% | 95.00% |
+| Sigmoid | 86.67% | 88.00% | 86.67% | 86.67% | 91.67% |
+
+### ANN Performance (Example)
+
+| Metric | Value |
+|--------|-------|
+| MAE | 0.0312 |
+| RMSE | 0.0456 |
+| R² Score | 0.9734 |
+| Training Time | ~45s |
