@@ -1,8 +1,9 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronDown, Menu, X, Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { createClient } from '@/lib/supabase/browser';
 
 interface DropdownItem {
     label: string;
@@ -33,8 +34,10 @@ const navItems: NavItem[] = [
 export default function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const supabase = useMemo(() => createClient(), []);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -46,6 +49,30 @@ export default function Navbar() {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const initSession = async () => {
+            const { data } = await supabase.auth.getUser();
+            if (isMounted) {
+                setIsAuthenticated(!!data.user);
+            }
+        };
+
+        initSession();
+
+        const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (isMounted) {
+                setIsAuthenticated(!!session?.user);
+            }
+        });
+
+        return () => {
+            isMounted = false;
+            authListener.subscription.unsubscribe();
+        };
+    }, [supabase]);
 
     const handleMouseEnter = (label: string) => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -136,12 +163,14 @@ export default function Navbar() {
                         <div className="h-5 w-px bg-slate-600 mx-2"></div>
 
                         {/* CTA Button */}
-                        <Link
-                            href="/signal-processing"
-                            className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-5 py-2 rounded-full font-semibold text-sm transition-all shadow-lg shadow-emerald-500/25"
-                        >
-                            Try It Free
-                        </Link>
+                        {!isAuthenticated && (
+                            <Link
+                                href="/signup"
+                                className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-5 py-2 rounded-full font-semibold text-sm transition-all shadow-lg shadow-emerald-500/25"
+                            >
+                                Try It Free
+                            </Link>
+                        )}
                     </div>
 
                     {/* Mobile Menu Button */}
@@ -188,16 +217,18 @@ export default function Navbar() {
                                 </div>
                             ))}
 
-                            <div className="pt-4 border-t border-slate-700/50">
-                                <Link
-                                    href="/signal-processing"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="flex items-center justify-center gap-2 bg-emerald-500 text-white py-3 px-4 rounded-full font-semibold hover:bg-emerald-400 transition-colors"
-                                >
-                                    Try It Free
-                                    <ArrowRight className="w-4 h-4" />
-                                </Link>
-                            </div>
+                            {!isAuthenticated && (
+                                <div className="pt-4 border-t border-slate-700/50">
+                                    <Link
+                                        href="/signup"
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className="flex items-center justify-center gap-2 bg-emerald-500 text-white py-3 px-4 rounded-full font-semibold hover:bg-emerald-400 transition-colors"
+                                    >
+                                        Try It Free
+                                        <ArrowRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                            )}
 
                             <div className="flex items-center justify-center gap-4 pt-3">
                                 <a href="mailto:sybilyticsai@gmail.com" className="flex items-center gap-2 text-slate-400 hover:text-white">
