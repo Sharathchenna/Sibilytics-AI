@@ -6,7 +6,7 @@ export default function DataAcquisitionPage() {
     return (
         <PageLayout>
             {/* Hero Section */}
-            <div className="relative bg-gradient-to-b from-indigo-50 to-white py-16 md:py-24">
+            <div className="relative py-16 md:py-24">
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center max-w-4xl mx-auto">
                         {/* Badge */}

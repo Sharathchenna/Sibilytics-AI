@@ -10,7 +10,7 @@ interface PageLayoutProps {
 
 export default function PageLayout({ children }: PageLayoutProps) {
     return (
-        <div className="min-h-screen bg-white relative">
+        <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-emerald-50/50 to-white relative">
             {/* Translucent Logo Watermark Overlay */}
             <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
                 <Image
@@ -26,8 +26,8 @@ export default function PageLayout({ children }: PageLayoutProps) {
             {/* Navigation */}
             <Navbar />
 
-            {/* Main Content */}
-            <main className="relative z-10">
+            {/* Main Content - add top padding for fixed navbar */}
+            <main className="relative z-10 pt-20">
                 {children}
             </main>
 
