@@ -69,20 +69,21 @@ def main():
     
     # Get project root (one level up from backend)
     project_root = Path(__file__).parent.parent
+    test_data_dir = project_root / "test-data"
     
     tests = [
         # CSV tests
-        (project_root / "test-signal-with-headers.csv", True, "CSV with headers"),
-        (project_root / "test-signal-no-headers.csv", False, "CSV without headers"),
+        (test_data_dir / "test-signal-with-headers.csv", True, "CSV with headers"),
+        (test_data_dir / "test-signal-no-headers.csv", False, "CSV without headers"),
         
         # TXT tests
-        (project_root / "test-signal-tab-with-headers.txt", True, "TXT (tab) with headers"),
-        (project_root / "test-signal-tab-no-headers.txt", False, "TXT (tab) without headers"),
+        (test_data_dir / "test-signal-tab-with-headers.txt", True, "TXT (tab) with headers"),
+        (test_data_dir / "test-signal-tab-no-headers.txt", False, "TXT (tab) without headers"),
         
         # Real files
-        (project_root / "Iris.csv", True, "Iris dataset (real file with headers)"),
-        (project_root / "Iris-no-header.csv", False, "Iris dataset (real file without headers)"),
-        (project_root / "20000rpm-3feedflute-01.lvm", True, "LVM file (real LabVIEW file)"),
+        (test_data_dir / "Iris.csv", True, "Iris dataset (real file with headers)"),
+        (test_data_dir / "Iris-no-header.csv", False, "Iris dataset (real file without headers)"),
+        (test_data_dir / "20000rpm-3feedflute-01.lvm", True, "LVM file (real LabVIEW file)"),
     ]
     
     results = []
@@ -125,7 +126,6 @@ def main():
 
 if __name__ == "__main__":
     main()
-
 
 
 
