@@ -75,23 +75,23 @@ export default function ContactPage() {
     return (
         <PageLayout>
             {/* Hero Section */}
-            <div className="relative py-16 md:py-24">
+            <div className="relative py-16 md:py-24" style={{ backgroundColor: '#FDFCF8' }}>
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="text-center max-w-4xl mx-auto">
                         {/* Badge */}
-                        <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 px-4 py-2 rounded-full text-sm font-semibold mb-6 animate-fade-in">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-6 animate-fade-in" style={{ backgroundColor: '#DCE3D6', color: '#4A5D3F', fontFamily: 'var(--font-jakarta)' }}>
                             <MessageSquare className="w-4 h-4" />
                             Contact Us
                         </div>
 
                         {/* Heading */}
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight animate-fade-in">
+                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight animate-fade-in" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>
                             Get in
-                            <span className="text-teal-600"> Touch</span>
+                            <span style={{ color: '#BC6C4F' }}> Touch</span>
                         </h1>
 
                         {/* Description */}
-                        <p className="text-lg md:text-xl text-slate-600 mb-8 leading-relaxed max-w-3xl mx-auto animate-fade-in">
+                        <p className="text-lg md:text-xl mb-8 leading-relaxed max-w-3xl mx-auto animate-fade-in" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
                             Have questions about our signal processing platform?
                             Send us a message or reach out directly via email.
                         </p>
@@ -104,8 +104,8 @@ export default function ContactPage() {
                 <div className="max-w-7xl mx-auto px-4">
                     <div className="grid md:grid-cols-2 gap-12">
                         {/* Contact Form */}
-                        <div className="bg-white p-8 rounded-2xl shadow-xl border border-gray-100">
-                            <h3 className="text-2xl font-bold text-gray-800 mb-6">Send us a Message</h3>
+                        <div className="bg-white p-8 rounded-2xl shadow-xl" style={{ border: '1px solid #EBE5DF' }}>
+                            <h3 className="text-2xl font-bold mb-6" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Send us a Message</h3>
 
                             {submitSuccess && (
                                 <div className="mb-6 p-4 bg-green-100 border border-green-300 text-green-800 rounded-lg flex items-center gap-3 animate-fade-in">
@@ -129,7 +129,8 @@ export default function ContactPage() {
                                         placeholder="Your Name *"
                                         value={formData.name}
                                         onChange={handleInputChange}
-                                        className={`w-full px-4 py-3 border ${formErrors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all`}
+                                        className={`w-full px-4 py-3 border ${formErrors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg transition-all focus:border-[#BC6C4F] focus:outline-none`}
+                                        style={{ fontFamily: 'var(--font-jakarta)' }}
                                     />
                                     {formErrors.name && <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>}
                                 </div>
@@ -141,7 +142,8 @@ export default function ContactPage() {
                                         placeholder="Email Address *"
                                         value={formData.email}
                                         onChange={handleInputChange}
-                                        className={`w-full px-4 py-3 border ${formErrors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all`}
+                                        className={`w-full px-4 py-3 border ${formErrors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg transition-all focus:border-[#BC6C4F] focus:outline-none`}
+                                        style={{ fontFamily: 'var(--font-jakarta)' }}
                                     />
                                     {formErrors.email && <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>}
                                 </div>
@@ -153,7 +155,8 @@ export default function ContactPage() {
                                         placeholder="Phone Number *"
                                         value={formData.phone}
                                         onChange={handleInputChange}
-                                        className={`w-full px-4 py-3 border ${formErrors.phone ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all`}
+                                        className={`w-full px-4 py-3 border ${formErrors.phone ? 'border-red-500' : 'border-gray-300'} rounded-lg transition-all focus:border-[#BC6C4F] focus:outline-none`}
+                                        style={{ fontFamily: 'var(--font-jakarta)' }}
                                     />
                                     {formErrors.phone && <p className="mt-1 text-sm text-red-600">{formErrors.phone}</p>}
                                 </div>
@@ -165,7 +168,8 @@ export default function ContactPage() {
                                         placeholder="Subject *"
                                         value={formData.subject}
                                         onChange={handleInputChange}
-                                        className={`w-full px-4 py-3 border ${formErrors.subject ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all`}
+                                        className={`w-full px-4 py-3 border ${formErrors.subject ? 'border-red-500' : 'border-gray-300'} rounded-lg transition-all focus:border-[#BC6C4F] focus:outline-none`}
+                                        style={{ fontFamily: 'var(--font-jakarta)' }}
                                     />
                                     {formErrors.subject && <p className="mt-1 text-sm text-red-600">{formErrors.subject}</p>}
                                 </div>
@@ -177,7 +181,8 @@ export default function ContactPage() {
                                         value={formData.message}
                                         onChange={handleInputChange}
                                         rows={5}
-                                        className={`w-full px-4 py-3 border ${formErrors.message ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all resize-none`}
+                                        className={`w-full px-4 py-3 border ${formErrors.message ? 'border-red-500' : 'border-gray-300'} rounded-lg transition-all resize-none focus:border-[#BC6C4F] focus:outline-none`}
+                                        style={{ fontFamily: 'var(--font-jakarta)' }}
                                     />
                                     {formErrors.message && <p className="mt-1 text-sm text-red-600">{formErrors.message}</p>}
                                 </div>
@@ -185,7 +190,8 @@ export default function ContactPage() {
                                 <button
                                     type="submit"
                                     disabled={isSubmitting}
-                                    className="w-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white py-4 rounded-lg font-bold text-lg hover:from-teal-700 hover:to-emerald-700 hover:scale-105 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                                    className="w-full text-white py-4 rounded-lg font-bold text-lg hover:scale-105 shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2 cursor-pointer"
+                                    style={{ background: 'linear-gradient(to right, #BC6C4F, #4A5D3F)', fontFamily: 'var(--font-jakarta)' }}
                                 >
                                     {isSubmitting ? (
                                         <>
@@ -204,8 +210,8 @@ export default function ContactPage() {
 
                         {/* Contact Info */}
                         <div className="space-y-8">
-                            <div className="bg-gradient-to-br from-teal-600 to-emerald-600 p-8 rounded-2xl text-white shadow-xl">
-                                <h3 className="text-2xl text-white font-bold mb-6">Contact Information</h3>
+                            <div className="p-8 rounded-2xl text-white shadow-xl" style={{ background: 'linear-gradient(to bottom right, #BC6C4F, #4A5D3F)' }}>
+                                <h3 className="text-2xl text-white font-bold mb-6" style={{ fontFamily: 'var(--font-playfair)' }}>Contact Information</h3>
 
                                 <div className="space-y-6">
                                     <div className="flex items-start gap-4">
@@ -213,24 +219,27 @@ export default function ContactPage() {
                                             <Mail className="w-6 h-6" />
                                         </div>
                                         <div>
-                                            <h4 className="font-semibold mb-2 text-white">Email</h4>
-                                            <a href="mailto:sybilyticsai@gmail.com" className="text-white hover:text-teal-100 text-lg transition-colors font-medium break-all">
-                                                sybilyticsai@gmail.com
+                                            <h4 className="font-semibold mb-2 text-white" style={{ fontFamily: 'var(--font-playfair)' }}>Email</h4>
+                                            <a href="mailto:sibilyticsai@gmail.com" className="text-white text-lg transition-colors font-medium break-all" style={{ fontFamily: 'var(--font-jakarta)' }}>
+                                                sibilyticsai@gmail.com
                                             </a>
                                         </div>
                                     </div>
                                 </div>
 
                                 <a href="https://www.google.com/maps/place/BITS+Pilani+Hyderabad+Campus" target="_blank" rel="noopener noreferrer"
-                                    className="mt-8 w-full bg-white text-teal-600 py-3 rounded-lg font-bold hover:bg-teal-50 transition-colors flex items-center justify-center gap-2">
+                                    className="mt-8 w-full bg-white py-3 rounded-lg font-bold transition-colors flex items-center justify-center gap-2"
+                                    style={{ color: '#BC6C4F', fontFamily: 'var(--font-jakarta)' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#FEF3E7'}
+                                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'white'}>
                                     <MapPin className="w-5 h-5" />
                                     View on Google Maps
                                 </a>
                             </div>
 
-                            <div className="bg-gradient-to-br from-slate-100 to-slate-50 p-8 rounded-2xl border border-slate-200">
-                                <h3 className="text-xl font-bold text-slate-800 mb-4">Quick Response</h3>
-                                <p className="text-slate-600 leading-relaxed">
+                            <div className="p-8 rounded-2xl" style={{ background: 'linear-gradient(to bottom right, #F5F0EB, #FDFCF8)', border: '1px solid #EBE5DF' }}>
+                                <h3 className="text-xl font-bold mb-4" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Quick Response</h3>
+                                <p className="leading-relaxed" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
                                     We typically respond to all inquiries within 24-48 hours during business days.
                                     For urgent matters, please reach out via email directly.
                                 </p>

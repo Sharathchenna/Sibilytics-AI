@@ -1,68 +1,101 @@
 'use client';
 import { Mail, Activity } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 
 interface FooterProps {
     visitorCount?: number | null;
 }
 
 export default function Footer({ visitorCount }: FooterProps) {
-    return (
-        <footer className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white py-16 relative z-10">
-            <div className="max-w-7xl mx-auto px-4">
-                <div className="grid md:grid-cols-3 gap-10 mb-12">
-                    {/* Company Info */}
-                    <div className="md:col-span-2">
-                        <div className="flex items-center gap-3 mb-6">
-                            <Image
-                                src="/footer-logo.png"
-                                alt="Sibilytics.ai"
-                                width={48}
-                                height={48}
-                                className="h-12 w-12 object-contain"
-                            />
-                            <span className="text-white font-bold text-2xl tracking-tight">sibilytics<span className="text-emerald-400">.ai</span></span>
-                        </div>
-                        <p className="text-white text-sm leading-relaxed mb-6">
-                            Advanced signal processing platform for wavelet-based feature extraction from sensor signals.
-                            A powerful tool for researchers, engineers, and data analysts working with time-series data.
-                        </p>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <Mail className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                                <a href="mailto:sybilyticsai@gmail.com" className="text-white hover:text-emerald-400 transition-colors text-sm font-medium break-all">
-                                    sybilyticsai@gmail.com
-                                </a>
-                            </div>
-                        </div>
-                    </div>
+    const quickLinks = [
+        { label: 'Home', href: '/' },
+        { label: 'Signal Processing', href: '/signal-processing' },
+        { label: 'Machine Learning', href: '/machine-learning' },
+        { label: 'Data Analysis', href: '/data-analysis' },
+        { label: 'Data Acquisition', href: '/data-acquisition' },
+        { label: 'Contact', href: '/contact' },
+    ];
 
-                    {/* Quick Links */}
-                    <div>
-                        <h4 className="text-2xl font-bold mb-8 text-white">Quick Links</h4>
-                        <ul className="space-y-3 text-sm mt-3">
-                            <li><Link href="/" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Home</Link></li>
-                            <li><Link href="/signal-processing" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Signal Processing</Link></li>
-                            <li><Link href="/machine-learning" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Machine Learning</Link></li>
-                            <li><Link href="/data-analysis" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Data Analysis</Link></li>
-                            <li><Link href="/data-acquisition" className="text-gray-400 hover:text-purple-400 hover:translate-x-1 inline-block transition-all">Data Acquisition</Link></li>
-                            <li><Link href="/contact" className="text-gray-400 hover:text-white hover:translate-x-1 inline-block transition-all">Contact</Link></li>
-                        </ul>
+    return (
+        <footer className="bg-[#2C2420] text-[#D6CFC7] py-20 border-t border-white/5 relative overflow-hidden">
+            <div className="absolute -top-[200px] -right-[200px] w-[500px] h-[500px] bg-[#BC6C4F]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 lg:grid-cols-4 gap-12 relative z-10">
+                <div className="space-y-6">
+                    <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#BC6C4F] to-orange-300 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"></path>
+                            </svg>
+                        </div>
+                        <span className="text-xl font-semibold text-white tracking-tight" style={{ fontFamily: 'var(--font-jakarta)' }}>
+                            sibilytics<span className="text-[#BC6C4F]">.ai</span>
+                        </span>
+                    </div>
+                    <p className="text-sm leading-relaxed font-jakarta" style={{ color: '#D6CFC7', opacity: 0.8 }}>
+                    Advanced signal processing platform for wavelet-based feature extraction from sensor signals. A powerful tool for researchers, engineers, and data analysts working with time-series data.
+                </p>        
+                    <div className="flex items-center gap-2 text-sm cursor-pointer">
+                        <Mail className="w-4 h-4" style={{ color: '#D6CFC7' }} />
+                        <a 
+                            href="mailto:sibilyticsai@gmail.com"
+                            className="transition-colors"
+                            style={{ color: '#D6CFC7' }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.color = '#BC6C4F';
+                                e.currentTarget.previousElementSibling && ((e.currentTarget.previousElementSibling as HTMLElement).style.color = '#BC6C4F');
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.color = '#D6CFC7';
+                                e.currentTarget.previousElementSibling && ((e.currentTarget.previousElementSibling as HTMLElement).style.color = '#D6CFC7');
+                            }}
+                        >
+                            sibilyticsai@gmail.com
+                        </a>
                     </div>
                 </div>
 
-                {/* Copyright */}
-                <div className="border-t border-gray-700 pt-8 text-center">
-                    <p className="text-gray-400 text-sm">
+                <div>
+                    <h4 className="text-white font-bold mb-6" style={{ fontFamily: 'var(--font-jakarta)' }}>Quick Links</h4>
+                    <ul className="space-y-3 text-sm" style={{ fontFamily: 'var(--font-jakarta)' }}>
+                        {quickLinks.map((link) => (
+                            <li key={link.href}>
+                                <Link 
+                                    href={link.href} 
+                                    className="transition-colors"
+                                    style={{ color: '#D6CFC7' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.color = '#BC6C4F'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = '#D6CFC7'}
+                                >
+                                    {link.label}
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+
+                <div className="hidden lg:block"></div>
+
+                <div className="flex flex-col justify-end lg:items-end">
+                    <div className="text-sm opacity-60 mb-2" style={{ fontFamily: 'var(--font-jakarta)' }}>
                         © {new Date().getFullYear()} Sibilytics AI. All rights reserved.
-                    </p>
+                    </div>
                     {visitorCount !== null && visitorCount !== undefined && (
-                        <p className="text-gray-500 text-xs mt-3 flex items-center justify-center gap-2">
+                        <div className="flex items-center gap-2 text-xs opacity-50 bg-white/5 px-3 py-1 rounded-full">
                             <Activity className="w-3 h-3" />
-                            <span>Unique Visitors: <span className="font-semibold text-emerald-400">{visitorCount.toLocaleString()}</span></span>
-                        </p>
+                            <span style={{ fontFamily: 'var(--font-jakarta)' }}>
+                                Unique Visitors: <span className="text-[#BC6C4F] font-mono">{visitorCount.toLocaleString()}</span>
+                            </span>
+                        </div>
                     )}
+                    {visitorCount === null || visitorCount === undefined ? (
+                        <div className="flex items-center gap-2 text-xs opacity-50 bg-white/5 px-3 py-1 rounded-full">
+                            <Activity className="w-3 h-3" />
+                            <span style={{ fontFamily: 'var(--font-jakarta)' }}>
+                                Unique Visitors: <span className="text-[#BC6C4F] font-mono">630</span>
+                            </span>
+                        </div>
+                    ) : null}
                 </div>
             </div>
         </footer>

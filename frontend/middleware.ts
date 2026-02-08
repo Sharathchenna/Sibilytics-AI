@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server"
 import { createServerClient } from "@supabase/ssr"
 
-const PUBLIC_PATHS = new Set(["/login", "/signup", "/auth/callback"])
+const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/auth/callback"])
 
 const isPublicFile = (pathname: string) =>
   /\.[^/]+$/.test(pathname) ||

@@ -35,11 +35,17 @@ export default function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [scrolled, setScrolled] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const supabase = useMemo(() => createClient(), []);
 
-    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleScroll = () => setScrolled(window.scrollY > 20);
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+    }, []);
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -87,19 +93,31 @@ export default function Navbar() {
 
     return (
         <div className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-6 lg:px-8 pt-4">
-            {/* Floating Navbar Container */}
-            <nav className="max-w-6xl mx-auto bg-slate-900/95 backdrop-blur-md rounded-full shadow-2xl border border-slate-700/50 px-2">
-                <div className="flex justify-between items-center h-14 px-4">
+            <nav
+                className="max-w-6xl mx-auto rounded-full px-4 transition-all duration-500 ease-out"
+                style={{
+                    background: scrolled
+                        ? 'rgba(255, 255, 255, 0.3)'
+                        : 'rgba(255, 255, 255, 0.15)',
+                    backdropFilter: 'blur(24px) saturate(1.6)',
+                    WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
+                    boxShadow: scrolled
+                        ? '0 8px 32px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
+                        : '0 4px 20px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                }}
+            >
+                <div className="flex justify-between items-center py-3.5 px-4">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity flex-shrink-0">
-                        <Image
-                            src="/footer-logo.png"
-                            alt="Sibilytics Logo"
-                            width={36}
-                            height={36}
-                            className="h-9 w-9 object-contain"
-                        />
-                        <span className="text-white font-semibold text-lg tracking-tight">sibilytics<span className="text-emerald-400">.ai</span></span>
+                    <Link href="/" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity flex-shrink-0">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#BC6C4F] to-orange-300 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"></path>
+                            </svg>
+                        </div>
+                        <span className="text-xl font-semibold tracking-tight font-sans" style={{ color: '#2C2420' }}>
+                            sibilytics<span style={{ color: '#BC6C4F' }}>.ai</span>
+                        </span>
                     </Link>
 
                     {/* Desktop Navigation */}
@@ -114,31 +132,51 @@ export default function Navbar() {
                                 {item.dropdown ? (
                                     <>
                                         <button
-                                            className="flex items-center gap-1 px-4 py-2 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-medium transition-all text-sm"
+                                            className="flex items-center gap-1 px-4 py-2 rounded-full font-medium transition-all text-sm"
+                                            style={{ color: '#3D342B' }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.color = '#BC6C4F';
+                                                e.currentTarget.style.background = 'rgba(188, 108, 79, 0.08)';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.color = '#3D342B';
+                                                e.currentTarget.style.background = 'transparent';
+                                            }}
                                         >
                                             {item.label}
                                             <ChevronDown
-                                                className={`w-4 h-4 transition-transform duration-200 ${activeDropdown === item.label ? 'rotate-180' : ''
-                                                    }`}
+                                                className={`w-4 h-4 transition-transform duration-200 ${activeDropdown === item.label ? 'rotate-180' : ''}`}
                                             />
                                         </button>
 
-                                        {/* Dropdown Menu */}
+                                        {/* Dropdown */}
                                         {activeDropdown === item.label && (
-                                            <div className="absolute top-full left-0 mt-3 w-72 bg-slate-900/95 backdrop-blur-md rounded-2xl shadow-2xl border border-slate-700/50 overflow-hidden animate-fade-in">
+                                            <div
+                                                className="absolute top-full left-0 mt-3 w-72 rounded-2xl overflow-hidden animate-fade-in"
+                                                style={{
+                                                    background: 'rgba(255, 255, 255, 0.7)',
+                                                    backdropFilter: 'blur(30px) saturate(1.8)',
+                                                    WebkitBackdropFilter: 'blur(30px) saturate(1.8)',
+                                                    boxShadow: '0 20px 50px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255,255,255,0.6)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.5)',
+                                                }}
+                                            >
                                                 <div className="p-2">
                                                     {item.dropdown.map((dropdownItem) => (
                                                         <Link
                                                             key={dropdownItem.label}
                                                             href={dropdownItem.href}
-                                                            className="flex flex-col gap-1 p-3 rounded-xl hover:bg-white/10 transition-colors group"
+                                                            className="flex flex-col gap-1 p-3 rounded-xl transition-all group"
+                                                            style={{ color: '#2C2420' }}
                                                             onClick={() => setActiveDropdown(null)}
+                                                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(188, 108, 79, 0.08)'}
+                                                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                                         >
-                                                            <span className="font-semibold text-white group-hover:text-emerald-400 transition-colors">
+                                                            <span className="font-semibold transition-colors group-hover:text-[#BC6C4F]" style={{ color: 'inherit' }}>
                                                                 {dropdownItem.label}
                                                             </span>
                                                             {dropdownItem.description && (
-                                                                <span className="text-sm text-slate-400">
+                                                                <span className="text-sm" style={{ color: '#786B61' }}>
                                                                     {dropdownItem.description}
                                                                 </span>
                                                             )}
@@ -151,7 +189,16 @@ export default function Navbar() {
                                 ) : (
                                     <Link
                                         href={item.href!}
-                                        className="px-4 py-2 rounded-full text-white/90 hover:text-white hover:bg-white/10 font-medium transition-all text-sm"
+                                        className="px-4 py-2 rounded-full font-medium transition-all text-sm"
+                                        style={{ color: '#3D342B' }}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.color = '#BC6C4F';
+                                            e.currentTarget.style.background = 'rgba(188, 108, 79, 0.08)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.color = '#3D342B';
+                                            e.currentTarget.style.background = 'transparent';
+                                        }}
                                     >
                                         {item.label}
                                     </Link>
@@ -160,13 +207,26 @@ export default function Navbar() {
                         ))}
 
                         {/* Divider */}
-                        <div className="h-5 w-px bg-slate-600 mx-2"></div>
+                        <div className="h-5 w-px mx-2" style={{ background: 'rgba(61, 52, 43, 0.15)' }}></div>
 
                         {/* CTA Button */}
                         {!isAuthenticated && (
                             <Link
                                 href="/signup"
-                                className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white px-5 py-2 rounded-full font-semibold text-sm transition-all shadow-lg shadow-emerald-500/25"
+                                className="inline-flex items-center gap-2 px-5 py-2 rounded-full font-semibold text-sm transition-all cursor-pointer"
+                                style={{
+                                    background: 'linear-gradient(135deg, #BC6C4F, #A05A41)',
+                                    color: '#FFFFFF',
+                                    boxShadow: '0 4px 15px rgba(188, 108, 79, 0.3)',
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.boxShadow = '0 6px 25px rgba(188, 108, 79, 0.45)';
+                                    e.currentTarget.style.transform = 'translateY(-1px)';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.boxShadow = '0 4px 15px rgba(188, 108, 79, 0.3)';
+                                    e.currentTarget.style.transform = 'translateY(0)';
+                                }}
                             >
                                 Try It Free
                             </Link>
@@ -176,7 +236,8 @@ export default function Navbar() {
                     {/* Mobile Menu Button */}
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="md:hidden p-2 rounded-full text-white hover:bg-white/10 transition-colors"
+                        className="md:hidden p-2 rounded-full transition-colors"
+                        style={{ color: '#2C2420' }}
                         aria-label="Toggle menu"
                     >
                         {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -185,13 +246,16 @@ export default function Navbar() {
 
                 {/* Mobile Navigation */}
                 {mobileMenuOpen && (
-                    <div className="md:hidden border-t border-slate-700/50 animate-fade-in rounded-b-3xl overflow-hidden">
+                    <div
+                        className="md:hidden animate-fade-in rounded-b-3xl overflow-hidden"
+                        style={{ borderTop: '1px solid rgba(61, 52, 43, 0.1)' }}
+                    >
                         <div className="px-4 py-4 space-y-2">
                             {navItems.map((item) => (
                                 <div key={item.label}>
                                     {item.dropdown ? (
                                         <div className="space-y-1">
-                                            <div className="px-4 py-2 text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                                            <div className="px-4 py-2 text-xs font-semibold uppercase tracking-wide" style={{ color: '#786B61' }}>
                                                 {item.label}
                                             </div>
                                             {item.dropdown.map((dropdownItem) => (
@@ -199,7 +263,8 @@ export default function Navbar() {
                                                     key={dropdownItem.label}
                                                     href={dropdownItem.href}
                                                     onClick={() => setMobileMenuOpen(false)}
-                                                    className="block text-white hover:text-emerald-400 hover:bg-white/10 font-medium py-2 px-4 rounded-lg transition-colors"
+                                                    className="block font-medium py-2 px-4 rounded-lg transition-colors"
+                                                    style={{ color: '#2C2420' }}
                                                 >
                                                     {dropdownItem.label}
                                                 </Link>
@@ -209,7 +274,8 @@ export default function Navbar() {
                                         <Link
                                             href={item.href!}
                                             onClick={() => setMobileMenuOpen(false)}
-                                            className="block text-white hover:text-emerald-400 hover:bg-white/10 font-medium py-2 px-4 rounded-lg transition-colors"
+                                            className="block font-medium py-2 px-4 rounded-lg transition-colors"
+                                            style={{ color: '#2C2420' }}
                                         >
                                             {item.label}
                                         </Link>
@@ -218,11 +284,12 @@ export default function Navbar() {
                             ))}
 
                             {!isAuthenticated && (
-                                <div className="pt-4 border-t border-slate-700/50">
+                                <div className="pt-4" style={{ borderTop: '1px solid rgba(61, 52, 43, 0.1)' }}>
                                     <Link
                                         href="/signup"
                                         onClick={() => setMobileMenuOpen(false)}
-                                        className="flex items-center justify-center gap-2 bg-emerald-500 text-white py-3 px-4 rounded-full font-semibold hover:bg-emerald-400 transition-colors"
+                                        className="flex items-center justify-center gap-2 py-3 px-4 rounded-full font-semibold transition-colors cursor-pointer"
+                                        style={{ background: 'linear-gradient(135deg, #BC6C4F, #A05A41)', color: '#FFFFFF' }}
                                     >
                                         Try It Free
                                         <ArrowRight className="w-4 h-4" />
@@ -231,7 +298,7 @@ export default function Navbar() {
                             )}
 
                             <div className="flex items-center justify-center gap-4 pt-3">
-                                <a href="mailto:sybilyticsai@gmail.com" className="flex items-center gap-2 text-slate-400 hover:text-white">
+                                <a href="mailto:sibilyticsai@gmail.com" className="flex items-center gap-2 transition-opacity hover:opacity-100" style={{ color: '#786B61' }}>
                                     <Mail className="w-4 h-4" />
                                     <span className="text-sm">Email Us</span>
                                 </a>

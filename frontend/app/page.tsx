@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
-import { ArrowRight, Activity, BarChart3, Download, Brain } from "lucide-react";
+import { ArrowRight, Activity, BarChart3, Download, Brain, BarChart2, Cpu, Users, Zap, Database, TrendingUp } from "lucide-react";
 
 export default function Home() {
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
@@ -38,7 +38,7 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-emerald-50/50 to-white relative">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50/30 to-white relative">
       {/* Translucent Logo Watermark Overlay */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
         <Image
@@ -54,174 +54,261 @@ export default function Home() {
       {/* Navigation */}
       <Navbar />
 
-      {/* Hero Section - Modern & Clean */}
-      <div className="relative py-20 md:py-32 z-10 pt-32 md:pt-40">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center max-w-4xl mx-auto">
-            {/* Badge */}
-            <div className="inline-flex items-center gap-2 bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold mb-8 animate-fade-in">
-              <Activity className="w-4 h-4" />
-              Advanced AI-Powered Signal Processing
-            </div>
+      {/* Hero Section - Earth Toned with Animated Blobs */}
+      <div className="relative pt-40 pb-20 lg:pt-52 lg:pb-32 overflow-hidden" style={{ backgroundColor: '#FDFCF8' }}>
+        {/* Animated Blob Background */}
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+          <div className="absolute -top-[20%] -right-[10%] w-[800px] h-[800px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" style={{ backgroundColor: '#F5F0EB' }}></div>
+          <div className="absolute top-[20%] -left-[10%] w-[600px] h-[600px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000" style={{ backgroundColor: '#E8DCCF' }}></div>
+          <div className="absolute -bottom-[20%] left-[20%] w-[600px] h-[600px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000" style={{ backgroundColor: '#FBECE6' }}></div>
+        </div>
 
-            {/* Heading */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 mb-6 leading-tight animate-fade-in">
-              Feature Extraction and
-              <span className="text-emerald-600"> ML-based Prediction</span> Platform
-            </h1>
+        <div className="relative max-w-7xl mx-auto px-6 text-center z-10">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 bg-white/80 border px-4 py-1.5 rounded-full shadow-sm mb-8 backdrop-blur-sm" style={{ borderColor: '#EBE5DF' }}>
+            <Activity className="w-4 h-4" style={{ color: '#BC6C4F' }} />
+            <span className="text-sm font-semibold tracking-wide uppercase" style={{ color: '#786B61' }}>Advanced AI-Powered Signal Processing</span>
+          </div>
 
-            {/* Description */}
-            <p className="text-lg md:text-xl text-slate-600 mb-10 leading-relaxed max-w-3xl mx-auto animate-fade-in">
+          {/* Heading with Playfair Display */}
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-tight mb-8" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>
+            Feature Extraction and <br />
+            <span className="italic" style={{ color: '#BC6C4F' }}>ML-based Prediction</span> Platform
+          </h1>
+
+          {/* Description */}
+          <div className="w-full flex justify-center">
+            <p className="text-lg md:text-xl max-w-3xl mb-10 leading-relaxed font-light text-center" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
               Advanced signal processing for sensor data analysis, feature extraction, optimization, and machine learning-based prediction.
             </p>
+          </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center animate-fade-in">
-              <Link href="/signal-processing"
-                className="inline-flex items-center justify-center gap-2 bg-emerald-600 text-white px-8 py-4 rounded-lg font-semibold text-lg hover:bg-emerald-700 shadow-sm hover:shadow-md transition-all">
-                Try It Now
-                <ArrowRight className="w-5 h-5" />
-              </Link>
-              <a href="#products"
-                className="inline-flex items-center justify-center gap-2 bg-white text-slate-700 border-2 border-slate-300 px-8 py-4 rounded-lg font-semibold text-lg hover:border-slate-400 hover:bg-slate-50 transition-all">
-                Explore Products
-              </a>
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link href="/signal-processing"
+              className="w-full sm:w-auto bg-[#BC6C4F] hover:bg-[#A05A41] text-white px-8 py-4 rounded-full text-base font-semibold transition-all shadow-xl hover:shadow-orange-900/20 flex items-center justify-center gap-2 cursor-pointer">
+              Try It Now
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+            <a href="#products"
+              className="w-full sm:w-auto bg-white text-[#3D342B] hover:bg-[#F5F0EB] px-8 py-4 rounded-full text-base font-semibold transition-all shadow-md flex items-center justify-center" style={{ border: '1px solid #EBE5DF' }}>
+              Explore Products
+            </a>
+          </div>
+
+          {/* Glass Card Mockup - Desktop Only */}
+          <div className="mt-20 relative mx-auto max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-white/40 backdrop-blur-sm p-4 hidden md:block transform hover:scale-[1.01] transition-transform duration-700" style={{ border: '1px solid rgba(255,255,255,0.5)' }}>
+            <div className="rounded-xl bg-white overflow-hidden shadow-inner" style={{ border: '1px solid rgba(235,229,223,0.5)' }}>
+              {/* Browser Chrome */}
+              <div className="h-12 flex items-center px-4 gap-2" style={{ backgroundColor: '#FDFCF8', borderBottom: '1px solid #EBE5DF' }}>
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#E5B8A5' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#D4C3B5' }}></div>
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#C2CDC3' }}></div>
+                </div>
+                <div className="ml-4 h-6 w-64 rounded-full opacity-50" style={{ backgroundColor: '#F5F0EB' }}></div>
+              </div>
+              {/* Dashboard Content */}
+              <div className="p-8 grid grid-cols-12 gap-6 h-[400px] bg-gradient-to-br from-white" style={{ backgroundImage: 'linear-gradient(to bottom right, white, #FDFCF8)' }}>
+                <div className="col-span-3 space-y-4">
+                  <div className="h-8 w-3/4 rounded animate-pulse" style={{ backgroundColor: 'rgba(245,240,235,0.5)' }}></div>
+                  <div className="h-4 w-1/2 rounded animate-pulse" style={{ backgroundColor: 'rgba(245,240,235,0.3)' }}></div>
+                  <div className="space-y-2 mt-8">
+                    <div className="h-12 w-full rounded-lg flex items-center px-3" style={{ backgroundColor: 'rgba(188,108,79,0.1)', border: '1px solid rgba(188,108,79,0.2)' }}>
+                      <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: '#BC6C4F' }}></div>
+                      <div className="h-2 w-20 rounded" style={{ backgroundColor: 'rgba(188,108,79,0.2)' }}></div>
+                    </div>
+                    <div className="h-12 w-full bg-white rounded-lg flex items-center px-3" style={{ border: '1px solid #EBE5DF' }}>
+                      <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: 'rgba(120,107,97,0.3)' }}></div>
+                      <div className="h-2 w-20 rounded" style={{ backgroundColor: 'rgba(120,107,97,0.1)' }}></div>
+                    </div>
+                    <div className="h-12 w-full bg-white rounded-lg flex items-center px-3" style={{ border: '1px solid #EBE5DF' }}>
+                      <div className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: 'rgba(120,107,97,0.3)' }}></div>
+                      <div className="h-2 w-20 rounded" style={{ backgroundColor: 'rgba(120,107,97,0.1)' }}></div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-span-9 bg-white rounded-xl shadow-sm p-6 relative overflow-hidden" style={{ border: '1px solid rgba(235,229,223,0.3)' }}>
+                  {/* Signal Visualization */}
+                  <svg className="w-full h-full" style={{ color: 'rgba(188,108,79,0.2)' }} preserveAspectRatio="none" viewBox="0 0 100 100">
+                    <path d="M0,50 Q10,20 20,50 T40,50 T60,50 T80,50 T100,50" fill="none" stroke="currentColor" strokeWidth="2"></path>
+                    <path d="M0,50 Q15,80 30,50 T60,50 T90,50" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5"></path>
+                  </svg>
+                  <div className="absolute bottom-6 left-6 right-6 h-32 bg-gradient-to-t from-white via-white/80 to-transparent flex items-end justify-between">
+                    <div className="space-y-2">
+                      <div className="h-2 w-32 rounded" style={{ backgroundColor: '#EBE5DF' }}></div>
+                      <div className="h-2 w-20 rounded" style={{ backgroundColor: 'rgba(235,229,223,0.5)' }}></div>
+                    </div>
+                    <div className="h-10 w-32 rounded-lg shadow-lg flex items-center justify-center text-white text-xs" style={{ backgroundColor: '#BC6C4F' }}>Analyze Signal</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* About Section */}
-      <div className="py-20 bg-white relative z-10">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="text-center mb-12">
-            <div className="inline-block mb-4">
-              <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">About Sibilytics AI</span>
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-6 leading-tight">
-              Intelligent <span className="text-emerald-600">Signal Processing</span><br />
+      {/* About Section - Earth Toned */}
+      <div className="py-24 relative" style={{ backgroundColor: '#F5F0EB' }}>
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Badge and Heading */}
+          <div className="text-center mb-16">
+            <span className="bg-[#DCE3D6] text-[#4A5D3F] px-4 py-1.5 rounded-full text-sm font-bold tracking-wide uppercase inline-block mb-6" style={{ fontFamily: 'var(--font-jakarta)' }}>About Sibilytics AI</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-6" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>
+              Intelligent <span style={{ color: '#BC6C4F' }}>Signal Processing</span> <br />
               for Research & Industry
             </h2>
+            <div className="w-24 h-1 mx-auto rounded-full opacity-60" style={{ backgroundColor: '#BC6C4F' }}></div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md p-8 md:p-10 border border-slate-200">
-            <p className="text-gray-700 text-lg leading-relaxed mb-6">
-              <strong className="text-emerald-600">Sibilytics AI</strong> is an advanced web-based platform designed for <strong>feature extraction</strong> from sensor and denoised signals, which can subsequently be used for <strong>machine learning-based analyses</strong> such as classification, clustering, and prediction.
-            </p>
+          {/* Main Content Card */}
+          <div className="bg-white rounded-[2rem] p-8 md:p-12 lg:p-16 shadow-xl relative overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.6)' }}>
+            {/* Decorative Blob */}
+            <div className="absolute top-0 right-0 w-96 h-96 rounded-full mix-blend-multiply filter blur-3xl opacity-50 -translate-y-1/2 translate-x-1/4" style={{ backgroundColor: '#FDFCF8' }}></div>
 
-            <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl p-6 mb-6">
-              <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <BarChart3 className="w-6 h-6 text-emerald-600" />
-                Comprehensive Visualizations
-              </h4>
-              <ul className="space-y-3 text-gray-700">
-                <li className="flex items-start gap-3">
-                  <div className="mt-1 w-2 h-2 bg-emerald-600 rounded-full flex-shrink-0"></div>
-                  <span><strong>Time-domain plots</strong> for both raw and denoised signals</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="mt-1 w-2 h-2 bg-emerald-600 rounded-full flex-shrink-0"></div>
-                  <span><strong>FFT plots</strong> for raw signals, denoised signals, and wavelet coefficients</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <div className="mt-1 w-2 h-2 bg-emerald-600 rounded-full flex-shrink-0"></div>
-                  <span><strong>Wavelet decomposition plots</strong> (approximation & detail coefficients)</span>
-                </li>
-              </ul>
-            </div>
+            <div className="relative z-10 grid lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-8">
+                <p className="text-lg leading-relaxed" style={{ color: '#786B61' }}>
+                  <strong style={{ color: '#3D342B', fontWeight: 'bold' }}>Sibilytics AI</strong> is an advanced web-based platform designed for <strong style={{ color: '#3D342B' }}>feature extraction</strong> from sensor and denoised signals, which can subsequently be used for <strong style={{ color: '#3D342B' }}>machine learning-based analyses</strong> such as classification, clustering, and prediction.
+                </p>
 
-            <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border-l-4 border-emerald-600">
-              <p className="text-gray-800 text-lg leading-relaxed font-medium">
-                A powerful and user-friendly tool for <strong>researchers, engineers, and data analysts</strong> working with time-series sensor data.
-              </p>
+                {/* Visualization Features Card */}
+                <div className="rounded-2xl p-8" style={{ backgroundColor: '#F2F6F0', border: '1px solid #E1E8DD' }}>
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="bg-white p-2 rounded-lg shadow-sm">
+                      <BarChart2 className="w-6 h-6" style={{ color: '#5D7052' }} />
+                    </div>
+                    <h3 className="text-xl font-bold" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Comprehensive Visualizations</h3>
+                  </div>
+                  <ul className="space-y-4">
+                    <li className="flex items-start gap-3">
+                      <div className="mt-1.5 min-w-[6px] h-[6px] rounded-full" style={{ backgroundColor: '#5D7052' }}></div>
+                      <span style={{ color: '#786B61' }}><strong style={{ color: '#3D342B' }}>Time-domain plots</strong> for both raw and denoised signals</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="mt-1.5 min-w-[6px] h-[6px] rounded-full" style={{ backgroundColor: '#5D7052' }}></div>
+                      <span style={{ color: '#786B61' }}><strong style={{ color: '#3D342B' }}>FFT plots</strong> for raw signals, denoised signals, and wavelet coefficients</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="mt-1.5 min-w-[6px] h-[6px] rounded-full" style={{ backgroundColor: '#5D7052' }}></div>
+                      <span style={{ color: '#786B61' }}><strong style={{ color: '#3D342B' }}>Wavelet decomposition plots</strong> (approximation & detail coefficients)</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {/* Quote Block */}
+                <div className="p-8 rounded-2xl relative" style={{ backgroundColor: '#FAF7F5', borderLeft: '4px solid #BC6C4F' }}>
+                  <p className="text-xl font-medium italic leading-relaxed" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>
+                    "A powerful and user-friendly tool for researchers, engineers, and data analysts working with time-series sensor data."
+                  </p>
+                </div>
+
+                {/* Feature Cards Grid */}
+                <div className="grid grid-cols-2 gap-4 mt-8">
+                  <div className="p-6 rounded-xl text-center hover:shadow-lg transition-shadow" style={{ backgroundColor: '#FDFCF8', border: '1px solid #EBE5DF' }}>
+                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                      <Users className="w-6 h-6" style={{ color: '#BC6C4F' }} />
+                    </div>
+                    <h4 className="font-bold" style={{ color: '#3D342B' }}>Collaborative</h4>
+                  </div>
+                  <div className="p-6 rounded-xl text-center hover:shadow-lg transition-shadow" style={{ backgroundColor: '#FDFCF8', border: '1px solid #EBE5DF' }}>
+                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                      <Zap className="w-6 h-6" style={{ color: '#BC6C4F' }} />
+                    </div>
+                    <h4 className="font-bold" style={{ color: '#3D342B' }}>Real-time</h4>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Products Section */}
-      <div id="products" className="py-20 bg-slate-50 relative z-10">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16 max-w-3xl mx-auto">
-            <div className="inline-block mb-4">
-              <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">Our Products</span>
-            </div>
-            <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">Comprehensive Signal Analysis Tools</h2>
-            <p className="text-slate-600 text-lg">Powerful features for time-series sensor data processing and analysis</p>
+      <div id="products" className="py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-6">
+          {/* Badge and Heading */}
+          <div className="text-center mb-16">
+            <span className="px-4 py-1.5 rounded-full text-sm font-bold tracking-wide uppercase inline-block mb-6" style={{ backgroundColor: '#EBE5DF', color: '#786B61', fontFamily: 'var(--font-jakarta)' }}>Our Products</span>
+            <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Comprehensive Signal Analysis Tools</h2>
+            <p className="text-lg" style={{ color: '#786B61' }}>Powerful features for time-series sensor data processing and analysis</p>
           </div>
 
+          {/* Products Grid - 2x2 */}
           <div className="grid md:grid-cols-2 gap-8">
-            {/* Signal Processing Card */}
-            <Link href="/signal-processing" className="group">
-              <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200 h-full">
-                <div className="mb-6 inline-block p-4 bg-emerald-100 rounded-xl group-hover:bg-emerald-600 transition-colors">
-                  <Activity className="w-10 h-10 text-emerald-600 group-hover:text-white transition-colors" />
-                </div>
-                <h4 className="text-2xl font-bold mb-4 text-gray-800 group-hover:text-emerald-600 transition-colors">
-                  Signal Processing
-                </h4>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  Wavelet-based feature extraction with time-domain visualization, FFT analysis, and comprehensive statistical features.
-                </p>
-                <span className="text-emerald-600 font-semibold inline-flex items-center gap-2">
-                  Explore <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </span>
+            {/* Signal Processing */}
+            <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Activity className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
-            </Link>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#E8F3E9' }}>
+                <Activity className="w-8 h-8" style={{ color: '#4A5D3F' }} />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 group-hover:text-[#BC6C4F] transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Signal Processing</h3>
+              <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
+                Wavelet-based feature extraction with time-domain visualization, FFT analysis, and comprehensive statistical features.
+              </p>
+              <Link href="/signal-processing" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#4A5D3F' }}>
+                Explore
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
 
-            {/* Machine Learning Card */}
-            <Link href="/machine-learning" className="group">
-              <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200 h-full">
-                <div className="mb-6 inline-block p-4 bg-purple-100 rounded-xl group-hover:bg-purple-600 transition-colors">
-                  <Brain className="w-10 h-10 text-purple-600 group-hover:text-white transition-colors" />
-                </div>
-                <h4 className="text-2xl font-bold mb-4 text-gray-800 group-hover:text-purple-600 transition-colors">
-                  Machine Learning
-                </h4>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  SVM classification and prediction module with interactive visualizations and model training capabilities.
-                </p>
-                <span className="text-purple-600 font-semibold inline-flex items-center gap-2">
-                  Explore <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </span>
+            {/* Machine Learning */}
+            <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Cpu className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
-            </Link>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#F5F0FF' }}>
+                <Cpu className="w-8 h-8" style={{ color: '#8B5CF6' }} />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 group-hover:text-[#BC6C4F] transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Machine Learning</h3>
+              <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
+                SVM classification and prediction module with interactive visualizations and model training capabilities.
+              </p>
+              <Link href="/machine-learning" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#8B5CF6' }}>
+                Explore
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
 
-            {/* Data Analysis Card */}
-            <Link href="/data-analysis" className="group">
-              <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200 h-full">
-                <div className="mb-6 inline-block p-4 bg-blue-100 rounded-xl group-hover:bg-blue-600 transition-colors">
-                  <BarChart3 className="w-10 h-10 text-blue-600 group-hover:text-white transition-colors" />
-                </div>
-                <h4 className="text-2xl font-bold mb-4 text-gray-800 group-hover:text-blue-600 transition-colors">
-                  Data Analysis
-                </h4>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  Statistical analysis and visualization tools for comprehensive data exploration and insights.
-                </p>
-                <span className="text-blue-600 font-semibold inline-flex items-center gap-2">
-                  Explore <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </span>
+            {/* Data Analysis */}
+            <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                <BarChart2 className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
-            </Link>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#EFF6FF' }}>
+                <BarChart2 className="w-8 h-8" style={{ color: '#3B82F6' }} />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 group-hover:text-[#BC6C4F] transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Data Analysis</h3>
+              <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
+                Statistical analysis and visualization tools for comprehensive data exploration and insights.
+              </p>
+              <Link href="/data-analysis" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#3B82F6' }}>
+                Explore
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
 
-            {/* Data Acquisition Card */}
-            <Link href="/data-acquisition" className="group">
-              <div className="bg-white p-8 rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 border border-slate-200 h-full">
-                <div className="mb-6 inline-block p-4 bg-indigo-100 rounded-xl group-hover:bg-indigo-600 transition-colors">
-                  <Download className="w-10 h-10 text-indigo-600 group-hover:text-white transition-colors" />
-                </div>
-                <h4 className="text-2xl font-bold mb-4 text-gray-800 group-hover:text-indigo-600 transition-colors">
-                  Data Acquisition
-                </h4>
-                <p className="text-gray-600 mb-6 leading-relaxed">
-                  NI DAQ integration software for recording voltage, current, force, acceleration, and more.
-                </p>
-                <span className="text-indigo-600 font-semibold inline-flex items-center gap-2">
-                  Download <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </span>
+            {/* Data Acquisition */}
+            <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Database className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
-            </Link>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FFF4F0' }}>
+                <Database className="w-8 h-8" style={{ color: '#BC6C4F' }} />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 group-hover:text-[#BC6C4F] transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Data Acquisition</h3>
+              <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
+                NI DAQ integration software for recording voltage, current, force, acceleration, and more.
+              </p>
+              <Link href="/data-acquisition" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#BC6C4F' }}>
+                Download
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           </div>
         </div>
       </div>
