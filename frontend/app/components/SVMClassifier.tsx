@@ -311,12 +311,12 @@ export default function SVMClassifier() {
   };
 
   return (
-    <div id="svm-classification" className="py-20 bg-slate-50">
+    <div id="svm-classification" className="py-20" style={{ backgroundColor: '#FDFCF8' }}>
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-16 max-w-3xl mx-auto">
           <div className="inline-block mb-4">
-            <span className="bg-emerald-100 text-emerald-700 px-4 py-2 rounded-full text-sm font-semibold">
+            <span className="px-4 py-2 rounded-full text-sm font-semibold" style={{ backgroundColor: 'rgba(188, 108, 79, 0.1)', color: '#BC6C4F' }}>
               Machine Learning
             </span>
           </div>
@@ -324,7 +324,7 @@ export default function SVMClassifier() {
           {/* Model Type Selector */}
           <div className="mb-6 flex justify-center">
             <div className="w-full max-w-md">
-              <label className="block text-sm font-semibold text-slate-700 mb-2 text-center">
+              <label className="block text-sm font-semibold mb-2 text-center" style={{ color: '#3D342B' }}>
                 Select Model Type
               </label>
               <select
@@ -340,7 +340,10 @@ export default function SVMClassifier() {
                   setShowResults(false);
                   setError('');
                 }}
-                className="w-full px-6 py-3 border-2 border-slate-300 rounded-lg font-semibold text-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                className="w-full px-6 py-3 rounded-lg font-semibold text-lg focus:outline-none focus:ring-2 focus:border-transparent"
+                style={{ border: '2px solid #EBE5DF', color: '#3D342B' }}
+                onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px rgba(188, 108, 79, 0.2)'}
+                onBlur={(e) => e.target.style.boxShadow = 'none'}
               >
                 <option value="svm">SVM Classification</option>
                 <option value="ann">ANN Regression</option>
@@ -348,10 +351,10 @@ export default function SVMClassifier() {
             </div>
           </div>
 
-          <h2 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
+          <h2 className="text-4xl md:text-5xl font-bold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: '#3D342B' }}>
             {modelType === 'svm' ? 'SVM Classification' : 'ANN Regression'}
           </h2>
-          <p className="text-slate-600 text-lg">
+          <p className="text-lg" style={{ color: '#786B61' }}>
             {modelType === 'svm'
               ? 'Upload your feature dataset (xlsx/csv), select columns, and train Support Vector Machine models with automatic hyperparameter optimization'
               : 'Upload your dataset (xlsx/csv), train Artificial Neural Network models for regression, and solve inverse problems to find inputs for desired outputs'
@@ -1028,8 +1031,8 @@ export default function SVMClassifier() {
               {/* Step 1: Upload Dataset */}
               <div className="mb-8">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                    <span className="text-emerald-700 font-bold">1</span>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(147, 112, 219, 0.15)' }}>
+                    <span className="font-bold" style={{ color: '#9370DB' }}>1</span>
                   </div>
                   <h3 className="text-2xl font-bold text-gray-800">Upload Dataset</h3>
                 </div>
@@ -1045,17 +1048,20 @@ export default function SVMClassifier() {
                   />
                   <label
                     htmlFor="svm-file-upload"
-                    className="flex items-center justify-center gap-3 px-6 py-4 bg-emerald-600 text-white rounded-lg font-semibold cursor-pointer hover:bg-emerald-700 transition-all shadow-sm hover:shadow-md"
+                    className="flex items-center justify-center gap-3 px-6 py-4 text-white rounded-lg font-semibold cursor-pointer transition-all shadow-sm hover:shadow-md"
+                    style={{ background: 'linear-gradient(135deg, #BC6C4F, #A05A41)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                   >
                     <FileSpreadsheet className="w-5 h-5" />
                     Choose Dataset File (.xlsx or .csv)
                   </label>
 
                   {selectedFile && (
-                    <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+                    <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'rgba(188, 108, 79, 0.1)', border: '1px solid rgba(188, 108, 79, 0.2)' }}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                          <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
+                          <FileSpreadsheet className="w-5 h-5" style={{ color: '#BC6C4F' }} />
                           <span className="font-medium text-gray-800">{selectedFile.name}</span>
                           <span className="text-sm text-gray-500">
                             ({(selectedFile.size / 1024).toFixed(2)} KB)
@@ -1064,7 +1070,10 @@ export default function SVMClassifier() {
                         <button
                           onClick={handleUpload}
                           disabled={isUploading}
-                          className="px-6 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                          className="px-6 py-2 text-white rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                          style={{ background: 'linear-gradient(135deg, #BC6C4F, #A05A41)' }}
+                          onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.transform = 'translateY(-2px)')}
+                          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                         >
                           {isUploading ? (
                             <>
@@ -1128,8 +1137,8 @@ export default function SVMClassifier() {
               {uploadData && (
                 <div className="mb-8 animate-fade-in">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                      <span className="text-emerald-700 font-bold">2</span>
+                    <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(147, 112, 219, 0.15)' }}>
+                      <span className="font-bold" style={{ color: '#9370DB' }}>2</span>
                     </div>
                     <h3 className="text-2xl font-bold text-gray-800">Select Features & Target</h3>
                   </div>
@@ -1169,7 +1178,10 @@ export default function SVMClassifier() {
                       <select
                         value={featureCol1}
                         onChange={(e) => setFeatureCol1(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                        style={{ '--focus-color': 'rgba(188, 108, 79, 0.3)' } as React.CSSProperties}
+                        onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px rgba(188, 108, 79, 0.3)'}
+                        onBlur={(e) => e.target.style.boxShadow = 'none'}
                       >
                         <option value="">Select column...</option>
                         {uploadData.columns.map((col) => (
@@ -1185,7 +1197,10 @@ export default function SVMClassifier() {
                       <select
                         value={featureCol2}
                         onChange={(e) => setFeatureCol2(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                        style={{ '--focus-color': 'rgba(188, 108, 79, 0.3)' } as React.CSSProperties}
+                        onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px rgba(188, 108, 79, 0.3)'}
+                        onBlur={(e) => e.target.style.boxShadow = 'none'}
                       >
                         <option value="">Select column...</option>
                         {uploadData.columns.map((col) => (
@@ -1201,7 +1216,10 @@ export default function SVMClassifier() {
                       <select
                         value={targetCol}
                         onChange={(e) => setTargetCol(e.target.value)}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2"
+                        style={{ '--focus-color': 'rgba(188, 108, 79, 0.3)' } as React.CSSProperties}
+                        onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px rgba(188, 108, 79, 0.3)'}
+                        onBlur={(e) => e.target.style.boxShadow = 'none'}
                       >
                         <option value="">Select column...</option>
                         {uploadData.columns.map((col) => (
@@ -1302,7 +1320,10 @@ export default function SVMClassifier() {
                   <div className="ml-13 mt-6">
                     <button
                       onClick={() => setShowAdvanced(!showAdvanced)}
-                      className="text-emerald-600 font-semibold hover:text-emerald-700 flex items-center gap-2"
+                      className="font-semibold flex items-center gap-2 transition-colors"
+                      style={{ color: '#BC6C4F' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#A05A41'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = '#BC6C4F'}
                     >
                       {showAdvanced ? '▼' : '▶'} Advanced Configuration
                     </button>
@@ -1318,7 +1339,9 @@ export default function SVMClassifier() {
                               type="text"
                               value={testSizes}
                               onChange={(e) => setTestSizes(e.target.value)}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                              onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px rgba(188, 108, 79, 0.3)'}
+                              onBlur={(e) => e.target.style.boxShadow = 'none'}
                               placeholder="0.2,0.3"
                             />
                           </div>
@@ -1331,7 +1354,9 @@ export default function SVMClassifier() {
                               type="text"
                               value={kernels}
                               onChange={(e) => setKernels(e.target.value)}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                              onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px rgba(188, 108, 79, 0.3)'}
+                              onBlur={(e) => e.target.style.boxShadow = 'none'}
                               placeholder="poly,rbf,linear,sigmoid"
                             />
                           </div>
@@ -1344,7 +1369,9 @@ export default function SVMClassifier() {
                               type="text"
                               value={cValues}
                               onChange={(e) => setCValues(e.target.value)}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                              onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px rgba(188, 108, 79, 0.3)'}
+                              onBlur={(e) => e.target.style.boxShadow = 'none'}
                               placeholder="1,2,3,4,5,6,7,8,9"
                             />
                           </div>
@@ -1357,7 +1384,9 @@ export default function SVMClassifier() {
                               type="text"
                               value={gammaValues}
                               onChange={(e) => setGammaValues(e.target.value)}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                              onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px rgba(188, 108, 79, 0.3)'}
+                              onBlur={(e) => e.target.style.boxShadow = 'none'}
                               placeholder="0.00001,0.0001,0.001,0.01,0.1"
                             />
                           </div>
@@ -1372,7 +1401,9 @@ export default function SVMClassifier() {
                               onChange={(e) => setCvFolds(parseInt(e.target.value))}
                               min="2"
                               max="10"
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-600"
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none"
+                              onFocus={(e) => e.target.style.boxShadow = '0 0 0 2px rgba(188, 108, 79, 0.3)'}
+                              onBlur={(e) => e.target.style.boxShadow = 'none'}
                             />
                           </div>
                         </div>
@@ -1402,7 +1433,10 @@ export default function SVMClassifier() {
                         featureCol2 === targetCol ||
                         (uploadData.unique_values?.[targetCol]?.count || 0) < 2
                       }
-                      className="px-8 py-4 bg-emerald-600 text-white rounded-lg font-bold text-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex items-center gap-3"
+                      className="px-8 py-4 text-white rounded-lg font-bold text-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-sm hover:shadow-md flex items-center gap-3"
+                      style={{ background: 'linear-gradient(135deg, #BC6C4F, #A05A41)' }}
+                      onMouseEnter={(e) => !e.currentTarget.disabled && (e.currentTarget.style.transform = 'translateY(-2px)')}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                     >
                       {isTraining ? (
                         <>
@@ -1532,7 +1566,10 @@ export default function SVMClassifier() {
                     <div className="flex justify-center mt-6">
                       <button
                         onClick={() => downloadAllSVMPlots(trainResults.job_id)}
-                        className="bg-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-emerald-700 transition flex items-center gap-2 shadow-md hover:shadow-lg"
+                        className="text-white px-8 py-3 rounded-lg font-semibold transition flex items-center gap-2 shadow-md hover:shadow-lg"
+                        style={{ background: 'linear-gradient(135deg, #BC6C4F, #A05A41)' }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                       >
                         <Download className="w-5 h-5" />
                         Download All Plots ({Object.keys(trainResults.plots).length} plots as ZIP)

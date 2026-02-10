@@ -39,7 +39,7 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
   ) => {
     // Base styles
     const baseStyles = `
-      bg-white border border-slate-200 rounded-xl
+      bg-white rounded-xl
       transition-all duration-200
     `;
 
@@ -74,6 +74,10 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
           ${hoverStyles}
           ${className}
         `.replace(/\s+/g, ' ').trim()}
+        style={{
+          border: '1px solid #EBE5DF',
+          ...((props as any).style || {}),
+        }}
         {...props}
       >
         {children}
@@ -114,12 +118,12 @@ export const CardHeader = React.forwardRef<HTMLDivElement, CardHeaderProps>(
       >
         <div className="flex-1 min-w-0">
           {title && (
-            <h3 className="text-lg font-semibold text-slate-900 truncate">
+            <h3 className="text-lg font-semibold truncate" style={{ color: '#3D342B' }}>
               {title}
             </h3>
           )}
           {subtitle && (
-            <p className="text-sm text-slate-600 mt-1">
+            <p className="text-sm mt-1" style={{ color: '#786B61' }}>
               {subtitle}
             </p>
           )}
@@ -143,7 +147,11 @@ export const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
     return (
       <div
         ref={ref}
-        className={`pt-4 mt-4 border-t border-slate-200 ${className}`.trim()}
+        className={`pt-4 mt-4 border-t ${className}`.trim()}
+        style={{
+          borderColor: '#EBE5DF',
+          ...((props as any).style || {}),
+        }}
         {...props}
       >
         {children}

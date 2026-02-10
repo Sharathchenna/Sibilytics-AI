@@ -60,24 +60,24 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       inline-flex items-center justify-center gap-2
       font-medium rounded-lg
       transition-all duration-200
-      focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
       disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none
     `;
 
     // Variant styles
     const variantStyles = {
       primary: `
-        bg-emerald-600 text-white
-        hover:bg-emerald-700 active:bg-emerald-800
-        shadow-sm hover:shadow-md
+        text-white
+        hover:shadow-md active:shadow-sm
+        shadow-sm
       `,
       secondary: `
-        bg-transparent text-slate-700 border-2 border-slate-300
-        hover:border-slate-400 hover:bg-slate-50 active:bg-slate-100
+        bg-transparent border-2
+        hover:bg-[#F5F0EB] active:bg-[#EBE5DF]
       `,
       ghost: `
-        bg-transparent text-slate-700
-        hover:bg-slate-100 active:bg-slate-200
+        bg-transparent
+        hover:bg-[#F5F0EB] active:bg-[#EBE5DF]
       `,
     };
 
@@ -105,6 +105,19 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           ${widthStyle}
           ${className}
         `.replace(/\s+/g, ' ').trim()}
+        style={{
+          ...(variant === 'primary' && {
+            background: 'linear-gradient(135deg, #BC6C4F, #A05A41)',
+          }),
+          ...(variant === 'secondary' && {
+            color: '#3D342B',
+            borderColor: '#EBE5DF',
+          }),
+          ...(variant === 'ghost' && {
+            color: '#3D342B',
+          }),
+          ...((props as any).style || {}),
+        }}
         {...props}
       >
         {loading && <Loader2 className="w-4 h-4 animate-spin" />}

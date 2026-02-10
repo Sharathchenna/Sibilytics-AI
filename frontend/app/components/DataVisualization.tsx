@@ -388,7 +388,7 @@ export default function DataVisualization() {
   };
 
   return (
-    <div id="data-analysis" className="py-20 bg-white relative z-10">
+    <div id="data-analysis" className="py-20 relative z-10" style={{ backgroundColor: '#FDFCF8' }}>
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-16 max-w-3xl mx-auto">

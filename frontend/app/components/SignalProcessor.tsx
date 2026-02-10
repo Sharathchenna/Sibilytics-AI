@@ -290,7 +290,7 @@ export default function SignalProcessor() {
   };
 
   return (
-    <div id="signal-processing" className="py-20 bg-white">
+    <div id="signal-processing" className="py-20" style={{ backgroundColor: '#FDFCF8' }}>
       <div className="max-w-7xl mx-auto px-4">
         <div className="text-center mb-12 max-w-3xl mx-auto">
           <div className="inline-block mb-4">
@@ -358,8 +358,8 @@ export default function SignalProcessor() {
           {/* Upload Status */}
           {uploadStatus && !error && (
             <div className={`mt-6 p-4 rounded flex items-center gap-3 ${uploadStatus.includes('successfully') || uploadStatus.includes('complete')
-                ? 'bg-green-100 text-green-800'
-                : 'bg-blue-100 text-blue-800'
+              ? 'bg-green-100 text-green-800'
+              : 'bg-blue-100 text-blue-800'
               }`}>
               {isUploading || isProcessing ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
@@ -390,9 +390,9 @@ export default function SignalProcessor() {
                 <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden shadow-inner">
                   <div
                     className={`h-full flex items-center justify-center text-xs font-semibold text-white transition-all duration-300 ${uploadProgress.status === 'compressing' ? 'bg-yellow-500' :
-                        uploadProgress.status === 'uploading' ? 'bg-blue-600' :
-                          uploadProgress.status === 'complete' ? 'bg-green-600' :
-                            'bg-red-600'
+                      uploadProgress.status === 'uploading' ? 'bg-blue-600' :
+                        uploadProgress.status === 'complete' ? 'bg-green-600' :
+                          'bg-red-600'
                       }`}
                     style={{ width: `${uploadProgress.percentage}%` }}
                   >

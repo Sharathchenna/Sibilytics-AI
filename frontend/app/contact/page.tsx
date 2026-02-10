@@ -75,23 +75,30 @@ export default function ContactPage() {
     return (
         <PageLayout>
             {/* Hero Section */}
-            <div className="relative py-16 md:py-24" style={{ backgroundColor: '#FDFCF8' }}>
-                <div className="max-w-7xl mx-auto px-4">
+            <div className="relative py-16 md:py-24 overflow-hidden" style={{ backgroundColor: '#FDFCF8' }}>
+                {/* Animated Blob Background */}
+                <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+                    <div className="absolute -top-[10%] -right-[5%] w-[600px] h-[600px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" style={{ backgroundColor: '#F5E6D3' }}></div>
+                    <div className="absolute top-[30%] -left-[5%] w-[500px] h-[500px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000" style={{ backgroundColor: '#E0E7D6' }}></div>
+                    <div className="absolute -bottom-[10%] left-[30%] w-[500px] h-[500px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000" style={{ backgroundColor: '#F5F0EB' }}></div>
+                </div>
+
+                <div className="relative max-w-7xl mx-auto px-6 z-10">
                     <div className="text-center max-w-4xl mx-auto">
                         {/* Badge */}
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold mb-6 animate-fade-in" style={{ backgroundColor: '#DCE3D6', color: '#4A5D3F', fontFamily: 'var(--font-jakarta)' }}>
+                        <div className="inline-flex items-center gap-2 bg-white/80 border px-4 py-2 rounded-full text-sm font-semibold mb-8 backdrop-blur-sm animate-fade-in" style={{ borderColor: '#DCE3D6', color: '#4A5D3F', fontFamily: 'var(--font-jakarta)' }}>
                             <MessageSquare className="w-4 h-4" />
                             Contact Us
                         </div>
 
                         {/* Heading */}
                         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6 leading-tight animate-fade-in" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>
-                            Get in
-                            <span style={{ color: '#BC6C4F' }}> Touch</span>
+                            Get in <br />
+                            <span className="italic" style={{ color: '#BC6C4F' }}>Touch</span>
                         </h1>
 
                         {/* Description */}
-                        <p className="text-lg md:text-xl mb-8 leading-relaxed max-w-3xl mx-auto animate-fade-in" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
+                        <p className="text-lg md:text-xl mb-10 leading-relaxed max-w-3xl mx-auto font-light animate-fade-in" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
                             Have questions about our signal processing platform?
                             Send us a message or reach out directly via email.
                         </p>
