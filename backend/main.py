@@ -379,8 +379,8 @@ def safe_float(value):
     except (ValueError, TypeError):
         return 0.0
 
-def calculate_statistical_data(reconstructed_signal, noise, original_signal):
-    """Calculate statistical parameters from signal - CORRECTED PSNR calculation"""
+def calculate_statistical_data(reconstructed_signal, noise, fs):
+    """Calculate statistical parameters from signal - matching Streamlit logic"""
     params = {}
 
     try:
@@ -402,7 +402,7 @@ def calculate_statistical_data(reconstructed_signal, noise, original_signal):
         params["Skewness"] = safe_float(skew(reconstructed_signal))
         params["Kurtosis"] = safe_float(kurtosis(reconstructed_signal))
         params["Energy"] = safe_float(np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal))))
-        params["Power"] = safe_float(np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal))) / (2 * (1 / 20000)))
+        params["Power"] = safe_float(np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal))) / (2 * (1 / fs)))
 
         # Crest Factor
         params["Crest Factor"] = safe_float(np.max(reconstructed_signal) / rms_val) if rms_val != 0 else 0.0
@@ -423,17 +423,17 @@ def calculate_statistical_data(reconstructed_signal, noise, original_signal):
         else:
             params["Signal-to-Noise Ratio"] = 0.0
 
-        # Root Mean Square Error (comparing original vs reconstructed)
-        params["Root Mean Square Error"] = safe_float(np.sqrt(mean_squared_error(original_signal, reconstructed_signal)))
+        # Root Mean Square Error (comparing against zero reference - matching Streamlit)
+        params["Root Mean Square Error"] = safe_float(np.sqrt(mean_squared_error(np.zeros_like(reconstructed_signal), reconstructed_signal)))
 
-        # Maximum Error (comparing original vs reconstructed)
-        params["Maximum Error"] = safe_float(np.max(np.abs(original_signal - reconstructed_signal)))
+        # Maximum Error (comparing against zero reference - matching Streamlit)
+        params["Maximum Error"] = safe_float(np.max(np.abs(np.zeros_like(reconstructed_signal) - reconstructed_signal)))
 
-        # Mean Absolute Error (comparing original vs reconstructed)
-        params["Mean Absolute Error"] = safe_float(np.mean(np.abs(original_signal - reconstructed_signal)))
+        # Mean Absolute Error (comparing against zero reference - matching Streamlit)
+        params["Mean Absolute Error"] = safe_float(np.mean(np.abs(np.zeros_like(reconstructed_signal) - reconstructed_signal)))
 
-        # Peak Signal-to-Noise Ratio (CORRECTED: uses original signal max)
-        max_signal = np.max(np.abs(original_signal))
+        # Peak Signal-to-Noise Ratio (matching Streamlit - uses reconstructed signal max)
+        max_signal = np.max(np.abs(reconstructed_signal))
         rms_error = params["Root Mean Square Error"]
         if rms_error > 0 and max_signal > 0:
             params["Peak Signal-to-Noise Ratio"] = safe_float(20 * np.log10(max_signal / rms_error))
@@ -674,8 +674,12 @@ async def process_signal(
 
         noise = Signal - denoised_signal
 
-        # Calculate statistics (passing original Signal for PSNR calculation)
-        stats = calculate_statistical_data(denoised_signal, noise, Signal)
+        # Calculate sampling frequency (matching Streamlit)
+        tf = time_data[2] - time_data[1]
+        fs = 1 / tf
+
+        # Calculate statistics (matching Streamlit logic)
+        stats = calculate_statistical_data(denoised_signal, noise, fs)
         print(f"Statistics calculation took: {time.time() - t1:.2f}s")
 
         # Limit data size for response (downsample if too large)
@@ -753,11 +757,15 @@ async def process_signal_raw(
         print(f"Processing raw signal of length: {len(Signal)}")
         t1 = time.time()
 
+        # Calculate sampling frequency (matching Streamlit)
+        tf = time_data[2] - time_data[1]
+        fs = 1 / tf
+
         # Calculate noise as zero (no denoising applied)
         noise = np.zeros_like(Signal)
 
-        # Calculate statistics on RAW signal (Signal is both original and reconstructed)
-        stats = calculate_statistical_data(Signal, noise, Signal)
+        # Calculate statistics on RAW signal (matching Streamlit logic)
+        stats = calculate_statistical_data(Signal, noise, fs)
         print(f"Statistics calculation took: {time.time() - t1:.2f}s")
 
         # Extract filename from file or file_id
@@ -945,11 +953,13 @@ async def generate_fft_plot(
 
         traces = []
 
+        # Compute NFFT and frequency axis once (matching Streamlit)
+        NFFT = 2 ** int(np.ceil(np.log2(len(Signal))))
+        fft_freqs = fs * np.arange(0, NFFT // 2 + 1) / NFFT
+
         if fft_type == 'raw':
             # FFT with zero-padding and normalization (matching Streamlit)
-            NFFT = 2 ** int(np.ceil(np.log2(len(Signal))))
-            fft_data = np.abs(np.fft.fft(Signal, NFFT)) / len(Signal)
-            fft_freqs = fs * np.arange(0, NFFT // 2 + 1) / NFFT
+            fft_data = 2 * np.abs(np.fft.fft(Signal, NFFT)) / len(Signal)
             fft_data = fft_data[:len(fft_freqs)]
             x_down, y_down = lttb_downsample(fft_freqs, fft_data, target_points=15000)
             traces.append({
@@ -959,9 +969,9 @@ async def generate_fft_plot(
                 "color": "#1f77b4"
             })
         elif fft_type == 'denoised':
-            # FFT without normalization for denoised (matching Streamlit)
-            fft_data = np.abs(np.fft.fft(denoised_signal))[:len(Signal) // 2]
-            fft_freqs = fs * np.arange(0, len(fft_data)) / len(Signal)
+            # FFT with zero-padding and normalization (matching Streamlit)
+            fft_data = 2 * np.abs(np.fft.fft(denoised_signal, NFFT)) / len(Signal)
+            fft_data = fft_data[:len(fft_freqs)]
             x_down, y_down = lttb_downsample(fft_freqs, fft_data, target_points=15000)
             traces.append({
                 "x": x_down.tolist(),
@@ -970,9 +980,9 @@ async def generate_fft_plot(
                 "color": "#ff7f0e"
             })
         elif fft_type == 'approx':
-            # FFT of approximation coefficients (matching Streamlit)
-            fft_data = np.abs(np.fft.fft(coeffs[0]))[:len(coeffs[0]) // 2]
-            fft_freqs = np.linspace(100, fs / 2, len(fft_data))
+            # FFT of approx coefficients with NFFT zero-padding (matching Streamlit)
+            fft_data = np.abs(np.fft.fft(coeffs[0], NFFT)) / len(Signal)
+            fft_data = fft_data[:len(fft_freqs)]
             x_down, y_down = lttb_downsample(fft_freqs, fft_data, target_points=15000)
             traces.append({
                 "x": x_down.tolist(),
@@ -981,10 +991,10 @@ async def generate_fft_plot(
                 "color": "#2ca02c"
             })
         else:  # detail
-            # FFT of detail coefficients (matching Streamlit)
+            # FFT of detail coefficients with NFFT zero-padding (matching Streamlit)
             for i, coeff in enumerate(coeffs[1:]):
-                fft_data = np.abs(np.fft.fft(coeff))[:len(coeff) // 2]
-                fft_freqs = np.linspace(100, fs / 2, len(fft_data))
+                fft_data = np.abs(np.fft.fft(coeff, NFFT)) / len(Signal)
+                fft_data = fft_data[:len(fft_freqs)]
                 x_down, y_down = lttb_downsample(fft_freqs, fft_data, target_points=5000)  # Less per trace
                 traces.append({
                     "x": x_down.tolist(),
@@ -1309,10 +1319,10 @@ async def generate_all_plots(
             }
         }
 
-        # 3b. FFT of Denoised Signal (matching Streamlit - no normalization for denoised)
-        fft_denoised = 2*np.abs(np.fft.fft(denoised_signal))[:len(Signal) // 2]
-        fft_freqs_denoised = fs * np.arange(0, len(fft_denoised)) / len(Signal)  # Proper frequency array
-        x_down_denoised, y_down_denoised = lttb_downsample(fft_freqs_denoised, fft_denoised, target_points=15000)
+        # 3b. FFT of Denoised Signal (matching Streamlit - same NFFT and normalization as raw)
+        fft_denoised = 2*np.abs(np.fft.fft(denoised_signal, NFFT)) / len(Signal)
+        fft_denoised = fft_denoised[:len(fft_freqs_raw)]
+        x_down_denoised, y_down_denoised = lttb_downsample(fft_freqs_raw, fft_denoised, target_points=15000)
 
         plots['fft_denoised'] = {
             "type": "scatter",
@@ -1331,10 +1341,10 @@ async def generate_all_plots(
             }
         }
 
-        # 3c. FFT of Approx Coefficients (matching Streamlit)
-        fft_approx = np.abs(np.fft.fft(coeffs[0]))[:len(coeffs[0]) // 2]
-        fft_freqs_approx = np.linspace(100, fs / 2, len(fft_approx))  # Streamlit uses linspace for coeffs
-        x_down_approx, y_down_approx = lttb_downsample(fft_freqs_approx, fft_approx, target_points=15000)
+        # 3c. FFT of Approx Coefficients (matching Streamlit - NFFT zero-padding, normalized)
+        fft_approx = np.abs(np.fft.fft(coeffs[0], NFFT)) / len(Signal)
+        fft_approx = fft_approx[:len(fft_freqs_raw)]
+        x_down_approx, y_down_approx = lttb_downsample(fft_freqs_raw, fft_approx, target_points=15000)
 
         plots['fft_approx'] = {
             "type": "scatter",
@@ -1353,12 +1363,12 @@ async def generate_all_plots(
             }
         }
 
-        # 3d. FFT of Detail Coefficients (matching Streamlit)
+        # 3d. FFT of Detail Coefficients (matching Streamlit - NFFT zero-padding, normalized)
         detail_traces = []
         for i, coeff in enumerate(coeffs[1:]):
-            fft_detail = np.abs(np.fft.fft(coeff))[:len(coeff) // 2]
-            fft_freqs_detail = np.linspace(100, fs / 2, len(fft_detail))  # Streamlit uses linspace for coeffs
-            x_down_detail, y_down_detail = lttb_downsample(fft_freqs_detail, fft_detail, target_points=5000)
+            fft_detail = np.abs(np.fft.fft(coeff, NFFT)) / len(Signal)
+            fft_detail = fft_detail[:len(fft_freqs_raw)]
+            x_down_detail, y_down_detail = lttb_downsample(fft_freqs_raw, fft_detail, target_points=5000)
             detail_traces.append({
                 "x": x_down_detail.tolist(),
                 "y": y_down_detail.tolist(),
