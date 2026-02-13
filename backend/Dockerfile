@@ -8,6 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY main.py .
 COPY data_viz.py .
 COPY ann_router.py .
+COPY regression_router.py .
+COPY regression/ ./regression/
 
 EXPOSE 8000
 
