@@ -379,8 +379,8 @@ def safe_float(value):
     except (ValueError, TypeError):
         return 0.0
 
-def calculate_statistical_data(reconstructed_signal, noise, original_signal):
-    """Calculate statistical parameters from signal - CORRECTED PSNR calculation"""
+def calculate_statistical_data(reconstructed_signal, noise, fs):
+    """Calculate statistical parameters from signal - Using Streamlit logic with error handling"""
     params = {}
 
     try:
@@ -402,7 +402,7 @@ def calculate_statistical_data(reconstructed_signal, noise, original_signal):
         params["Skewness"] = safe_float(skew(reconstructed_signal))
         params["Kurtosis"] = safe_float(kurtosis(reconstructed_signal))
         params["Energy"] = safe_float(np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal))))
-        params["Power"] = safe_float(np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal))) / (2 * (1 / 20000)))
+        params["Power"] = safe_float(np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal))) / (2 * (1 / fs)))
 
         # Crest Factor
         params["Crest Factor"] = safe_float(np.max(reconstructed_signal) / rms_val) if rms_val != 0 else 0.0
@@ -423,17 +423,17 @@ def calculate_statistical_data(reconstructed_signal, noise, original_signal):
         else:
             params["Signal-to-Noise Ratio"] = 0.0
 
-        # Root Mean Square Error (comparing original vs reconstructed)
-        params["Root Mean Square Error"] = safe_float(np.sqrt(mean_squared_error(original_signal, reconstructed_signal)))
+        # Root Mean Square Error (Streamlit logic: comparing zeros vs reconstructed)
+        params["Root Mean Square Error"] = safe_float(np.sqrt(mean_squared_error(np.zeros_like(reconstructed_signal), reconstructed_signal)))
 
-        # Maximum Error (comparing original vs reconstructed)
-        params["Maximum Error"] = safe_float(np.max(np.abs(original_signal - reconstructed_signal)))
+        # Maximum Error (Streamlit logic: comparing zeros vs reconstructed)
+        params["Maximum Error"] = safe_float(np.max(np.abs(np.zeros_like(reconstructed_signal) - reconstructed_signal)))
 
-        # Mean Absolute Error (comparing original vs reconstructed)
-        params["Mean Absolute Error"] = safe_float(np.mean(np.abs(original_signal - reconstructed_signal)))
+        # Mean Absolute Error (Streamlit logic: comparing zeros vs reconstructed)
+        params["Mean Absolute Error"] = safe_float(np.mean(np.abs(np.zeros_like(reconstructed_signal) - reconstructed_signal)))
 
-        # Peak Signal-to-Noise Ratio (CORRECTED: uses original signal max)
-        max_signal = np.max(np.abs(original_signal))
+        # Peak Signal-to-Noise Ratio (Streamlit logic: using zeros as reference)
+        max_signal = np.max(np.zeros_like(reconstructed_signal))
         rms_error = params["Root Mean Square Error"]
         if rms_error > 0 and max_signal > 0:
             params["Peak Signal-to-Noise Ratio"] = safe_float(20 * np.log10(max_signal / rms_error))
@@ -674,8 +674,12 @@ async def process_signal(
 
         noise = Signal - denoised_signal
 
-        # Calculate statistics (passing original Signal for PSNR calculation)
-        stats = calculate_statistical_data(denoised_signal, noise, Signal)
+        # Calculate sampling frequency from time data
+        tf = time_data[2] - time_data[1] if len(time_data) > 2 else time_data[1] - time_data[0]
+        fs = 1 / tf
+
+        # Calculate statistics (using Streamlit logic with fs)
+        stats = calculate_statistical_data(denoised_signal, noise, fs)
         print(f"Statistics calculation took: {time.time() - t1:.2f}s")
 
         # Limit data size for response (downsample if too large)
@@ -756,8 +760,12 @@ async def process_signal_raw(
         # Calculate noise as zero (no denoising applied)
         noise = np.zeros_like(Signal)
 
-        # Calculate statistics on RAW signal (Signal is both original and reconstructed)
-        stats = calculate_statistical_data(Signal, noise, Signal)
+        # Calculate sampling frequency from time data
+        tf = time_data[2] - time_data[1] if len(time_data) > 2 else time_data[1] - time_data[0]
+        fs = 1 / tf
+
+        # Calculate statistics on RAW signal (using Streamlit logic with fs)
+        stats = calculate_statistical_data(Signal, noise, fs)
         print(f"Statistics calculation took: {time.time() - t1:.2f}s")
 
         # Extract filename from file or file_id

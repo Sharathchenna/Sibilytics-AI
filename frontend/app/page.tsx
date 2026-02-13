@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
+import ScrollIndicator from "./components/ScrollIndicator";
 import { ArrowRight, Activity, BarChart3, Download, Brain, BarChart2, Cpu, Users, Zap, Database, TrendingUp } from "lucide-react";
 
 export default function Home() {
@@ -38,12 +39,13 @@ export default function Home() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-blue-50/30 to-white relative">
+    <div className="min-h-screen bg-gradient-to-b from-[#FDFCF8] via-[#FDFCF8] to-white relative">
       {/* Translucent Logo Watermark Overlay */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
         <Image
           src="/logo-new.jpg"
-          alt="Sybilytics Background"
+          alt=""
+          aria-hidden="true"
           width={800}
           height={800}
           className="w-[60%] max-w-4xl h-auto object-contain opacity-[0.05]"
@@ -66,7 +68,7 @@ export default function Home() {
         <div className="relative max-w-7xl mx-auto px-6 text-center z-10">
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-white/80 border px-4 py-1.5 rounded-full shadow-sm mb-8 backdrop-blur-sm" style={{ borderColor: '#EBE5DF' }}>
-            <Activity className="w-4 h-4" style={{ color: '#BC6C4F' }} />
+            <Activity className="w-4 h-4" style={{ color: '#BC6C4F' }} aria-hidden="true" />
             <span className="text-sm font-semibold tracking-wide uppercase" style={{ color: '#786B61' }}>Advanced AI-Powered Signal Processing</span>
           </div>
 
@@ -86,9 +88,10 @@ export default function Home() {
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link href="/signal-processing"
-              className="w-full sm:w-auto bg-[#BC6C4F] hover:bg-[#A05A41] text-white px-8 py-4 rounded-full text-base font-semibold transition-all shadow-xl hover:shadow-orange-900/20 flex items-center justify-center gap-2 cursor-pointer">
+              className="w-full sm:w-auto bg-[#BC6C4F] hover:bg-[#A05A41] text-white px-8 py-4 rounded-full text-base font-semibold transition-all shadow-xl hover:shadow-orange-900/20 flex items-center justify-center gap-2 cursor-pointer"
+              aria-label="Try signal processing now">
               Try It Now
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="w-5 h-5" aria-hidden="true" />
             </Link>
             <a href="#products"
               className="w-full sm:w-auto bg-white text-[#3D342B] hover:bg-[#F5F0EB] px-8 py-4 rounded-full text-base font-semibold transition-all shadow-md flex items-center justify-center" style={{ border: '1px solid #EBE5DF' }}>
@@ -97,7 +100,12 @@ export default function Home() {
           </div>
 
           {/* Glass Card Mockup - Desktop Only */}
-          <div className="mt-20 relative mx-auto max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-white/40 backdrop-blur-sm p-4 hidden md:block transform hover:scale-[1.01] transition-transform duration-700" style={{ border: '1px solid rgba(255,255,255,0.5)' }}>
+          <div 
+            className="mt-20 relative mx-auto max-w-5xl rounded-2xl overflow-hidden shadow-2xl bg-white/40 backdrop-blur-sm p-4 hidden md:block transform hover:scale-[1.01] transition-transform duration-700" 
+            style={{ border: '1px solid rgba(255,255,255,0.5)' }}
+            aria-label="Platform dashboard preview"
+            role="img"
+          >
             <div className="rounded-xl bg-white overflow-hidden shadow-inner" style={{ border: '1px solid rgba(235,229,223,0.5)' }}>
               {/* Browser Chrome */}
               <div className="h-12 flex items-center px-4 gap-2" style={{ backgroundColor: '#FDFCF8', borderBottom: '1px solid #EBE5DF' }}>
@@ -130,7 +138,7 @@ export default function Home() {
                 </div>
                 <div className="col-span-9 bg-white rounded-xl shadow-sm p-6 relative overflow-hidden" style={{ border: '1px solid rgba(235,229,223,0.3)' }}>
                   {/* Signal Visualization */}
-                  <svg className="w-full h-full" style={{ color: 'rgba(188,108,79,0.2)' }} preserveAspectRatio="none" viewBox="0 0 100 100">
+                  <svg className="w-full h-full" style={{ color: 'rgba(188,108,79,0.2)' }} preserveAspectRatio="none" viewBox="0 0 100 100" aria-hidden="true">
                     <path d="M0,50 Q10,20 20,50 T40,50 T60,50 T80,50 T100,50" fill="none" stroke="currentColor" strokeWidth="2"></path>
                     <path d="M0,50 Q15,80 30,50 T60,50 T90,50" fill="none" stroke="currentColor" strokeWidth="2" opacity="0.5"></path>
                   </svg>
@@ -149,7 +157,7 @@ export default function Home() {
       </div>
 
       {/* About Section - Earth Toned */}
-      <div className="py-24 relative" style={{ backgroundColor: '#F5F0EB' }}>
+      <div className="py-24 relative" style={{ backgroundColor: '#FDFCF8' }}>
         <div className="max-w-7xl mx-auto px-6">
           {/* Badge and Heading */}
           <div className="text-center mb-16">
@@ -175,7 +183,7 @@ export default function Home() {
                 {/* Visualization Features Card */}
                 <div className="rounded-2xl p-8" style={{ backgroundColor: '#F2F6F0', border: '1px solid #E1E8DD' }}>
                   <div className="flex items-center gap-3 mb-6">
-                    <div className="bg-white p-2 rounded-lg shadow-sm">
+                    <div className="bg-white p-2 rounded-lg shadow-sm" aria-hidden="true">
                       <BarChart2 className="w-6 h-6" style={{ color: '#5D7052' }} />
                     </div>
                     <h3 className="text-xl font-bold" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Comprehensive Visualizations</h3>
@@ -208,13 +216,13 @@ export default function Home() {
                 {/* Feature Cards Grid */}
                 <div className="grid grid-cols-2 gap-4 mt-8">
                   <div className="p-6 rounded-xl text-center hover:shadow-lg transition-shadow" style={{ backgroundColor: '#FDFCF8', border: '1px solid #EBE5DF' }}>
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm" aria-hidden="true">
                       <Users className="w-6 h-6" style={{ color: '#BC6C4F' }} />
                     </div>
                     <h4 className="font-bold" style={{ color: '#3D342B' }}>Collaborative</h4>
                   </div>
                   <div className="p-6 rounded-xl text-center hover:shadow-lg transition-shadow" style={{ backgroundColor: '#FDFCF8', border: '1px solid #EBE5DF' }}>
-                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm">
+                    <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-sm" aria-hidden="true">
                       <Zap className="w-6 h-6" style={{ color: '#BC6C4F' }} />
                     </div>
                     <h4 className="font-bold" style={{ color: '#3D342B' }}>Real-time</h4>
@@ -225,6 +233,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Scroll Indicator */}
+      <ScrollIndicator message="Discover our products" />
 
       {/* Products Section */}
       <div id="products" className="py-24 bg-white">
@@ -240,73 +251,73 @@ export default function Home() {
           <div className="grid md:grid-cols-2 gap-8">
             {/* Signal Processing */}
             <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
                 <Activity className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#E8F3E9' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#E8F3E9' }} aria-hidden="true">
                 <Activity className="w-8 h-8" style={{ color: '#4A5D3F' }} />
               </div>
               <h3 className="text-2xl font-bold mb-3 group-hover:text-[#BC6C4F] transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Signal Processing</h3>
               <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
                 Wavelet-based feature extraction with time-domain visualization, FFT analysis, and comprehensive statistical features.
               </p>
-              <Link href="/signal-processing" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#4A5D3F' }}>
+              <Link href="/signal-processing" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#4A5D3F' }} aria-label="Explore signal processing">
                 Explore
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
               </Link>
             </div>
 
             {/* Machine Learning */}
             <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
                 <Cpu className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#F5F0FF' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#F5F0FF' }} aria-hidden="true">
                 <Cpu className="w-8 h-8" style={{ color: '#8B5CF6' }} />
               </div>
               <h3 className="text-2xl font-bold mb-3 group-hover:text-[#BC6C4F] transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Machine Learning</h3>
               <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
                 SVM classification and prediction module with interactive visualizations and model training capabilities.
               </p>
-              <Link href="/machine-learning" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#8B5CF6' }}>
+              <Link href="/machine-learning" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#8B5CF6' }} aria-label="Explore machine learning">
                 Explore
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
               </Link>
             </div>
 
             {/* Data Analysis */}
             <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
                 <BarChart2 className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#EFF6FF' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#EFF6FF' }} aria-hidden="true">
                 <BarChart2 className="w-8 h-8" style={{ color: '#3B82F6' }} />
               </div>
               <h3 className="text-2xl font-bold mb-3 group-hover:text-[#BC6C4F] transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Data Analysis</h3>
               <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
                 Statistical analysis and visualization tools for comprehensive data exploration and insights.
               </p>
-              <Link href="/data-analysis" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#3B82F6' }}>
+              <Link href="/data-analysis" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#3B82F6' }} aria-label="Explore data analysis">
                 Explore
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
               </Link>
             </div>
 
             {/* Data Acquisition */}
             <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
                 <Database className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FFF4F0' }}>
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FFF4F0' }} aria-hidden="true">
                 <Database className="w-8 h-8" style={{ color: '#BC6C4F' }} />
               </div>
               <h3 className="text-2xl font-bold mb-3 group-hover:text-[#BC6C4F] transition-colors" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>Data Acquisition</h3>
               <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
                 NI DAQ integration software for recording voltage, current, force, acceleration, and more.
               </p>
-              <Link href="/data-acquisition" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#BC6C4F' }}>
+              <Link href="/data-acquisition" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#BC6C4F' }} aria-label="Download data acquisition software">
                 Download
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
               </Link>
             </div>
           </div>

@@ -35,22 +35,21 @@ export default function Footer({ visitorCount }: FooterProps) {
                     <p className="text-sm leading-relaxed font-jakarta" style={{ color: '#D6CFC7', opacity: 0.8 }}>
                     Advanced signal processing platform for wavelet-based feature extraction from sensor signals. A powerful tool for researchers, engineers, and data analysts working with time-series data.
                 </p>        
-                    <div className="flex items-center gap-2 text-sm cursor-pointer">
-                        <Mail className="w-4 h-4" style={{ color: '#D6CFC7' }} />
+                    <div className="flex items-center gap-2 text-sm">
                         <a 
                             href="mailto:sibilyticsai@gmail.com"
-                            className="transition-colors"
+                            className="flex items-center gap-2 transition-colors cursor-pointer"
                             style={{ color: '#D6CFC7' }}
+                            aria-label="Email us at sibilyticsai@gmail.com"
                             onMouseEnter={(e) => {
                                 e.currentTarget.style.color = '#BC6C4F';
-                                e.currentTarget.previousElementSibling && ((e.currentTarget.previousElementSibling as HTMLElement).style.color = '#BC6C4F');
                             }}
                             onMouseLeave={(e) => {
                                 e.currentTarget.style.color = '#D6CFC7';
-                                e.currentTarget.previousElementSibling && ((e.currentTarget.previousElementSibling as HTMLElement).style.color = '#D6CFC7');
                             }}
                         >
-                            sibilyticsai@gmail.com
+                            <Mail className="w-4 h-4" aria-hidden="true" />
+                            <span>sibilyticsai@gmail.com</span>
                         </a>
                     </div>
                 </div>
@@ -81,16 +80,16 @@ export default function Footer({ visitorCount }: FooterProps) {
                         © {new Date().getFullYear()} Sibilytics AI. All rights reserved.
                     </div>
                     {visitorCount !== null && visitorCount !== undefined && (
-                        <div className="flex items-center gap-2 text-xs opacity-50 bg-white/5 px-3 py-1 rounded-full">
-                            <Activity className="w-3 h-3" />
+                        <div className="flex items-center gap-2 text-xs opacity-50 bg-white/5 px-3 py-1 rounded-full" role="status" aria-label={`${visitorCount.toLocaleString()} unique visitors`}>
+                            <Activity className="w-3 h-3" aria-hidden="true" />
                             <span style={{ fontFamily: 'var(--font-jakarta)' }}>
                                 Unique Visitors: <span className="text-[#BC6C4F] font-mono">{visitorCount.toLocaleString()}</span>
                             </span>
                         </div>
                     )}
                     {visitorCount === null || visitorCount === undefined ? (
-                        <div className="flex items-center gap-2 text-xs opacity-50 bg-white/5 px-3 py-1 rounded-full">
-                            <Activity className="w-3 h-3" />
+                        <div className="flex items-center gap-2 text-xs opacity-50 bg-white/5 px-3 py-1 rounded-full" role="status" aria-label="630 unique visitors">
+                            <Activity className="w-3 h-3" aria-hidden="true" />
                             <span style={{ fontFamily: 'var(--font-jakarta)' }}>
                                 Unique Visitors: <span className="text-[#BC6C4F] font-mono">630</span>
                             </span>

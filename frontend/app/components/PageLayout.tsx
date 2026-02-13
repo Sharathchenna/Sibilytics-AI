@@ -10,12 +10,13 @@ interface PageLayoutProps {
 
 export default function PageLayout({ children }: PageLayoutProps) {
     return (
-        <div className="min-h-screen bg-gradient-to-b from-emerald-50 via-emerald-50/50 to-white relative">
+        <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom, #FDFCF8 0%, #FDFCF8 40%, #ffffff 100%)' }}>
             {/* Translucent Logo Watermark Overlay */}
-            <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
+            <div className="fixed inset-0 flex items-center justify-center pointer-events-none overflow-hidden" style={{ zIndex: -1 }}>
                 <Image
                     src="/logo-new.jpg"
-                    alt="Sybilytics Background"
+                    alt=""
+                    aria-hidden="true"
                     width={800}
                     height={800}
                     className="w-[60%] max-w-4xl h-auto object-contain opacity-[0.05]"

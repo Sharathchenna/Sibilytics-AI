@@ -1,18 +1,39 @@
 'use client';
-import PageLayout from '../components/PageLayout';
 import SVMClassifier from '../components/SVMClassifier';
 import { Brain, Target, TrendingUp, Zap } from 'lucide-react';
+import Image from 'next/image';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
+import ScrollIndicator from '../components/ScrollIndicator';
 
 export default function MachineLearningPage() {
     return (
-        <PageLayout>
+        <div className="min-h-screen relative" style={{ background: 'linear-gradient(to bottom, #F5EFFF 0%, #F5EFFF 60%, #ffffff 100%)' }}>
+            {/* Translucent Logo Watermark Overlay */}
+            <div className="fixed inset-0 flex items-center justify-center pointer-events-none overflow-hidden" style={{ zIndex: -1 }}>
+                <Image
+                    src="/logo-new.jpg"
+                    alt=""
+                    aria-hidden="true"
+                    width={800}
+                    height={800}
+                    className="w-[60%] max-w-4xl h-auto object-contain opacity-[0.05]"
+                    priority
+                />
+            </div>
+
+            {/* Navigation */}
+            <Navbar />
+
+            {/* Main Content */}
+            <main className="relative z-10 pt-20">
             {/* Hero Section */}
-            <div className="relative py-16 md:py-24 overflow-hidden" style={{ backgroundColor: '#F5F0EB' }}>
+            <div className="relative py-16 md:py-24 overflow-hidden" style={{ backgroundColor: '#F5EFFF' }}>
                 {/* Animated Blob Background */}
                 <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                    <div className="absolute -top-[10%] -left-[5%] w-[600px] h-[600px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" style={{ backgroundColor: '#F5F0FF' }}></div>
-                    <div className="absolute top-[30%] -right-[5%] w-[500px] h-[500px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000" style={{ backgroundColor: '#FDFCF8' }}></div>
-                    <div className="absolute -bottom-[10%] left-[30%] w-[500px] h-[500px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000" style={{ backgroundColor: '#E8E0F0' }}></div>
+                    <div className="absolute -top-[10%] -left-[5%] w-[600px] h-[600px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob" style={{ backgroundColor: '#E5D5FF' }}></div>
+                    <div className="absolute top-[30%] -right-[5%] w-[500px] h-[500px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-2000" style={{ backgroundColor: '#F0E5FF' }}></div>
+                    <div className="absolute -bottom-[10%] left-[30%] w-[500px] h-[500px] rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-blob animation-delay-4000" style={{ backgroundColor: '#EADCFF' }}></div>
                 </div>
 
                 <div className="relative max-w-7xl mx-auto px-6 z-10">
@@ -56,6 +77,13 @@ export default function MachineLearningPage() {
 
             {/* SVM Classifier Component */}
             <SVMClassifier />
-        </PageLayout>
+            </main>
+
+            {/* Scroll Indicator */}
+            <ScrollIndicator message="Try the classifier below" />
+
+            {/* Footer */}
+            <Footer />
+        </div>
     );
 }

@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronDown, Menu, X, Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/browser';
 
 interface DropdownItem {
@@ -39,6 +40,15 @@ export default function Navbar() {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const supabase = useMemo(() => createClient(), []);
+    const pathname = usePathname();
+
+    // Reset state on route change
+    useEffect(() => {
+        setMobileMenuOpen(false);
+        setActiveDropdown(null);
+        setScrolled(false);
+        window.scrollTo(0, 0);
+    }, [pathname]);
 
     useEffect(() => {
         const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -97,14 +107,14 @@ export default function Navbar() {
                 className="max-w-6xl mx-auto rounded-full px-4 transition-all duration-500 ease-out"
                 style={{
                     background: scrolled
-                        ? 'rgba(255, 255, 255, 0.3)'
-                        : 'rgba(255, 255, 255, 0.15)',
-                    backdropFilter: 'blur(24px) saturate(1.6)',
-                    WebkitBackdropFilter: 'blur(24px) saturate(1.6)',
+                        ? 'rgba(255, 255, 255, 0.85)'
+                        : 'rgba(255, 255, 255, 0.75)',
+                    backdropFilter: 'blur(16px) saturate(1.3)',
+                    WebkitBackdropFilter: 'blur(16px) saturate(1.3)',
                     boxShadow: scrolled
-                        ? '0 8px 32px rgba(0, 0, 0, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.4)'
-                        : '0 4px 20px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                        ? '0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6)'
+                        : '0 4px 20px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
+                    border: '1px solid rgba(255, 255, 255, 0.6)',
                 }}
             >
                 <div className="flex justify-between items-center py-3.5 px-4">
@@ -134,6 +144,9 @@ export default function Navbar() {
                                         <button
                                             className="flex items-center gap-1 px-4 py-2 rounded-full font-medium transition-all text-sm"
                                             style={{ color: '#3D342B' }}
+                                            aria-haspopup="true"
+                                            aria-expanded={activeDropdown === item.label}
+                                            aria-label={`${item.label} menu`}
                                             onMouseEnter={(e) => {
                                                 e.currentTarget.style.color = '#BC6C4F';
                                                 e.currentTarget.style.background = 'rgba(188, 108, 79, 0.08)';
@@ -146,12 +159,15 @@ export default function Navbar() {
                                             {item.label}
                                             <ChevronDown
                                                 className={`w-4 h-4 transition-transform duration-200 ${activeDropdown === item.label ? 'rotate-180' : ''}`}
+                                                aria-hidden="true"
                                             />
                                         </button>
 
                                         {/* Dropdown */}
                                         {activeDropdown === item.label && (
                                             <div
+                                                role="menu"
+                                                aria-label={`${item.label} submenu`}
                                                 className="absolute top-full left-0 mt-3 w-72 rounded-2xl overflow-hidden animate-fade-in"
                                                 style={{
                                                     background: 'rgba(255, 255, 255, 0.7)',
@@ -166,6 +182,7 @@ export default function Navbar() {
                                                         <Link
                                                             key={dropdownItem.label}
                                                             href={dropdownItem.href}
+                                                            role="menuitem"
                                                             className="flex flex-col gap-1 p-3 rounded-xl transition-all group"
                                                             style={{ color: '#2C2420' }}
                                                             onClick={() => setActiveDropdown(null)}
@@ -238,7 +255,9 @@ export default function Navbar() {
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                         className="md:hidden p-2 rounded-full transition-colors"
                         style={{ color: '#2C2420' }}
-                        aria-label="Toggle menu"
+                        aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+                        aria-expanded={mobileMenuOpen}
+                        aria-controls="mobile-navigation"
                     >
                         {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
                     </button>
@@ -247,6 +266,7 @@ export default function Navbar() {
                 {/* Mobile Navigation */}
                 {mobileMenuOpen && (
                     <div
+                        id="mobile-navigation"
                         className="md:hidden animate-fade-in rounded-b-3xl overflow-hidden"
                         style={{ borderTop: '1px solid rgba(61, 52, 43, 0.1)' }}
                     >
@@ -298,8 +318,13 @@ export default function Navbar() {
                             )}
 
                             <div className="flex items-center justify-center gap-4 pt-3">
-                                <a href="mailto:sibilyticsai@gmail.com" className="flex items-center gap-2 transition-opacity hover:opacity-100" style={{ color: '#786B61' }}>
-                                    <Mail className="w-4 h-4" />
+                                <a 
+                                    href="mailto:sibilyticsai@gmail.com" 
+                                    className="flex items-center gap-2 transition-opacity hover:opacity-100" 
+                                    style={{ color: '#786B61' }}
+                                    aria-label="Email us at sibilyticsai@gmail.com"
+                                >
+                                    <Mail className="w-4 h-4" aria-hidden="true" />
                                     <span className="text-sm">Email Us</span>
                                 </a>
                             </div>
