@@ -43,6 +43,9 @@ from data_viz import router as data_viz_router
 # Import ANN router
 from ann_router import router as ann_router
 
+# Import Regression router
+from regression_router import router as regression_router
+
 # File cache directory
 CACHE_DIR = Path("/tmp/upload_cache")
 CACHE_DIR.mkdir(exist_ok=True)
@@ -368,6 +371,9 @@ app.include_router(data_viz_router)
 
 # Include ANN router
 app.include_router(ann_router)
+
+# Include Regression router
+app.include_router(regression_router)
 
 def safe_float(value):
     """Convert value to float, handling inf and nan"""
@@ -2469,4 +2475,3 @@ async def download_all_svm_plots(job_id: str = Form(...)):
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
-

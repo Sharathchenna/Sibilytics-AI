@@ -1,6 +1,7 @@
 'use client';
 import PageLayout from '../components/PageLayout';
 import SVMClassifier from '../components/SVMClassifier';
+import RegressionWorkbench from '../components/RegressionWorkbench';
 import { Brain, Target, TrendingUp, Zap } from 'lucide-react';
 
 export default function MachineLearningPage() {
@@ -49,6 +50,9 @@ export default function MachineLearningPage() {
 
             {/* SVM Classifier Component */}
             <SVMClassifier />
+
+            {/* Regression Workbench */}
+            <RegressionWorkbench />
         </PageLayout>
     );
 }
