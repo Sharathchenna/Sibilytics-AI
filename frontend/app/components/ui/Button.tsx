@@ -112,13 +112,13 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           ...(variant === 'secondary' && {
             color: '#3D342B',
             borderColor: '#EBE5DF',
-          }),
-          ...(variant === 'ghost' && {
-            color: '#3D342B',
-          }),
-          ...((props as any).style || {}),
-        }}
-        {...props}
+        }),
+        ...(variant === 'ghost' && {
+          color: '#3D342B',
+        }),
+        ...((props as React.ButtonHTMLAttributes<HTMLButtonElement>).style || {}),
+      }}
+      {...props}
       >
         {loading && <Loader2 className="w-4 h-4 animate-spin" />}
         {!loading && leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}

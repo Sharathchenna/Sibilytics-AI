@@ -2,7 +2,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { ChevronDown, Menu, X, Mail, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { createClient } from '@/lib/supabase/browser';
 
@@ -25,6 +24,7 @@ const navItems: NavItem[] = [
         dropdown: [
             { label: 'Signal Processing', href: '/signal-processing', description: 'Wavelet-based feature extraction' },
             { label: 'Machine Learning', href: '/machine-learning', description: 'SVM classification & prediction' },
+            { label: 'Regression Analysis', href: '/regression', description: 'Curve fitting & regression models' },
             { label: 'Data Analysis', href: '/data-analysis', description: 'Statistical analysis & visualization' },
             { label: 'Data Acquisition', href: '/data-acquisition', description: 'NI DAQ integration software' },
         ],
@@ -107,10 +107,10 @@ export default function Navbar() {
                 className="max-w-6xl mx-auto rounded-full px-4 transition-all duration-500 ease-out"
                 style={{
                     background: scrolled
-                        ? 'rgba(255, 255, 255, 0.85)'
-                        : 'rgba(255, 255, 255, 0.75)',
-                    backdropFilter: 'blur(16px) saturate(1.3)',
-                    WebkitBackdropFilter: 'blur(16px) saturate(1.3)',
+                        ? 'rgba(255, 255, 255, 0.9)'
+                        : 'rgba(255, 255, 255, 0.8)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
                     boxShadow: scrolled
                         ? '0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.6)'
                         : '0 4px 20px rgba(0, 0, 0, 0.05), inset 0 1px 0 rgba(255, 255, 255, 0.5)',
@@ -126,7 +126,7 @@ export default function Navbar() {
                             </svg>
                         </div>
                         <span className="text-xl font-semibold tracking-tight font-sans" style={{ color: '#2C2420' }}>
-                            sibilytics<span style={{ color: '#BC6C4F' }}>.ai</span>
+                            sibilytics<span style={{ color: '#BC6C4F' }}>-ai</span>
                         </span>
                     </Link>
 

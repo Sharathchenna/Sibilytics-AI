@@ -29,7 +29,7 @@ export default function Footer({ visitorCount }: FooterProps) {
                             </svg>
                         </div>
                         <span className="text-xl font-semibold text-white tracking-tight" style={{ fontFamily: 'var(--font-jakarta)' }}>
-                            sibilytics<span className="text-[#BC6C4F]">.ai</span>
+                            sibilytics<span className="text-[#BC6C4F]">-ai</span>
                         </span>
                     </div>
                     <p className="text-sm leading-relaxed font-jakarta" style={{ color: '#D6CFC7', opacity: 0.8 }}>
@@ -77,7 +77,7 @@ export default function Footer({ visitorCount }: FooterProps) {
 
                 <div className="flex flex-col justify-end lg:items-end">
                     <div className="text-sm opacity-60 mb-2" style={{ fontFamily: 'var(--font-jakarta)' }}>
-                        © {new Date().getFullYear()} Sibilytics AI. All rights reserved.
+                        © {new Date().getFullYear()} Sibilytics-AI. All rights reserved.
                     </div>
                     {visitorCount !== null && visitorCount !== undefined && (
                         <div className="flex items-center gap-2 text-xs opacity-50 bg-white/5 px-3 py-1 rounded-full" role="status" aria-label={`${visitorCount.toLocaleString()} unique visitors`}>

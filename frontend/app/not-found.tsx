@@ -19,7 +19,7 @@ export default function NotFound() {
           Page <span className="italic" style={{ color: '#BC6C4F' }}>Not Found</span>
         </h2>
         <p className="text-lg md:text-xl mb-10 max-w-md mx-auto font-light animate-fade-in" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
-          The page you're looking for doesn't exist or has been moved.
+          The page you&apos;re looking for doesn&apos;t exist or has been moved.
         </p>
         <Link
           href="/"

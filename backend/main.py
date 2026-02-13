@@ -43,6 +43,9 @@ from data_viz import router as data_viz_router
 # Import ANN router
 from ann_router import router as ann_router
 
+# Import regression router
+from regression_router import router as regression_router
+
 # File cache directory
 CACHE_DIR = Path("/tmp/upload_cache")
 CACHE_DIR.mkdir(exist_ok=True)
@@ -369,6 +372,9 @@ app.include_router(data_viz_router)
 # Include ANN router
 app.include_router(ann_router)
 
+# Include regression router
+app.include_router(regression_router)
+
 def safe_float(value):
     """Convert value to float, handling inf and nan"""
     try:
@@ -487,13 +493,13 @@ async def options_download_all_stats():
 
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
-    """Upload and parse signal file"""
+    """Upload and parse signal file - supports multiple formats"""
     try:
         # Read file content
         contents = await file.read()
 
-        # Parse as CSV with tab delimiter
-        df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
+        # Use robust parsing logic that handles multiple formats
+        df = parse_file_content(contents, file.filename)
 
         # Generate file ID for caching
         file_hash = hashlib.sha256(contents).hexdigest()[:16]
@@ -503,16 +509,20 @@ async def upload_file(file: UploadFile = File(...)):
         # Save to cache
         cache_path.write_bytes(contents)
 
+        # Get column names - they should be strings now after parsing
+        columns = [str(col) for col in df.columns.tolist()]
+
         # Return column names and sample data
         return {
             "filename": file.filename,
             "file_id": file_id,
-            "columns": df.columns.tolist(),  # Return column names as array
+            "columns": columns,  # Return column names as array
             "rows": df.shape[0],
             "sample_data": df.head(10).to_dict('records'),  # First 10 rows as sample
             "status": "success"
         }
     except Exception as e:
+        print(f"[UPLOAD ERROR] {str(e)}")
         raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
 
 @app.post("/api/upload-with-progress")

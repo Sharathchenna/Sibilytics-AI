@@ -1,11 +1,10 @@
 'use client';
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollIndicator from "./components/ScrollIndicator";
-import { ArrowRight, Activity, BarChart3, Download, Brain, BarChart2, Cpu, Users, Zap, Database, TrendingUp } from "lucide-react";
+import { ArrowRight, Activity, BarChart2, Cpu, Users, Zap, Database } from "lucide-react";
 
 export default function Home() {
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
@@ -40,19 +39,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#FDFCF8] via-[#FDFCF8] to-white relative">
-      {/* Translucent Logo Watermark Overlay */}
-      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0 overflow-hidden">
-        <Image
-          src="/logo-new.jpg"
-          alt=""
-          aria-hidden="true"
-          width={800}
-          height={800}
-          className="w-[60%] max-w-4xl h-auto object-contain opacity-[0.05]"
-          priority
-        />
-      </div>
-
       {/* Navigation */}
       <Navbar />
 
@@ -209,7 +195,7 @@ export default function Home() {
                 {/* Quote Block */}
                 <div className="p-8 rounded-2xl relative" style={{ backgroundColor: '#FAF7F5', borderLeft: '4px solid #BC6C4F' }}>
                   <p className="text-xl font-medium italic leading-relaxed" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>
-                    "A powerful and user-friendly tool for researchers, engineers, and data analysts working with time-series sensor data."
+                    &quot;A powerful and user-friendly tool for researchers, engineers, and data analysts working with time-series sensor data.&quot;
                   </p>
                 </div>
 

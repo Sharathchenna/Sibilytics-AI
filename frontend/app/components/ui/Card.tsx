@@ -72,16 +72,16 @@ export const Card = React.forwardRef<HTMLDivElement, CardProps>(
           ${elevationStyles[elevation]}
           ${paddingStyles[padding]}
           ${hoverStyles}
-          ${className}
-        `.replace(/\s+/g, ' ').trim()}
-        style={{
-          border: '1px solid #EBE5DF',
-          ...((props as any).style || {}),
-        }}
-        {...props}
-      >
-        {children}
-      </div>
+        ${className}
+      `.replace(/\s+/g, ' ').trim()}
+      style={{
+        border: '1px solid #EBE5DF',
+        ...((props as React.HTMLAttributes<HTMLDivElement>).style || {}),
+      }}
+      {...props}
+    >
+      {children}
+    </div>
     );
   }
 );
@@ -146,16 +146,16 @@ export const CardFooter = React.forwardRef<HTMLDivElement, CardFooterProps>(
   ({ className = '', children, ...props }, ref) => {
     return (
       <div
-        ref={ref}
-        className={`pt-4 mt-4 border-t ${className}`.trim()}
-        style={{
-          borderColor: '#EBE5DF',
-          ...((props as any).style || {}),
-        }}
-        {...props}
-      >
-        {children}
-      </div>
+      ref={ref}
+      className={`pt-4 mt-4 border-t ${className}`.trim()}
+      style={{
+        borderColor: '#EBE5DF',
+        ...((props as React.HTMLAttributes<HTMLDivElement>).style || {}),
+      }}
+      {...props}
+    >
+      {children}
+    </div>
     );
   }
 );

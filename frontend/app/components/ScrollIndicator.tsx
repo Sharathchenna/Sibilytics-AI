@@ -1,5 +1,5 @@
 'use client';
-import { ChevronDown, ChevronsDown } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface ScrollIndicatorProps {
