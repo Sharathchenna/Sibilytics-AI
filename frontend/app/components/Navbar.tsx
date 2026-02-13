@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { ChevronDown, Menu, X, Mail, ArrowRight } from 'lucide-react';
+import { ChevronDown, Menu, X, Mail, ArrowRight, User, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/browser';
 
 interface DropdownItem {
@@ -35,12 +35,15 @@ const navItems: NavItem[] = [
 export default function Navbar() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+    const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const profileDropdownRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const supabase = useMemo(() => createClient(), []);
     const pathname = usePathname();
+    const router = useRouter();
 
     // Reset state on route change
     useEffect(() => {
@@ -60,6 +63,9 @@ export default function Navbar() {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
                 setActiveDropdown(null);
+            }
+            if (profileDropdownRef.current && !profileDropdownRef.current.contains(event.target as Node)) {
+                setProfileDropdownOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -99,6 +105,12 @@ export default function Navbar() {
         timeoutRef.current = setTimeout(() => {
             setActiveDropdown(null);
         }, 150);
+    };
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        setProfileDropdownOpen(false);
+        router.push('/');
     };
 
     return (
@@ -226,8 +238,8 @@ export default function Navbar() {
                         {/* Divider */}
                         <div className="h-5 w-px mx-2" style={{ background: 'rgba(61, 52, 43, 0.15)' }}></div>
 
-                        {/* CTA Button */}
-                        {!isAuthenticated && (
+                        {/* CTA Button or Profile */}
+                        {!isAuthenticated ? (
                             <Link
                                 href="/signup"
                                 className="inline-flex items-center gap-2 px-5 py-2 rounded-full font-semibold text-sm transition-all cursor-pointer"
@@ -247,6 +259,61 @@ export default function Navbar() {
                             >
                                 Try It Free
                             </Link>
+                        ) : (
+                            <div className="relative" ref={profileDropdownRef}>
+                                <button
+                                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                                    className="p-2 rounded-full transition-all"
+                                    style={{
+                                        background: profileDropdownOpen ? 'rgba(188, 108, 79, 0.1)' : 'transparent',
+                                        color: '#BC6C4F',
+                                    }}
+                                    onMouseEnter={(e) => {
+                                        if (!profileDropdownOpen) {
+                                            e.currentTarget.style.background = 'rgba(188, 108, 79, 0.08)';
+                                        }
+                                    }}
+                                    onMouseLeave={(e) => {
+                                        if (!profileDropdownOpen) {
+                                            e.currentTarget.style.background = 'transparent';
+                                        }
+                                    }}
+                                    aria-label="Profile menu"
+                                    aria-expanded={profileDropdownOpen}
+                                >
+                                    <User className="w-5 h-5" />
+                                </button>
+
+                                {/* Profile Dropdown */}
+                                {profileDropdownOpen && (
+                                    <div
+                                        className="absolute right-0 mt-2 w-48 rounded-2xl shadow-xl overflow-hidden animate-fade-in"
+                                        style={{
+                                            background: 'rgba(255, 255, 255, 0.98)',
+                                            backdropFilter: 'blur(16px)',
+                                            border: '1px solid rgba(61, 52, 43, 0.1)',
+                                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.12)',
+                                        }}
+                                    >
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center gap-3 px-4 py-3 transition-colors text-left"
+                                            style={{ color: '#3D342B' }}
+                                            onMouseEnter={(e) => {
+                                                e.currentTarget.style.background = 'rgba(188, 108, 79, 0.08)';
+                                                e.currentTarget.style.color = '#BC6C4F';
+                                            }}
+                                            onMouseLeave={(e) => {
+                                                e.currentTarget.style.background = 'transparent';
+                                                e.currentTarget.style.color = '#3D342B';
+                                            }}
+                                        >
+                                            <LogOut className="w-4 h-4" />
+                                            <span className="font-medium text-sm">Logout</span>
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
                         )}
                     </div>
 
@@ -303,8 +370,8 @@ export default function Navbar() {
                                 </div>
                             ))}
 
-                            {!isAuthenticated && (
-                                <div className="pt-4" style={{ borderTop: '1px solid rgba(61, 52, 43, 0.1)' }}>
+                            <div className="pt-4" style={{ borderTop: '1px solid rgba(61, 52, 43, 0.1)' }}>
+                                {!isAuthenticated ? (
                                     <Link
                                         href="/signup"
                                         onClick={() => setMobileMenuOpen(false)}
@@ -314,8 +381,21 @@ export default function Navbar() {
                                         Try It Free
                                         <ArrowRight className="w-4 h-4" />
                                     </Link>
-                                </div>
-                            )}
+                                ) : (
+                                    <button
+                                        onClick={handleLogout}
+                                        className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-full font-semibold transition-colors"
+                                        style={{ 
+                                            background: 'rgba(188, 108, 79, 0.1)',
+                                            color: '#BC6C4F',
+                                            border: '1px solid rgba(188, 108, 79, 0.2)'
+                                        }}
+                                    >
+                                        <LogOut className="w-4 h-4" />
+                                        Logout
+                                    </button>
+                                )}
+                            </div>
 
                             <div className="flex items-center justify-center gap-4 pt-3">
                                 <a 
