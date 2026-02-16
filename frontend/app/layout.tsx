@@ -32,11 +32,10 @@ export const metadata: Metadata = {
   authors: [{ name: "Sibilytics AI - BITS Pilani" }],
   icons: {
     icon: [
-      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/dop-logo.svg', type: 'image/svg+xml' },
     ],
-    apple: '/logo-new.jpg',
-    shortcut: '/favicon-32x32.png',
+    apple: '/dop-logo.svg',
+    shortcut: '/dop-logo.svg',
   },
   openGraph: {
     title: "Sibilytics AI - Wavelet-Based Feature Extraction Platform",
@@ -46,7 +45,7 @@ export const metadata: Metadata = {
     siteName: "Sibilytics AI",
     images: [
       {
-        url: '/logo-new.jpg',
+        url: '/dop-logo.svg',
         width: 1200,
         height: 630,
         alt: 'Sibilytics AI - Signal Processing Platform',
@@ -57,7 +56,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Sibilytics AI - Signal Processing Platform",
     description: "Wavelet-based feature extraction from sensor signals with comprehensive visualization tools.",
-    images: ['/logo-new.jpg'],
+    images: ['/dop-logo.svg'],
   },
 };
 

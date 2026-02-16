@@ -1,6 +1,7 @@
 'use client';
 import { Mail, Activity } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface FooterProps {
     visitorCount?: number | null;
@@ -22,12 +23,8 @@ export default function Footer({ visitorCount }: FooterProps) {
 
             <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 lg:grid-cols-4 gap-12 relative z-10">
                 <div className="space-y-6">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-[#BC6C4F] to-orange-300 flex items-center justify-center">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M12 2v20M2 12h20M4.93 4.93l14.14 14.14M19.07 4.93L4.93 19.07"></path>
-                            </svg>
-                        </div>
+                    <div className="flex items-center gap-1">
+                        <Image src="/dop-logo.svg" alt="DOP logo" width={56} height={38} className="w-14 h-9 object-contain" />
                         <span className="text-xl font-semibold text-white tracking-tight" style={{ fontFamily: 'var(--font-jakarta)' }}>
                             sibilytics<span className="text-[#BC6C4F]">-ai</span>
                         </span>

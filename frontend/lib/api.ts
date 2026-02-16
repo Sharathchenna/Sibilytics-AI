@@ -26,7 +26,7 @@ const getAccessToken = async (): Promise<string | null> => {
   }
 };
 
-const fetchWithAuth: typeof fetch = async (input, init) => {
+const fetchWithAuth: typeof globalThis.fetch = async (input, init) => {
   const headers = new Headers(init?.headers ?? {});
   const accessToken = await getAccessToken();
   if (accessToken) {

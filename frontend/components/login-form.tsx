@@ -1,7 +1,6 @@
 "use client"
 
 import Link from "next/link"
-import { GalleryVerticalEnd } from "lucide-react"
 import { useMemo, useState } from "react"
 
 import { cn } from "@/lib/utils"
@@ -79,15 +78,6 @@ export function LoginForm({
       <form onSubmit={handleMagicLink}>
         <FieldGroup>
           <div className="flex flex-col items-center gap-2 text-center">
-            <a
-              href="#"
-              className="flex flex-col items-center gap-2 font-medium"
-            >
-              <div className="flex size-8 items-center justify-center rounded-md">
-                <GalleryVerticalEnd className="size-6" />
-              </div>
-              <span className="sr-only">Acme Inc.</span>
-            </a>
             <h1 className="text-xl font-bold">Welcome to Sibilytics AI</h1>
             <FieldDescription>
               Don&apos;t have an account? <Link href="/signup">Sign up</Link>

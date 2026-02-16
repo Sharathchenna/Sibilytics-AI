@@ -3,6 +3,8 @@ services:
     build: .
     container_name: backend-api
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       - ENV=production
       - SUPABASE_URL=${SUPABASE_URL}

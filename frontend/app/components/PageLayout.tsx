@@ -14,12 +14,12 @@ export default function PageLayout({ children }: PageLayoutProps) {
             {/* Translucent Logo Watermark Overlay */}
             <div className="fixed inset-0 flex items-center justify-center pointer-events-none overflow-hidden" style={{ zIndex: -1 }}>
                 <Image
-                    src="/logo-new.jpg"
+                    src="/dop-logo.svg"
                     alt=""
                     aria-hidden="true"
-                    width={800}
-                    height={800}
-                    className="w-[60%] max-w-4xl h-auto object-contain opacity-[0.05]"
+                    width={1232}
+                    height={832}
+                    className="w-[75%] max-w-6xl h-auto object-contain opacity-[0.06]"
                     priority
                 />
             </div>
