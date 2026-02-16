@@ -61,6 +61,25 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 - **API Docs**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
+### 6. Supabase Auth for Protected APIs
+
+Set Supabase auth variables before starting the server:
+
+```bash
+export SUPABASE_URL=https://your-project-ref.supabase.co
+export SUPABASE_ANON_KEY=your-supabase-anon-key
+export SUPABASE_AUTH_TIMEOUT_SECONDS=5
+```
+
+Use an access token from Supabase Auth:
+
+```bash
+curl http://localhost:8000/auth/me \
+  -H "Authorization: Bearer <access_token>"
+```
+
+Most API routes now require `Authorization: Bearer <access_token>`.
+
 ---
 
 ## Frontend Setup

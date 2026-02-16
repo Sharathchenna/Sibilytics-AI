@@ -81,6 +81,21 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
+### 3.5 Configure Supabase Auth (Required)
+```bash
+# macOS/Linux
+export SUPABASE_URL=https://your-project-ref.supabase.co
+export SUPABASE_ANON_KEY=your-supabase-anon-key
+export SUPABASE_AUTH_TIMEOUT_SECONDS=5
+
+# Windows (PowerShell)
+# $env:SUPABASE_URL="https://your-project-ref.supabase.co"
+# $env:SUPABASE_ANON_KEY="your-supabase-anon-key"
+# $env:SUPABASE_AUTH_TIMEOUT_SECONDS="5"
+```
+
+The backend verifies bearer tokens with Supabase on each request.
+
 ### 4. Run the Server
 ```bash
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
@@ -94,6 +109,15 @@ curl http://localhost:8000
 # Expected response:
 # {"message": "Feature Extraction API", "status": "healthy"}
 ```
+
+### 6. Login with Supabase and Use Token
+```bash
+# Use an access token issued by Supabase Auth
+curl http://localhost:8000/auth/me \
+  -H "Authorization: Bearer <access_token>"
+```
+
+All API endpoints except `/` and docs endpoints require a Bearer token.
 
 The API is now running at: **http://localhost:8000**
 

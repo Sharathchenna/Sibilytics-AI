@@ -236,8 +236,8 @@ export default function Home() {
           {/* Products Grid - 2x2 */}
           <div className="grid md:grid-cols-2 gap-8">
             {/* Signal Processing */}
-            <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
+            <Link href="/signal-processing" className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300 block cursor-pointer" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }} aria-label="Explore signal processing">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none" aria-hidden="true">
                 <Activity className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#E8F3E9' }} aria-hidden="true">
@@ -247,15 +247,15 @@ export default function Home() {
               <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
                 Wavelet-based feature extraction with time-domain visualization, FFT analysis, and comprehensive statistical features.
               </p>
-              <Link href="/signal-processing" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#4A5D3F' }} aria-label="Explore signal processing">
+              <span className="inline-flex items-center font-semibold transition-colors" style={{ color: '#4A5D3F' }}>
                 Explore
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-              </Link>
-            </div>
+              </span>
+            </Link>
 
             {/* Machine Learning */}
-            <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
+            <Link href="/machine-learning" className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300 block cursor-pointer" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }} aria-label="Explore machine learning">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none" aria-hidden="true">
                 <Cpu className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#F5F0FF' }} aria-hidden="true">
@@ -265,15 +265,15 @@ export default function Home() {
               <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
                 SVM classification and prediction module with interactive visualizations and model training capabilities.
               </p>
-              <Link href="/machine-learning" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#8B5CF6' }} aria-label="Explore machine learning">
+              <span className="inline-flex items-center font-semibold transition-colors" style={{ color: '#8B5CF6' }}>
                 Explore
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-              </Link>
-            </div>
+              </span>
+            </Link>
 
             {/* Data Analysis */}
-            <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
+            <Link href="/data-analysis" className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300 block cursor-pointer" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }} aria-label="Explore data analysis">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none" aria-hidden="true">
                 <BarChart2 className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#EFF6FF' }} aria-hidden="true">
@@ -283,15 +283,15 @@ export default function Home() {
               <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
                 Statistical analysis and visualization tools for comprehensive data exploration and insights.
               </p>
-              <Link href="/data-analysis" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#3B82F6' }} aria-label="Explore data analysis">
+              <span className="inline-flex items-center font-semibold transition-colors" style={{ color: '#3B82F6' }}>
                 Explore
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-              </Link>
-            </div>
+              </span>
+            </Link>
 
             {/* Data Acquisition */}
-            <div className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }}>
-              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity" aria-hidden="true">
+            <Link href="/data-acquisition" className="group rounded-2xl p-10 relative overflow-hidden hover:shadow-2xl transition-all duration-300 block cursor-pointer" style={{ backgroundColor: '#FDFCF8', border: '1px solid #F3EFEA' }} aria-label="Download data acquisition software">
+              <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none" aria-hidden="true">
                 <Database className="w-32 h-32" style={{ color: '#BC6C4F' }} />
               </div>
               <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform duration-300" style={{ backgroundColor: '#FFF4F0' }} aria-hidden="true">
@@ -301,11 +301,11 @@ export default function Home() {
               <p className="mb-8 leading-relaxed" style={{ color: '#786B61' }}>
                 NI DAQ integration software for recording voltage, current, force, acceleration, and more.
               </p>
-              <Link href="/data-acquisition" className="inline-flex items-center font-semibold transition-colors" style={{ color: '#BC6C4F' }} aria-label="Download data acquisition software">
+              <span className="inline-flex items-center font-semibold transition-colors" style={{ color: '#BC6C4F' }}>
                 Download
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" aria-hidden="true" />
-              </Link>
-            </div>
+              </span>
+            </Link>
           </div>
         </div>
       </div>

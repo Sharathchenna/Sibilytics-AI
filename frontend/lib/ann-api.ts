@@ -2,6 +2,8 @@
  * ANN (Artificial Neural Network) API functions
  */
 
+import { createClient } from '@/lib/supabase/browser';
+
 const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
@@ -13,6 +15,33 @@ const getApiBaseUrl = (): string => {
 };
 
 const API_BASE_URL = getApiBaseUrl();
+
+const nativeFetch = globalThis.fetch.bind(globalThis);
+
+const getAccessToken = async (): Promise<string | null> => {
+  try {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+};
+
+const fetchWithAuth: typeof fetch = async (input, init) => {
+  const headers = new Headers(init?.headers ?? {});
+  const accessToken = await getAccessToken();
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+
+  return nativeFetch(input, {
+    ...init,
+    headers,
+  });
+};
+
+const fetch = fetchWithAuth;
 
 export interface ANNUploadResponse {
   file_id: string;

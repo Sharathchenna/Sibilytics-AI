@@ -1,5 +1,7 @@
 // API Configuration and helper functions
 // Automatically detect environment: use localhost:8000 for local development, production URL otherwise
+import { createClient } from '@/lib/supabase/browser';
+
 const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
@@ -11,6 +13,33 @@ const getApiBaseUrl = (): string => {
 };
 
 export const API_BASE_URL = getApiBaseUrl();
+
+const nativeFetch = globalThis.fetch.bind(globalThis);
+
+const getAccessToken = async (): Promise<string | null> => {
+  try {
+    const supabase = createClient();
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+};
+
+const fetchWithAuth: typeof fetch = async (input, init) => {
+  const headers = new Headers(init?.headers ?? {});
+  const accessToken = await getAccessToken();
+  if (accessToken) {
+    headers.set('Authorization', `Bearer ${accessToken}`);
+  }
+
+  return nativeFetch(input, {
+    ...init,
+    headers,
+  });
+};
+
+const fetch = fetchWithAuth;
 
 // Compress file using gzip
 export const compressFile = async (file: File): Promise<File> => {
@@ -146,6 +175,12 @@ export const uploadFile = async (
 
       // Open and send request
       xhr.open('POST', `${API_BASE_URL}/api/upload-with-progress`);
+
+      const accessToken = await getAccessToken();
+      if (accessToken) {
+        xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`);
+      }
+
       xhr.send(formData);
     } catch (error) {
       if (onProgress) {
@@ -973,4 +1008,3 @@ export interface EncodeCategoricalResponse {
   new_columns: string[];
   status: string;
 }
-

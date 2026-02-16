@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile, HTTPException, Form
+from fastapi import FastAPI, File, UploadFile, HTTPException, Form, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, StreamingResponse, HTMLResponse
 import pandas as pd
@@ -9,7 +9,7 @@ from scipy.stats import skew, kurtosis, entropy
 from sklearn.metrics import mean_squared_error
 from io import StringIO, BytesIO
 import base64
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 import json
 import math
 from functools import lru_cache
@@ -20,18 +20,26 @@ from pathlib import Path
 import gzip
 import openpyxl
 import zipfile
+import urllib.request
+import urllib.error
 
 # SVM Classification imports
 import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend for server
+
+matplotlib.use("Agg")  # Use non-interactive backend for server
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.svm import SVC, LinearSVC
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split, GridSearchCV, RandomizedSearchCV
 from sklearn.metrics import (
-    roc_auc_score, roc_curve, accuracy_score, precision_score,
-    recall_score, f1_score, confusion_matrix
+    roc_auc_score,
+    roc_curve,
+    accuracy_score,
+    precision_score,
+    recall_score,
+    f1_score,
+    confusion_matrix,
 )
 from sklearn.preprocessing import label_binarize
 import pickle
@@ -54,20 +62,45 @@ CACHE_DIR.mkdir(exist_ok=True)
 MODEL_DIR = Path("/tmp/svm_models")
 MODEL_DIR.mkdir(exist_ok=True)
 
-def detect_signal_file_header(content_str: str, delimiter: str = ',') -> bool:
+
+def load_env_file() -> None:
+    """Load key=value pairs from backend/.env if present."""
+    env_path = Path(__file__).resolve().parent / ".env"
+    if not env_path.exists():
+        return
+
+    try:
+        for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+            line = raw_line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+
+            key, value = line.split("=", 1)
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key:
+                os.environ.setdefault(key, value)
+    except Exception as error:
+        print(f"[ENV] Failed to load .env file: {error}")
+
+
+load_env_file()
+
+
+def detect_signal_file_header(content_str: str, delimiter: str = ",") -> bool:
     """
     Detect if a signal file (CSV/TXT/LVM) has a header row.
     Uses the same robust logic as SVM classification header detection.
     """
     try:
-        lines = content_str.strip().split('\n')
+        lines = content_str.strip().split("\n")
         if len(lines) < 2:
             return False  # Single-line files assumed to have no header
-        
+
         first_row = lines[0].split(delimiter)
         second_row = lines[1].split(delimiter) if len(lines) > 1 else []
         third_row = lines[2].split(delimiter) if len(lines) > 2 else []
-        
+
         # Helper function to check if a cell is numeric
         def is_numeric(cell):
             cell = cell.strip()
@@ -78,40 +111,47 @@ def detect_signal_file_header(content_str: str, delimiter: str = ',') -> bool:
                 return True
             except ValueError:
                 return False
-        
+
         # Count numeric cells in each row
         first_row_numeric_count = sum(1 for cell in first_row if is_numeric(cell))
         second_row_numeric_count = sum(1 for cell in second_row if is_numeric(cell))
-        third_row_numeric_count = sum(1 for cell in third_row if is_numeric(cell)) if third_row else 0
-        
+        third_row_numeric_count = (
+            sum(1 for cell in third_row if is_numeric(cell)) if third_row else 0
+        )
+
         # If first row is ALL numeric, definitely no header
         if first_row_numeric_count == len(first_row):
             return False
-        
+
         # If first row is mostly numeric (all cells), likely no header
         if first_row_numeric_count >= len(first_row):
             return False
-        
+
         # If first row has NO numeric values and second row has numeric values, likely has header
         if first_row_numeric_count == 0 and second_row_numeric_count > 0:
             return True
-        
+
         # If first row has fewer numeric cells than second row, likely has header
         if first_row_numeric_count < second_row_numeric_count:
             return True
-        
+
         # Check pattern consistency - if first row has some non-numeric but subsequent rows are all numeric
-        second_row_all_numeric = second_row_numeric_count == len(second_row) if second_row else False
-        third_row_all_numeric = third_row_numeric_count == len(third_row) if third_row else False
-        
+        second_row_all_numeric = (
+            second_row_numeric_count == len(second_row) if second_row else False
+        )
+        third_row_all_numeric = (
+            third_row_numeric_count == len(third_row) if third_row else False
+        )
+
         if not (first_row_numeric_count == len(first_row)) and second_row_all_numeric:
             return True
-        
+
         # Default to False (no header) when uncertain for signal files
         return False
     except Exception as e:
         print(f"[HEADER DETECTION ERROR] {e}")
         return False  # Default to no header on error
+
 
 def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
     """
@@ -123,32 +163,32 @@ def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
     """
     # Remove .gz extension if present (file content is already decompressed)
     filename_clean = filename.lower()
-    if filename_clean.endswith('.gz'):
+    if filename_clean.endswith(".gz"):
         filename_clean = filename_clean[:-3]  # Remove '.gz'
 
-    file_ext = filename_clean.split('.')[-1]
+    file_ext = filename_clean.split(".")[-1]
 
     try:
-        if file_ext in ['txt', 'lvm']:
+        if file_ext in ["txt", "lvm"]:
             # Special handling for LabVIEW LVM files
-            content_str = contents.decode('utf-8')
-            
+            content_str = contents.decode("utf-8")
+
             # Check if this is a LabVIEW file with header
-            if content_str.startswith('LabVIEW Measurement'):
+            if content_str.startswith("LabVIEW Measurement"):
                 # Find the last occurrence of ***End_of_Header***
-                lines = content_str.split('\n')
+                lines = content_str.split("\n")
                 data_start_idx = 0
-                
+
                 for idx, line in enumerate(lines):
-                    if '***End_of_Header***' in line:
+                    if "***End_of_Header***" in line:
                         data_start_idx = idx + 1
-                
+
                 # IMPROVED: Check if the next line is a header using better logic
                 if data_start_idx < len(lines):
                     next_line = lines[data_start_idx].strip()
                     if next_line:
                         # Check if ANY cell in the row is non-numeric
-                        cells = next_line.split('\t')
+                        cells = next_line.split("\t")
                         has_non_numeric = False
                         for cell in cells:
                             cell_stripped = cell.strip()
@@ -158,47 +198,55 @@ def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
                                 except ValueError:
                                     has_non_numeric = True
                                     break
-                        
+
                         if has_non_numeric:
                             data_start_idx += 1
-                            print(f"[PARSE] Detected column header in LVM file, skipping line: {next_line[:50]}")
-                
+                            print(
+                                f"[PARSE] Detected column header in LVM file, skipping line: {next_line[:50]}"
+                            )
+
                 # Parse from data start
-                data_content = '\n'.join(lines[data_start_idx:])
-                df = pd.read_csv(StringIO(data_content), delimiter='\t', header=None)
+                data_content = "\n".join(lines[data_start_idx:])
+                df = pd.read_csv(StringIO(data_content), delimiter="\t", header=None)
             else:
                 # Regular tab-delimited file without LabVIEW header
                 # NEW: Detect if it has headers
-                has_header = detect_signal_file_header(content_str, '\t')
+                has_header = detect_signal_file_header(content_str, "\t")
                 if has_header:
                     print(f"[PARSE] Detected header in TXT/LVM file")
-                    df = pd.read_csv(StringIO(content_str), delimiter='\t')
+                    df = pd.read_csv(StringIO(content_str), delimiter="\t")
                     # Convert column names to None for consistency (signal processing expects numeric indices)
                     df.columns = range(len(df.columns))
                 else:
                     print(f"[PARSE] No header detected in TXT/LVM file")
-                    df = pd.read_csv(StringIO(content_str), delimiter='\t', header=None)
-                    
-        elif file_ext == 'csv':
+                    df = pd.read_csv(StringIO(content_str), delimiter="\t", header=None)
+
+        elif file_ext == "csv":
             # CSV files - try to auto-detect delimiter AND headers
-            content_str = contents.decode('utf-8')
+            content_str = contents.decode("utf-8")
             df = None
-            detected_delimiter = ','
-            
-            for delimiter in [',', '\t', ';']:
+            detected_delimiter = ","
+
+            for delimiter in [",", "\t", ";"]:
                 try:
                     # NEW: Detect if has header
                     has_header = detect_signal_file_header(content_str, delimiter)
-                    
+
                     if has_header:
-                        print(f"[PARSE] Detected header in CSV file (delimiter: '{delimiter}')")
+                        print(
+                            f"[PARSE] Detected header in CSV file (delimiter: '{delimiter}')"
+                        )
                         df = pd.read_csv(StringIO(content_str), delimiter=delimiter)
                         # Convert column names to None for consistency
                         df.columns = range(len(df.columns))
                     else:
-                        print(f"[PARSE] No header detected in CSV file (delimiter: '{delimiter}')")
-                        df = pd.read_csv(StringIO(content_str), delimiter=delimiter, header=None)
-                    
+                        print(
+                            f"[PARSE] No header detected in CSV file (delimiter: '{delimiter}')"
+                        )
+                        df = pd.read_csv(
+                            StringIO(content_str), delimiter=delimiter, header=None
+                        )
+
                     # Check if we got more than 1 column
                     if df.shape[1] > 1:
                         detected_delimiter = delimiter
@@ -208,46 +256,58 @@ def parse_file_content(contents: bytes, filename: str) -> pd.DataFrame:
                     continue
             else:
                 # If all fail, default to comma with header detection
-                has_header = detect_signal_file_header(content_str, ',')
+                has_header = detect_signal_file_header(content_str, ",")
                 if has_header:
-                    print(f"[PARSE] Fallback: Detected header in CSV file (comma delimiter)")
-                    df = pd.read_csv(StringIO(content_str), delimiter=',')
+                    print(
+                        f"[PARSE] Fallback: Detected header in CSV file (comma delimiter)"
+                    )
+                    df = pd.read_csv(StringIO(content_str), delimiter=",")
                     df.columns = range(len(df.columns))
                 else:
                     print(f"[PARSE] Fallback: No header in CSV file (comma delimiter)")
-                    df = pd.read_csv(StringIO(content_str), delimiter=',', header=None)
-                    
-        elif file_ext == 'xlsx':
+                    df = pd.read_csv(StringIO(content_str), delimiter=",", header=None)
+
+        elif file_ext == "xlsx":
             # Excel files - try to detect headers
-            df_test = pd.read_excel(BytesIO(contents), nrows=2, engine='openpyxl')
+            df_test = pd.read_excel(BytesIO(contents), nrows=2, engine="openpyxl")
             if len(df_test) >= 1:
                 # Check if first row (which became column names) looks like data
                 first_col = str(df_test.columns[0])
                 # More robust check: see if column name is purely numeric
-                is_numeric_header = first_col.replace('.', '', 1).replace('-', '', 1).replace('e', '', 1).replace('E', '', 1).replace('+', '', 1).isdigit()
-                
+                is_numeric_header = (
+                    first_col.replace(".", "", 1)
+                    .replace("-", "", 1)
+                    .replace("e", "", 1)
+                    .replace("E", "", 1)
+                    .replace("+", "", 1)
+                    .isdigit()
+                )
+
                 if is_numeric_header:
                     # Likely no header, re-read without header
                     print(f"[PARSE] No header detected in Excel file")
-                    df = pd.read_excel(BytesIO(contents), header=None, engine='openpyxl')
+                    df = pd.read_excel(
+                        BytesIO(contents), header=None, engine="openpyxl"
+                    )
                 else:
                     print(f"[PARSE] Detected header in Excel file")
-                    df = pd.read_excel(BytesIO(contents), engine='openpyxl')
+                    df = pd.read_excel(BytesIO(contents), engine="openpyxl")
                     # Convert column names to numeric indices for consistency
                     df.columns = range(len(df.columns))
             else:
-                df = pd.read_excel(BytesIO(contents), header=None, engine='openpyxl')
+                df = pd.read_excel(BytesIO(contents), header=None, engine="openpyxl")
         else:
             raise ValueError(f"Unsupported file format: {file_ext}")
 
         # Remove any completely empty rows/columns
-        df = df.dropna(how='all', axis=0).dropna(how='all', axis=1)
+        df = df.dropna(how="all", axis=0).dropna(how="all", axis=1)
 
         print(f"[PARSE] Successfully parsed {filename}: shape={df.shape}")
         return df
     except Exception as e:
         print(f"[PARSE ERROR] Failed to parse {filename}: {str(e)}")
         raise ValueError(f"Error parsing {file_ext} file: {str(e)}")
+
 
 def json_encoder(obj):
     """Custom JSON encoder to handle inf and nan"""
@@ -258,8 +318,10 @@ def json_encoder(obj):
             return None
     return obj
 
+
 # Monkey patch JSON encoder
 json._default_encoder = json.JSONEncoder(default=json_encoder)
+
 
 # ============================================================================
 # LTTB Downsampling Algorithm (Largest-Triangle-Three-Buckets)
@@ -268,36 +330,36 @@ def lttb_downsample(x_data, y_data, target_points=15000):
     """
     Largest-Triangle-Three-Buckets (LTTB) downsampling algorithm.
     Intelligently reduces data points while preserving visual features.
-    
+
     Reference: https://github.com/sveinn-steinarsson/flot-downsample
-    
+
     Args:
         x_data: X-axis data (e.g., time)
         y_data: Y-axis data (e.g., amplitude)
         target_points: Target number of points (default: 15000 for optimal Plotly performance)
-    
+
     Returns:
         downsampled_x, downsampled_y: Downsampled arrays
     """
     data_length = len(x_data)
-    
+
     # If already below target, return as-is
     if data_length <= target_points:
         return x_data, y_data
-    
+
     # Convert to numpy arrays for efficiency
     x_data = np.asarray(x_data)
     y_data = np.asarray(y_data)
-    
+
     # Always keep first and last points
     sampled_x = [x_data[0]]
     sampled_y = [y_data[0]]
-    
+
     # Calculate bucket size
     bucket_size = (data_length - 2) / (target_points - 2)
-    
+
     a = 0  # Initially a is the first point in the triangle
-    
+
     for i in range(target_points - 2):
         # Calculate point average for next bucket (for triangle apex)
         avg_x = 0.0
@@ -305,50 +367,132 @@ def lttb_downsample(x_data, y_data, target_points=15000):
         avg_range_start = int(np.floor((i + 1) * bucket_size) + 1)
         avg_range_end = int(np.floor((i + 2) * bucket_size) + 1)
         avg_range_end = min(avg_range_end, data_length)
-        
+
         avg_range_length = avg_range_end - avg_range_start
-        
+
         for j in range(avg_range_start, avg_range_end):
             avg_x += x_data[j]
             avg_y += y_data[j]
-        
+
         if avg_range_length > 0:
             avg_x /= avg_range_length
             avg_y /= avg_range_length
-        
+
         # Get the range for this bucket
         range_offs = int(np.floor((i + 0) * bucket_size) + 1)
         range_to = int(np.floor((i + 1) * bucket_size) + 1)
-        
+
         # Point a (previous selected point)
         point_a_x = x_data[a]
         point_a_y = y_data[a]
-        
+
         max_area = -1.0
         next_a = range_offs
-        
+
         for j in range(range_offs, range_to):
             # Calculate triangle area over three buckets
-            area = abs(
-                (point_a_x - avg_x) * (y_data[j] - point_a_y) -
-                (point_a_x - x_data[j]) * (avg_y - point_a_y)
-            ) * 0.5
-            
+            area = (
+                abs(
+                    (point_a_x - avg_x) * (y_data[j] - point_a_y)
+                    - (point_a_x - x_data[j]) * (avg_y - point_a_y)
+                )
+                * 0.5
+            )
+
             if area > max_area:
                 max_area = area
                 next_a = j
-        
+
         sampled_x.append(x_data[next_a])
         sampled_y.append(y_data[next_a])
         a = next_a  # This point is the next a (chosen point)
-    
+
     # Always add the last point
     sampled_x.append(x_data[-1])
     sampled_y.append(y_data[-1])
-    
+
     return np.array(sampled_x), np.array(sampled_y)
 
+
 app = FastAPI(title="Feature Extraction API", version="1.0.0")
+
+# ============================================================================
+# Authentication (Supabase JWT verification)
+# ============================================================================
+SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
+SUPABASE_AUTH_TIMEOUT_SECONDS = float(os.getenv("SUPABASE_AUTH_TIMEOUT_SECONDS", "5"))
+SUPABASE_AUTH_USER_ENDPOINT = f"{SUPABASE_URL}/auth/v1/user" if SUPABASE_URL else ""
+
+PUBLIC_PATHS = {
+    "/",
+    "/openapi.json",
+    "/docs",
+    "/docs/oauth2-redirect",
+    "/redoc",
+    "/favicon.ico",
+    "/auth/login",
+}
+
+
+def _fetch_supabase_user(access_token: str) -> Optional[Dict[str, Any]]:
+    if not SUPABASE_AUTH_USER_ENDPOINT or not SUPABASE_ANON_KEY:
+        return None
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "apikey": SUPABASE_ANON_KEY,
+    }
+    request = urllib.request.Request(
+        SUPABASE_AUTH_USER_ENDPOINT,
+        method="GET",
+        headers=headers,
+    )
+
+    try:
+        with urllib.request.urlopen(
+            request,
+            timeout=SUPABASE_AUTH_TIMEOUT_SECONDS,
+        ) as response:
+            if response.status != 200:
+                return None
+            payload = response.read().decode("utf-8")
+            parsed = json.loads(payload)
+            return parsed if isinstance(parsed, dict) else None
+    except urllib.error.HTTPError:
+        return None
+    except Exception as error:
+        print(f"[AUTH ERROR] Supabase verification failed: {error}")
+        return None
+
+
+@app.middleware("http")
+async def require_authentication(request: Request, call_next):
+    if request.method == "OPTIONS" or request.url.path in PUBLIC_PATHS:
+        return await call_next(request)
+
+    if not SUPABASE_AUTH_USER_ENDPOINT or not SUPABASE_ANON_KEY:
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "Supabase auth is not configured. Set SUPABASE_URL and SUPABASE_ANON_KEY."
+            },
+        )
+
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return JSONResponse(status_code=401, content={"detail": "Not authenticated"})
+
+    token = auth_header.split(" ", 1)[1].strip()
+    user = _fetch_supabase_user(token)
+    if not user:
+        return JSONResponse(
+            status_code=401, content={"detail": "Invalid or expired token"}
+        )
+
+    request.state.user = user
+    return await call_next(request)
+
 
 # CORS middleware for Next.js frontend
 app.add_middleware(
@@ -375,6 +519,7 @@ app.include_router(ann_router)
 # Include regression router
 app.include_router(regression_router)
 
+
 def safe_float(value):
     """Convert value to float, handling inf and nan"""
     try:
@@ -385,6 +530,7 @@ def safe_float(value):
     except (ValueError, TypeError):
         return 0.0
 
+
 def calculate_statistical_data(reconstructed_signal, noise, fs):
     """Calculate statistical parameters from signal - Using Streamlit logic with error handling"""
     params = {}
@@ -393,7 +539,9 @@ def calculate_statistical_data(reconstructed_signal, noise, fs):
         params["Mean"] = safe_float(np.mean(reconstructed_signal))
         params["Median"] = safe_float(np.median(reconstructed_signal))
         mode_val = pd.Series(reconstructed_signal).mode()
-        params["Mode"] = safe_float(mode_val[0] if len(mode_val) > 0 else np.mean(reconstructed_signal))
+        params["Mode"] = safe_float(
+            mode_val[0] if len(mode_val) > 0 else np.mean(reconstructed_signal)
+        )
         params["Std Dev"] = safe_float(np.std(reconstructed_signal))
         params["Variance"] = safe_float(np.var(reconstructed_signal))
         params["Mean Square"] = safe_float(np.mean(reconstructed_signal**2))
@@ -403,93 +551,182 @@ def calculate_statistical_data(reconstructed_signal, noise, fs):
 
         # Peak-to-RMS
         rms_val = np.sqrt(np.mean(reconstructed_signal**2))
-        params["Peak-to-RMS"] = safe_float(np.max(reconstructed_signal) / rms_val) if rms_val != 0 else 0.0
+        params["Peak-to-RMS"] = (
+            safe_float(np.max(reconstructed_signal) / rms_val) if rms_val != 0 else 0.0
+        )
 
         params["Skewness"] = safe_float(skew(reconstructed_signal))
         params["Kurtosis"] = safe_float(kurtosis(reconstructed_signal))
-        params["Energy"] = safe_float(np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal))))
-        params["Power"] = safe_float(np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal))) / (2 * (1 / fs)))
+        params["Energy"] = safe_float(
+            np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal)))
+        )
+        params["Power"] = safe_float(
+            np.trapz(reconstructed_signal**2, np.arange(len(reconstructed_signal)))
+            / (2 * (1 / fs))
+        )
 
         # Crest Factor
-        params["Crest Factor"] = safe_float(np.max(reconstructed_signal) / rms_val) if rms_val != 0 else 0.0
+        params["Crest Factor"] = (
+            safe_float(np.max(reconstructed_signal) / rms_val) if rms_val != 0 else 0.0
+        )
 
         # Impulse Factor
         mean_val = np.mean(reconstructed_signal)
-        params["Impulse Factor"] = safe_float(np.max(reconstructed_signal) / mean_val) if mean_val != 0 else 0.0
+        params["Impulse Factor"] = (
+            safe_float(np.max(reconstructed_signal) / mean_val)
+            if mean_val != 0
+            else 0.0
+        )
 
         # Shape Factor
-        params["Shape Factor"] = safe_float(rms_val / mean_val) if mean_val != 0 else 0.0
+        params["Shape Factor"] = (
+            safe_float(rms_val / mean_val) if mean_val != 0 else 0.0
+        )
 
         params["Shannon Entropy"] = safe_float(entropy(np.abs(reconstructed_signal)))
 
         # Signal-to-Noise Ratio
         noise_sum_sq = np.sum(noise**2)
         if noise_sum_sq != 0:
-            params["Signal-to-Noise Ratio"] = safe_float(10 * np.log10(np.sum(reconstructed_signal**2) / noise_sum_sq))
+            params["Signal-to-Noise Ratio"] = safe_float(
+                10 * np.log10(np.sum(reconstructed_signal**2) / noise_sum_sq)
+            )
         else:
             params["Signal-to-Noise Ratio"] = 0.0
 
         # Root Mean Square Error (Streamlit logic: comparing zeros vs reconstructed)
-        params["Root Mean Square Error"] = safe_float(np.sqrt(mean_squared_error(np.zeros_like(reconstructed_signal), reconstructed_signal)))
+        params["Root Mean Square Error"] = safe_float(
+            np.sqrt(
+                mean_squared_error(
+                    np.zeros_like(reconstructed_signal), reconstructed_signal
+                )
+            )
+        )
 
         # Maximum Error (Streamlit logic: comparing zeros vs reconstructed)
-        params["Maximum Error"] = safe_float(np.max(np.abs(np.zeros_like(reconstructed_signal) - reconstructed_signal)))
+        params["Maximum Error"] = safe_float(
+            np.max(np.abs(np.zeros_like(reconstructed_signal) - reconstructed_signal))
+        )
 
         # Mean Absolute Error (Streamlit logic: comparing zeros vs reconstructed)
-        params["Mean Absolute Error"] = safe_float(np.mean(np.abs(np.zeros_like(reconstructed_signal) - reconstructed_signal)))
+        params["Mean Absolute Error"] = safe_float(
+            np.mean(np.abs(np.zeros_like(reconstructed_signal) - reconstructed_signal))
+        )
 
         # Peak Signal-to-Noise Ratio (Streamlit logic: using zeros as reference)
         max_signal = np.max(np.zeros_like(reconstructed_signal))
         rms_error = params["Root Mean Square Error"]
         if rms_error > 0 and max_signal > 0:
-            params["Peak Signal-to-Noise Ratio"] = safe_float(20 * np.log10(max_signal / rms_error))
+            params["Peak Signal-to-Noise Ratio"] = safe_float(
+                20 * np.log10(max_signal / rms_error)
+            )
         else:
             params["Peak Signal-to-Noise Ratio"] = 0.0
 
         # Coefficient of Variation
         std_val = np.std(reconstructed_signal)
-        params["Coefficient of Variation"] = safe_float(std_val / mean_val) if mean_val != 0 else 0.0
-        
+        params["Coefficient of Variation"] = (
+            safe_float(std_val / mean_val) if mean_val != 0 else 0.0
+        )
+
     except Exception as e:
         print(f"Error calculating statistics: {e}")
         # Return safe defaults if anything fails
-        for key in ["Mean", "Median", "Mode", "Std Dev", "Variance", "Mean Square", "RMS", "Max", 
-                   "Peak-to-Peak", "Peak-to-RMS", "Skewness", "Kurtosis", "Energy", "Power",
-                   "Crest Factor", "Impulse Factor", "Shape Factor", "Shannon Entropy",
-                   "Signal-to-Noise Ratio", "Root Mean Square Error", "Maximum Error",
-                   "Mean Absolute Error", "Peak Signal-to-Noise Ratio", "Coefficient of Variation"]:
+        for key in [
+            "Mean",
+            "Median",
+            "Mode",
+            "Std Dev",
+            "Variance",
+            "Mean Square",
+            "RMS",
+            "Max",
+            "Peak-to-Peak",
+            "Peak-to-RMS",
+            "Skewness",
+            "Kurtosis",
+            "Energy",
+            "Power",
+            "Crest Factor",
+            "Impulse Factor",
+            "Shape Factor",
+            "Shannon Entropy",
+            "Signal-to-Noise Ratio",
+            "Root Mean Square Error",
+            "Maximum Error",
+            "Mean Absolute Error",
+            "Peak Signal-to-Noise Ratio",
+            "Coefficient of Variation",
+        ]:
             if key not in params:
                 params[key] = 0.0
-    
+
     return params
+
 
 @app.get("/")
 async def root():
     return {"message": "Feature Extraction API", "status": "healthy"}
 
+
+@app.post("/auth/login")
+async def auth_login_not_supported():
+    raise HTTPException(
+        status_code=405,
+        detail="Login is handled by Supabase Auth. Obtain a Supabase access token on the client and send it as Bearer token.",
+    )
+
+
+@app.get("/auth/me")
+async def auth_me(request: Request):
+    user = getattr(request.state, "user", None)
+    if not user or not isinstance(user, dict):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return {
+        "id": user.get("id"),
+        "email": user.get("email"),
+        "role": user.get("role"),
+        "aud": user.get("aud"),
+    }
+
+
+@app.post("/auth/logout")
+async def logout(request: Request):
+    _ = request
+    return {
+        "message": "Logout must be handled by Supabase on the client side (clear session/refresh token there)."
+    }
+
+
 @app.options("/api/upload-with-progress")
 async def options_upload_with_progress():
     return {}
+
 
 @app.options("/api/process")
 async def options_process():
     return {}
 
+
 @app.options("/api/process-raw")
 async def options_process_raw():
     return {}
+
 
 @app.options("/api/plot/all")
 async def options_plot_all():
     return {}
 
+
 @app.options("/api/plots/batch")
 async def options_plots_batch():
     return {}
 
+
 @app.options("/api/download-all-stats")
 async def options_download_all_stats():
     return {}
+
 
 @app.post("/api/upload")
 async def upload_file(file: UploadFile = File(...)):
@@ -500,6 +737,7 @@ async def upload_file(file: UploadFile = File(...)):
 
         # Use robust parsing logic that handles multiple formats
         df = parse_file_content(contents, file.filename)
+        print(df.head())
 
         # Generate file ID for caching
         file_hash = hashlib.sha256(contents).hexdigest()[:16]
@@ -518,12 +756,13 @@ async def upload_file(file: UploadFile = File(...)):
             "file_id": file_id,
             "columns": columns,  # Return column names as array
             "rows": df.shape[0],
-            "sample_data": df.head(10).to_dict('records'),  # First 10 rows as sample
-            "status": "success"
+            "sample_data": df.head(10).to_dict("records"),  # First 10 rows as sample
+            "status": "success",
         }
     except Exception as e:
         print(f"[UPLOAD ERROR] {str(e)}")
         raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
+
 
 @app.post("/api/upload-with-progress")
 async def upload_file_with_progress(file: UploadFile = File(...)):
@@ -549,9 +788,11 @@ async def upload_file_with_progress(file: UploadFile = File(...)):
             chunks.append(chunk)
             total_bytes += len(chunk)
 
-        compressed_data = b''.join(chunks)
+        compressed_data = b"".join(chunks)
         upload_time = time.time() - start_time
-        print(f"[UPLOAD] Received {total_bytes / (1024*1024):.2f} MB in {upload_time:.2f}s")
+        print(
+            f"[UPLOAD] Received {total_bytes / (1024 * 1024):.2f} MB in {upload_time:.2f}s"
+        )
 
         # Detect and decompress gzip if needed
         decompress_start = time.time()
@@ -559,21 +800,33 @@ async def upload_file_with_progress(file: UploadFile = File(...)):
         compression_method = "none"
 
         # Check for gzip magic bytes (0x1f 0x8b) - Works with CompressionStream('gzip')
-        if len(compressed_data) > 2 and compressed_data[0] == 0x1f and compressed_data[1] == 0x8b:
+        if (
+            len(compressed_data) > 2
+            and compressed_data[0] == 0x1F
+            and compressed_data[1] == 0x8B
+        ):
             is_compressed = True
             compression_method = "gzip"
-            print(f"[UPLOAD] ✓ Detected gzip compression (native CompressionStream compatible)")
+            print(
+                f"[UPLOAD] ✓ Detected gzip compression (native CompressionStream compatible)"
+            )
 
             try:
                 contents = gzip.decompress(compressed_data)
                 decompress_time = time.time() - decompress_start
-                original_size = len(contents) / (1024*1024)
-                compressed_size = total_bytes / (1024*1024)
+                original_size = len(contents) / (1024 * 1024)
+                compressed_size = total_bytes / (1024 * 1024)
                 compression_ratio = len(contents) / total_bytes
 
-                print(f"[UPLOAD] ✓ Decompressed {compressed_size:.2f} MB → {original_size:.2f} MB in {decompress_time:.2f}s")
-                print(f"[UPLOAD] ✓ Compression ratio: {compression_ratio:.2f}x ({(1 - 1/compression_ratio)*100:.1f}% reduction)")
-                print(f"[UPLOAD] ✓ Bandwidth saved: {(original_size - compressed_size):.2f} MB")
+                print(
+                    f"[UPLOAD] ✓ Decompressed {compressed_size:.2f} MB → {original_size:.2f} MB in {decompress_time:.2f}s"
+                )
+                print(
+                    f"[UPLOAD] ✓ Compression ratio: {compression_ratio:.2f}x ({(1 - 1 / compression_ratio) * 100:.1f}% reduction)"
+                )
+                print(
+                    f"[UPLOAD] ✓ Bandwidth saved: {(original_size - compressed_size):.2f} MB"
+                )
 
             except Exception as decompress_error:
                 print(f"[UPLOAD] ⚠️  Decompression failed: {str(decompress_error)}")
@@ -583,7 +836,9 @@ async def upload_file_with_progress(file: UploadFile = File(...)):
                 compression_method = "failed"
         else:
             contents = compressed_data
-            print(f"[UPLOAD] No compression detected, using raw data ({total_bytes / (1024*1024):.2f} MB)")
+            print(
+                f"[UPLOAD] No compression detected, using raw data ({total_bytes / (1024 * 1024):.2f} MB)"
+            )
 
         # Generate file ID based on content hash
         file_hash = hashlib.sha256(contents).hexdigest()[:16]
@@ -598,6 +853,7 @@ async def upload_file_with_progress(file: UploadFile = File(...)):
         parse_start = time.time()
         df = parse_file_content(contents, file.filename)
         print(f"[UPLOAD] Parsed {file.filename} in {time.time() - parse_start:.2f}s")
+        print(df.head())
 
         # Prepare response with compression stats and sample data
         response_data = {
@@ -605,36 +861,39 @@ async def upload_file_with_progress(file: UploadFile = File(...)):
             "file_id": file_id,
             "columns": df.columns.tolist(),  # Return column names as array
             "rows": df.shape[0],
-            "sample_data": df.head(10).to_dict('records'),  # First 10 rows as sample
+            "sample_data": df.head(10).to_dict("records"),  # First 10 rows as sample
             "status": "success",
             "message": "File uploaded and cached successfully",
             "upload_time": f"{time.time() - start_time:.2f}s",
             "compressed": is_compressed,
-            "compression_method": compression_method
+            "compression_method": compression_method,
         }
 
         if is_compressed and compression_method == "gzip":
             # Include compression statistics
-            original_size_mb = len(contents) / (1024*1024)
-            compressed_size_mb = total_bytes / (1024*1024)
+            original_size_mb = len(contents) / (1024 * 1024)
+            compressed_size_mb = total_bytes / (1024 * 1024)
             ratio = len(contents) / total_bytes
             bandwidth_saved_mb = original_size_mb - compressed_size_mb
 
-            response_data.update({
-                "compressed_size_mb": f"{compressed_size_mb:.2f}",
-                "original_size_mb": f"{original_size_mb:.2f}",
-                "compression_ratio": f"{ratio:.2f}x",
-                "size_reduction_percent": f"{(1 - 1/ratio)*100:.1f}%",
-                "bandwidth_saved_mb": f"{bandwidth_saved_mb:.2f}",
-                "decompress_time": f"{decompress_time:.2f}s"
-            })
+            response_data.update(
+                {
+                    "compressed_size_mb": f"{compressed_size_mb:.2f}",
+                    "original_size_mb": f"{original_size_mb:.2f}",
+                    "compression_ratio": f"{ratio:.2f}x",
+                    "size_reduction_percent": f"{(1 - 1 / ratio) * 100:.1f}%",
+                    "bandwidth_saved_mb": f"{bandwidth_saved_mb:.2f}",
+                    "decompress_time": f"{decompress_time:.2f}s",
+                }
+            )
         else:
-            response_data["file_size_mb"] = f"{total_bytes / (1024*1024):.2f}"
+            response_data["file_size_mb"] = f"{total_bytes / (1024 * 1024):.2f}"
 
         return response_data
     except Exception as e:
         print(f"[UPLOAD ERROR] {str(e)}")
         raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
+
 
 @app.post("/api/process")
 async def process_signal(
@@ -643,7 +902,7 @@ async def process_signal(
     time_column: int = Form(...),
     signal_column: int = Form(...),
     wavelet_type: str = Form(...),
-    n_levels: int = Form(...)
+    n_levels: int = Form(...),
 ):
     """Process signal with wavelet decomposition. Supports cached files via file_id."""
     start_time = time.time()
@@ -653,16 +912,20 @@ async def process_signal(
         if file_id:
             cache_path = CACHE_DIR / file_id
             if not cache_path.exists():
-                raise HTTPException(status_code=404, detail=f"Cached file not found: {file_id}")
+                raise HTTPException(
+                    status_code=404, detail=f"Cached file not found: {file_id}"
+                )
             contents = cache_path.read_bytes()
-            filename = file_id.split('_', 1)[1] if '_' in file_id else file_id
+            filename = file_id.split("_", 1)[1] if "_" in file_id else file_id
             print(f"[PROCESS] Using cached file: {file_id}")
         elif file:
             contents = await file.read()
             filename = file.filename
             print(f"[PROCESS] Processing uploaded file: {file.filename}")
         else:
-            raise HTTPException(status_code=400, detail="Either 'file' or 'file_id' must be provided")
+            raise HTTPException(
+                status_code=400, detail="Either 'file' or 'file_id' must be provided"
+            )
 
         df = parse_file_content(contents, filename)
 
@@ -675,9 +938,14 @@ async def process_signal(
 
         # Wavelet decomposition and denoising (EXACT Streamlit logic)
         coeffs = pywt.wavedec(Signal, wavelet_type, level=n_levels)
-        threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(np.abs(x) / 0.6745)
-        denoised_coeffs = [pywt.threshold(c, threshold(c), mode='soft') if i > 0 else c for i, c in enumerate(coeffs)]
-        denoised_signal = pywt.waverec(denoised_coeffs, wavelet_type)[:len(Signal)]
+        threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(
+            np.abs(x) / 0.6745
+        )
+        denoised_coeffs = [
+            pywt.threshold(c, threshold(c), mode="soft") if i > 0 else c
+            for i, c in enumerate(coeffs)
+        ]
+        denoised_signal = pywt.waverec(denoised_coeffs, wavelet_type)[: len(Signal)]
 
         print(f"Wavelet processing took: {time.time() - t1:.2f}s")
         t1 = time.time()
@@ -685,7 +953,11 @@ async def process_signal(
         noise = Signal - denoised_signal
 
         # Calculate sampling frequency from time data
-        tf = time_data[2] - time_data[1] if len(time_data) > 2 else time_data[1] - time_data[0]
+        tf = (
+            time_data[2] - time_data[1]
+            if len(time_data) > 2
+            else time_data[1] - time_data[0]
+        )
         fs = 1 / tf
 
         # Calculate statistics (using Streamlit logic with fs)
@@ -710,7 +982,13 @@ async def process_signal(
         detail_limit = min(max(len(c) for c in coeffs[1:]), 1000)
 
         # Extract filename from file or file_id
-        filename = file.filename if file else file_id.split('_', 1)[1] if file_id else "unknown"
+        filename = (
+            file.filename
+            if file
+            else file_id.split("_", 1)[1]
+            if file_id
+            else "unknown"
+        )
 
         # Prepare response data
         result = {
@@ -718,11 +996,18 @@ async def process_signal(
             "raw_signal": raw_subset,
             "denoised_signal": denoised_subset,
             "wavelet_coeffs": {
-                "approximation": coeffs[0][:approx_limit].tolist() if len(coeffs[0]) > approx_limit else coeffs[0].tolist(),
-                "detail": [(coeff[:detail_limit] if len(coeff) > detail_limit else coeff).tolist() for coeff in coeffs[1:]]
+                "approximation": coeffs[0][:approx_limit].tolist()
+                if len(coeffs[0]) > approx_limit
+                else coeffs[0].tolist(),
+                "detail": [
+                    (
+                        coeff[:detail_limit] if len(coeff) > detail_limit else coeff
+                    ).tolist()
+                    for coeff in coeffs[1:]
+                ],
             },
             "statistics": stats,
-            "filename": filename
+            "filename": filename,
         }
 
         print(f"Total processing time: {time.time() - start_time:.2f}s")
@@ -732,12 +1017,13 @@ async def process_signal(
         print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
 
+
 @app.post("/api/process-raw")
 async def process_signal_raw(
     file: UploadFile = File(None),
     file_id: Optional[str] = Form(None),
     time_column: int = Form(...),
-    signal_column: int = Form(...)
+    signal_column: int = Form(...),
 ):
     """Process raw signal statistics without denoising. Supports cached files via file_id."""
     start_time = time.time()
@@ -747,16 +1033,20 @@ async def process_signal_raw(
         if file_id:
             cache_path = CACHE_DIR / file_id
             if not cache_path.exists():
-                raise HTTPException(status_code=404, detail=f"Cached file not found: {file_id}")
+                raise HTTPException(
+                    status_code=404, detail=f"Cached file not found: {file_id}"
+                )
             contents = cache_path.read_bytes()
-            filename = file_id.split('_', 1)[1] if '_' in file_id else file_id
+            filename = file_id.split("_", 1)[1] if "_" in file_id else file_id
             print(f"[PROCESS-RAW] Using cached file: {file_id}")
         elif file:
             contents = await file.read()
             filename = file.filename
             print(f"[PROCESS-RAW] Processing uploaded file: {file.filename}")
         else:
-            raise HTTPException(status_code=400, detail="Either 'file' or 'file_id' must be provided")
+            raise HTTPException(
+                status_code=400, detail="Either 'file' or 'file_id' must be provided"
+            )
 
         df = parse_file_content(contents, filename)
 
@@ -771,7 +1061,11 @@ async def process_signal_raw(
         noise = np.zeros_like(Signal)
 
         # Calculate sampling frequency from time data
-        tf = time_data[2] - time_data[1] if len(time_data) > 2 else time_data[1] - time_data[0]
+        tf = (
+            time_data[2] - time_data[1]
+            if len(time_data) > 2
+            else time_data[1] - time_data[0]
+        )
         fs = 1 / tf
 
         # Calculate statistics on RAW signal (using Streamlit logic with fs)
@@ -779,13 +1073,16 @@ async def process_signal_raw(
         print(f"Statistics calculation took: {time.time() - t1:.2f}s")
 
         # Extract filename from file or file_id
-        filename = file.filename if file else file_id.split('_', 1)[1] if file_id else "unknown"
+        filename = (
+            file.filename
+            if file
+            else file_id.split("_", 1)[1]
+            if file_id
+            else "unknown"
+        )
 
         # Prepare response data
-        result = {
-            "statistics": stats,
-            "filename": filename
-        }
+        result = {"statistics": stats, "filename": filename}
 
         print(f"Total processing time: {time.time() - start_time:.2f}s")
         return result
@@ -793,6 +1090,7 @@ async def process_signal_raw(
     except Exception as e:
         print(f"Error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Processing error: {str(e)}")
+
 
 @app.post("/api/download-stats")
 async def download_stats(stats: Dict):
@@ -808,10 +1106,11 @@ async def download_stats(stats: Dict):
         return StreamingResponse(
             output,
             media_type="text/csv",
-            headers={"Content-Disposition": "attachment; filename=statistics.csv"}
+            headers={"Content-Disposition": "attachment; filename=statistics.csv"},
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
+
 
 @app.post("/api/download-all-stats")
 async def download_all_stats(all_stats: List[Dict]):
@@ -835,8 +1134,8 @@ async def download_all_stats(all_stats: List[Dict]):
         stats_df = pd.DataFrame(all_stats)
 
         # If 'filename' column exists, set it as index
-        if 'filename' in stats_df.columns:
-            stats_df = stats_df.set_index('filename')
+        if "filename" in stats_df.columns:
+            stats_df = stats_df.set_index("filename")
 
         # Convert to CSV with index
         output = BytesIO()
@@ -848,13 +1147,14 @@ async def download_all_stats(all_stats: List[Dict]):
         return StreamingResponse(
             output,
             media_type="text/csv",
-            headers={"Content-Disposition": "attachment; filename=all_files_stats.csv"}
+            headers={"Content-Disposition": "attachment; filename=all_files_stats.csv"},
         )
     except HTTPException:
         raise
     except Exception as e:
         print(f"[DOWNLOAD ERROR] {str(e)}")
         raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
+
 
 @app.post("/api/plot/signal")
 async def generate_signal_plot(
@@ -863,7 +1163,7 @@ async def generate_signal_plot(
     signal_column: int = Form(...),
     wavelet_type: str = Form(...),
     n_levels: int = Form(...),
-    signal_type: str = Form(...)  # 'raw' or 'denoised'
+    signal_type: str = Form(...),  # 'raw' or 'denoised'
 ):
     """
     Generate signal plot data with LTTB downsampling for efficient transfer.
@@ -871,36 +1171,47 @@ async def generate_signal_plot(
     """
     try:
         start_time = time.time()
-        
+
         # Read and parse file
         contents = await file.read()
-        df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
-        
+        df = pd.read_csv(
+            StringIO(contents.decode("utf-8")), delimiter="\t", header=None
+        )
+
         # Extract time and signal columns
         time_data = df.iloc[:, time_column].values
         Signal = df.iloc[:, signal_column].values
-        
+
         print(f"[SIGNAL PLOT] Processing {len(Signal):,} points ({signal_type})")
-        
+
         # If denoised, perform wavelet processing
-        if signal_type == 'denoised':
+        if signal_type == "denoised":
             coeffs = pywt.wavedec(Signal, wavelet_type, level=n_levels)
-            threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(np.abs(x) / 0.6745)
-            denoised_coeffs = [pywt.threshold(c, threshold(c), mode='soft') if i > 0 else c for i, c in enumerate(coeffs)]
-            signal_data = pywt.waverec(denoised_coeffs, wavelet_type)[:len(Signal)]
-            name = 'Denoised Signal'
-            color = '#ff7f0e'
+            threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(
+                np.abs(x) / 0.6745
+            )
+            denoised_coeffs = [
+                pywt.threshold(c, threshold(c), mode="soft") if i > 0 else c
+                for i, c in enumerate(coeffs)
+            ]
+            signal_data = pywt.waverec(denoised_coeffs, wavelet_type)[: len(Signal)]
+            name = "Denoised Signal"
+            color = "#ff7f0e"
         else:
             signal_data = Signal
-            name = 'Raw Signal'
-            color = '#1f77b4'
-        
+            name = "Raw Signal"
+            color = "#1f77b4"
+
         # Apply LTTB downsampling (830k → 15k points)
-        downsampled_x, downsampled_y = lttb_downsample(time_data, signal_data, target_points=15000)
-        
-        print(f"[SIGNAL PLOT] Downsampled: {len(Signal):,} → {len(downsampled_x):,} points")
+        downsampled_x, downsampled_y = lttb_downsample(
+            time_data, signal_data, target_points=15000
+        )
+
+        print(
+            f"[SIGNAL PLOT] Downsampled: {len(Signal):,} → {len(downsampled_x):,} points"
+        )
         print(f"[SIGNAL PLOT] Processing time: {time.time() - start_time:.3f}s")
-        
+
         # Return raw data for client-side rendering
         return {
             "type": "scatter",
@@ -908,24 +1219,25 @@ async def generate_signal_plot(
                 "x": downsampled_x.tolist(),
                 "y": downsampled_y.tolist(),
                 "name": name,
-                "color": color
+                "color": color,
             },
             "layout": {
                 "xaxis_title": "Time (s)",
                 "yaxis_title": "Amplitude (V)",
-                "title": name
+                "title": name,
             },
             "metadata": {
                 "original_points": len(Signal),
                 "downsampled_points": len(downsampled_x),
                 "compression_ratio": f"{len(Signal) / len(downsampled_x):.1f}x",
-                "processing_time": f"{time.time() - start_time:.3f}s"
-            }
+                "processing_time": f"{time.time() - start_time:.3f}s",
+            },
         }
-        
+
     except Exception as e:
         print(f"Plot error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Plot generation error: {str(e)}")
+
 
 @app.post("/api/plot/fft")
 async def generate_fft_plot(
@@ -934,7 +1246,7 @@ async def generate_fft_plot(
     signal_column: int = Form(...),
     wavelet_type: str = Form(...),
     n_levels: int = Form(...),
-    fft_type: str = Form(...)  # 'raw', 'denoised', 'approx', 'detail'
+    fft_type: str = Form(...),  # 'raw', 'denoised', 'approx', 'detail'
 ):
     """
     Generate FFT plot data with LTTB downsampling.
@@ -942,10 +1254,12 @@ async def generate_fft_plot(
     """
     try:
         start_time = time.time()
-        
+
         contents = await file.read()
-        df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
-        
+        df = pd.read_csv(
+            StringIO(contents.decode("utf-8")), delimiter="\t", header=None
+        )
+
         time_data = df.iloc[:, time_column].values
         Signal = df.iloc[:, signal_column].values
 
@@ -957,82 +1271,96 @@ async def generate_fft_plot(
 
         # Wavelet processing
         coeffs = pywt.wavedec(Signal, wavelet_type, level=n_levels)
-        threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(np.abs(x) / 0.6745)
-        denoised_coeffs = [pywt.threshold(c, threshold(c), mode='soft') if i > 0 else c for i, c in enumerate(coeffs)]
-        denoised_signal = pywt.waverec(denoised_coeffs, wavelet_type)[:len(Signal)]
+        threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(
+            np.abs(x) / 0.6745
+        )
+        denoised_coeffs = [
+            pywt.threshold(c, threshold(c), mode="soft") if i > 0 else c
+            for i, c in enumerate(coeffs)
+        ]
+        denoised_signal = pywt.waverec(denoised_coeffs, wavelet_type)[: len(Signal)]
 
         traces = []
 
-        if fft_type == 'raw':
+        if fft_type == "raw":
             # FFT with zero-padding and normalization (matching Streamlit)
             NFFT = 2 ** int(np.ceil(np.log2(len(Signal))))
             fft_data = np.abs(np.fft.fft(Signal, NFFT)) / len(Signal)
             fft_freqs = fs * np.arange(0, NFFT // 2 + 1) / NFFT
-            fft_data = fft_data[:len(fft_freqs)]
+            fft_data = fft_data[: len(fft_freqs)]
             x_down, y_down = lttb_downsample(fft_freqs, fft_data, target_points=15000)
-            traces.append({
-                "x": x_down.tolist(),
-                "y": y_down.tolist(),
-                "name": "FFT of Raw Signal",
-                "color": "#1f77b4"
-            })
-        elif fft_type == 'denoised':
+            traces.append(
+                {
+                    "x": x_down.tolist(),
+                    "y": y_down.tolist(),
+                    "name": "FFT of Raw Signal",
+                    "color": "#1f77b4",
+                }
+            )
+        elif fft_type == "denoised":
             # FFT without normalization for denoised (matching Streamlit)
-            fft_data = np.abs(np.fft.fft(denoised_signal))[:len(Signal) // 2]
+            fft_data = np.abs(np.fft.fft(denoised_signal))[: len(Signal) // 2]
             fft_freqs = fs * np.arange(0, len(fft_data)) / len(Signal)
             x_down, y_down = lttb_downsample(fft_freqs, fft_data, target_points=15000)
-            traces.append({
-                "x": x_down.tolist(),
-                "y": y_down.tolist(),
-                "name": "FFT of Denoised Signal",
-                "color": "#ff7f0e"
-            })
-        elif fft_type == 'approx':
+            traces.append(
+                {
+                    "x": x_down.tolist(),
+                    "y": y_down.tolist(),
+                    "name": "FFT of Denoised Signal",
+                    "color": "#ff7f0e",
+                }
+            )
+        elif fft_type == "approx":
             # FFT of approximation coefficients (matching Streamlit)
-            fft_data = np.abs(np.fft.fft(coeffs[0]))[:len(coeffs[0]) // 2]
+            fft_data = np.abs(np.fft.fft(coeffs[0]))[: len(coeffs[0]) // 2]
             fft_freqs = np.linspace(100, fs / 2, len(fft_data))
             x_down, y_down = lttb_downsample(fft_freqs, fft_data, target_points=15000)
-            traces.append({
-                "x": x_down.tolist(),
-                "y": y_down.tolist(),
-                "name": "FFT of Approx Coefficients",
-                "color": "#2ca02c"
-            })
+            traces.append(
+                {
+                    "x": x_down.tolist(),
+                    "y": y_down.tolist(),
+                    "name": "FFT of Approx Coefficients",
+                    "color": "#2ca02c",
+                }
+            )
         else:  # detail
             # FFT of detail coefficients (matching Streamlit)
             for i, coeff in enumerate(coeffs[1:]):
-                fft_data = np.abs(np.fft.fft(coeff))[:len(coeff) // 2]
+                fft_data = np.abs(np.fft.fft(coeff))[: len(coeff) // 2]
                 fft_freqs = np.linspace(100, fs / 2, len(fft_data))
-                x_down, y_down = lttb_downsample(fft_freqs, fft_data, target_points=5000)  # Less per trace
-                traces.append({
-                    "x": x_down.tolist(),
-                    "y": y_down.tolist(),
-                    "name": f"FFT of Detail Coefficients {i + 1}",
-                    "color": None  # Let client choose
-                })
-        
+                x_down, y_down = lttb_downsample(
+                    fft_freqs, fft_data, target_points=5000
+                )  # Less per trace
+                traces.append(
+                    {
+                        "x": x_down.tolist(),
+                        "y": y_down.tolist(),
+                        "name": f"FFT of Detail Coefficients {i + 1}",
+                        "color": None,  # Let client choose
+                    }
+                )
+
         print(f"[FFT PLOT] Generated {len(traces)} trace(s)")
         print(f"[FFT PLOT] Processing time: {time.time() - start_time:.3f}s")
-        
+
         return {
             "type": "scatter",
-            "data": {
-                "traces": traces
-            },
+            "data": {"traces": traces},
             "layout": {
                 "xaxis_title": "Frequency (Hz)",
                 "yaxis_title": "Amplitude (V)",
-                "title": f"FFT Analysis ({fft_type})"
+                "title": f"FFT Analysis ({fft_type})",
             },
             "metadata": {
                 "processing_time": f"{time.time() - start_time:.3f}s",
-                "num_traces": len(traces)
-            }
+                "num_traces": len(traces),
+            },
         }
-        
+
     except Exception as e:
         print(f"FFT plot error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"FFT plot error: {str(e)}")
+
 
 @app.post("/api/plot/wavelet")
 async def generate_wavelet_plot(
@@ -1041,7 +1369,9 @@ async def generate_wavelet_plot(
     signal_column: int = Form(...),
     wavelet_type: str = Form(...),
     n_levels: int = Form(...),
-    wavelet_option: str = Form(...)  # 'approx', 'detail', 'pearson_approx', 'pearson_detail'
+    wavelet_option: str = Form(
+        ...
+    ),  # 'approx', 'detail', 'pearson_approx', 'pearson_detail'
 ):
     """
     Generate wavelet plot data with downsampling.
@@ -1049,86 +1379,99 @@ async def generate_wavelet_plot(
     """
     try:
         start_time = time.time()
-        
+
         contents = await file.read()
-        df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
-        
+        df = pd.read_csv(
+            StringIO(contents.decode("utf-8")), delimiter="\t", header=None
+        )
+
         Signal = df.iloc[:, signal_column].values
-        
+
         print(f"[WAVELET PLOT] Processing {len(Signal):,} points ({wavelet_option})")
-        
+
         # Wavelet decomposition
         coeffs = pywt.wavedec(Signal, wavelet_type, level=n_levels)
-        
+
         plot_type = "scatter"
         traces = []
         x_title = "Index"
         y_title = "Coefficient Value (V)"
-        
-        if wavelet_option == 'approx':
+
+        if wavelet_option == "approx":
             x_data = np.arange(len(coeffs[0]))
             x_down, y_down = lttb_downsample(x_data, coeffs[0], target_points=15000)
-            traces.append({
-                "x": x_down.tolist(),
-                "y": y_down.tolist(),
-                "name": "Approximation Coefficients",
-                "color": "#2ca02c"
-            })
-        elif wavelet_option == 'detail':
-            for i, coeff in enumerate(coeffs[1:]):
-                x_data = np.arange(len(coeff))
-                x_down, y_down = lttb_downsample(x_data, coeff, target_points=5000)  # Less per trace
-                traces.append({
+            traces.append(
+                {
                     "x": x_down.tolist(),
                     "y": y_down.tolist(),
-                    "name": f"Detail Coefficients {i + 1}",
-                    "color": None
-                })
-        elif wavelet_option == 'pearson_approx':
+                    "name": "Approximation Coefficients",
+                    "color": "#2ca02c",
+                }
+            )
+        elif wavelet_option == "detail":
+            for i, coeff in enumerate(coeffs[1:]):
+                x_data = np.arange(len(coeff))
+                x_down, y_down = lttb_downsample(
+                    x_data, coeff, target_points=5000
+                )  # Less per trace
+                traces.append(
+                    {
+                        "x": x_down.tolist(),
+                        "y": y_down.tolist(),
+                        "name": f"Detail Coefficients {i + 1}",
+                        "color": None,
+                    }
+                )
+        elif wavelet_option == "pearson_approx":
             plot_type = "bar"
             x_title = "Coefficient Type"
             y_title = "Correlation Coefficient"
-            correlation = np.corrcoef(Signal[:len(coeffs[0])], coeffs[0])[0, 1]
-            traces.append({
-                "x": ["Approx Coefficients"],
-                "y": [float(correlation)],
-                "name": "Pearson CC",
-                "color": "#9467bd"
-            })
+            correlation = np.corrcoef(Signal[: len(coeffs[0])], coeffs[0])[0, 1]
+            traces.append(
+                {
+                    "x": ["Approx Coefficients"],
+                    "y": [float(correlation)],
+                    "name": "Pearson CC",
+                    "color": "#9467bd",
+                }
+            )
         else:  # pearson_detail
             plot_type = "bar"
             x_title = "Coefficient Type"
             y_title = "Correlation Coefficient"
-            correlations = [np.corrcoef(Signal[:len(coeff)], coeff)[0, 1] for coeff in coeffs[1:]]
-            traces.append({
-                "x": [f"Detail {i + 1}" for i in range(len(correlations))],
-                "y": [float(c) for c in correlations],
-                "name": "Pearson CC",
-                "color": "#9467bd"
-            })
-        
+            correlations = [
+                np.corrcoef(Signal[: len(coeff)], coeff)[0, 1] for coeff in coeffs[1:]
+            ]
+            traces.append(
+                {
+                    "x": [f"Detail {i + 1}" for i in range(len(correlations))],
+                    "y": [float(c) for c in correlations],
+                    "name": "Pearson CC",
+                    "color": "#9467bd",
+                }
+            )
+
         print(f"[WAVELET PLOT] Generated {len(traces)} trace(s)")
         print(f"[WAVELET PLOT] Processing time: {time.time() - start_time:.3f}s")
-        
+
         return {
             "type": plot_type,
-            "data": {
-                "traces": traces
-            },
+            "data": {"traces": traces},
             "layout": {
                 "xaxis_title": x_title,
                 "yaxis_title": y_title,
-                "title": f"Wavelet Analysis ({wavelet_option})"
+                "title": f"Wavelet Analysis ({wavelet_option})",
             },
             "metadata": {
                 "processing_time": f"{time.time() - start_time:.3f}s",
-                "num_traces": len(traces)
-            }
+                "num_traces": len(traces),
+            },
         }
-        
+
     except Exception as e:
         print(f"Wavelet plot error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Wavelet plot error: {str(e)}")
+
 
 @app.post("/api/plot/spectrum")
 async def generate_spectrum_plot(
@@ -1137,7 +1480,7 @@ async def generate_spectrum_plot(
     signal_column: int = Form(...),
     wavelet_type: str = Form(...),
     n_levels: int = Form(...),
-    spectrum_type: str = Form(...)  # 'raw' or 'denoised'
+    spectrum_type: str = Form(...),  # 'raw' or 'denoised'
 ):
     """
     Generate time-frequency spectrum (spectrogram) plot data.
@@ -1145,38 +1488,45 @@ async def generate_spectrum_plot(
     """
     try:
         start_time = time.time()
-        
+
         contents = await file.read()
-        df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter='\t', header=None)
-        
+        df = pd.read_csv(
+            StringIO(contents.decode("utf-8")), delimiter="\t", header=None
+        )
+
         time_data = df.iloc[:, time_column].values
         Signal = df.iloc[:, signal_column].values
 
         # Calculate sampling frequency
         tf = time_data[2] - time_data[1]
         fs = 1 / tf
-        
+
         print(f"[SPECTRUM PLOT] Processing {len(Signal):,} points ({spectrum_type})")
-        
-        if spectrum_type == 'denoised':
+
+        if spectrum_type == "denoised":
             coeffs = pywt.wavedec(Signal, wavelet_type, level=n_levels)
-            threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(np.abs(x) / 0.6745)
-            denoised_coeffs = [pywt.threshold(c, threshold(c), mode='soft') if i > 0 else c for i, c in enumerate(coeffs)]
-            signal_data = pywt.waverec(denoised_coeffs, wavelet_type)[:len(Signal)]
-            colorscale = 'Plasma'
+            threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(
+                np.abs(x) / 0.6745
+            )
+            denoised_coeffs = [
+                pywt.threshold(c, threshold(c), mode="soft") if i > 0 else c
+                for i, c in enumerate(coeffs)
+            ]
+            signal_data = pywt.waverec(denoised_coeffs, wavelet_type)[: len(Signal)]
+            colorscale = "Plasma"
         else:
             signal_data = Signal
-            colorscale = 'Viridis'
-        
+            colorscale = "Viridis"
+
         # Calculate spectrogram
         f, t, Sxx = spectrogram(signal_data, fs)
-        
+
         # Convert to dB scale
         z_data = 10 * np.log10(Sxx + 1e-10)  # Add small value to avoid log(0)
-        
+
         print(f"[SPECTRUM PLOT] Spectrogram shape: {z_data.shape}")
         print(f"[SPECTRUM PLOT] Processing time: {time.time() - start_time:.3f}s")
-        
+
         # Return raw heatmap data
         return {
             "type": "heatmap",
@@ -1184,23 +1534,24 @@ async def generate_spectrum_plot(
                 "x": t.tolist(),  # Time axis
                 "y": f.tolist(),  # Frequency axis
                 "z": z_data.tolist(),  # 2D array of intensity values
-                "colorscale": colorscale
+                "colorscale": colorscale,
             },
             "layout": {
                 "xaxis_title": "Time (s)",
                 "yaxis_title": "Frequency (Hz)",
-                "title": f"Spectrogram ({spectrum_type})"
+                "title": f"Spectrogram ({spectrum_type})",
             },
             "metadata": {
                 "processing_time": f"{time.time() - start_time:.3f}s",
                 "shape": z_data.shape,
-                "data_points": z_data.size
-            }
+                "data_points": z_data.size,
+            },
         }
-        
+
     except Exception as e:
         print(f"Spectrum plot error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Spectrum plot error: {str(e)}")
+
 
 @app.post("/api/plots/batch")
 @app.post("/api/plot/all")  # Alias for frontend compatibility
@@ -1210,7 +1561,7 @@ async def generate_all_plots(
     time_column: int = Form(...),
     signal_column: int = Form(...),
     wavelet_type: str = Form(...),
-    n_levels: int = Form(...)
+    n_levels: int = Form(...),
 ):
     """
     Generate all plots at once for maximum efficiency.
@@ -1226,75 +1577,86 @@ async def generate_all_plots(
         if file_id:
             cache_path = CACHE_DIR / file_id
             if not cache_path.exists():
-                raise HTTPException(status_code=404, detail=f"Cached file not found: {file_id}")
+                raise HTTPException(
+                    status_code=404, detail=f"Cached file not found: {file_id}"
+                )
             contents = cache_path.read_bytes()
-            filename = file_id.split('_', 1)[1] if '_' in file_id else file_id
+            filename = file_id.split("_", 1)[1] if "_" in file_id else file_id
             print(f"[BATCH] Using cached file: {file_id}")
         elif file:
             contents = await file.read()
             filename = file.filename
             print(f"[BATCH] Processing uploaded file: {file.filename}")
         else:
-            raise HTTPException(status_code=400, detail="Either 'file' or 'file_id' must be provided")
+            raise HTTPException(
+                status_code=400, detail="Either 'file' or 'file_id' must be provided"
+            )
 
         df = parse_file_content(contents, filename)
-        
+
         # Extract data
         time_data = df.iloc[:, time_column].values
         Signal = df.iloc[:, signal_column].values
-        
-        print(f"\n{'='*70}")
+
+        print(f"\n{'=' * 70}")
         print(f"[BATCH] Processing {len(Signal):,} points")
-        print(f"{'='*70}")
-        
+        print(f"{'=' * 70}")
+
         plots = {}
-        
+
         # 1. Raw Signal Plot
         t1 = time.time()
         x_down, y_down = lttb_downsample(time_data, Signal, target_points=15000)
-        plots['signal_raw'] = {
+        plots["signal_raw"] = {
             "type": "scatter",
             "data": {
                 "x": x_down.tolist(),
                 "y": y_down.tolist(),
                 "name": "Raw Signal",
-                "color": "#1f77b4"
+                "color": "#1f77b4",
             },
             "layout": {
                 "xaxis_title": "Time (s)",
                 "yaxis_title": "Amplitude (V)",
-                "title": "Raw Signal"
-            }
+                "title": "Raw Signal",
+            },
         }
         print(f"[BATCH] ✓ Raw signal: {time.time() - t1:.3f}s")
-        
+
         # Process wavelet decomposition once for all plots
         t1 = time.time()
         coeffs = pywt.wavedec(Signal, wavelet_type, level=n_levels)
-        threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(np.abs(x) / 0.6745)
-        denoised_coeffs = [pywt.threshold(c, threshold(c), mode='soft') if i > 0 else c for i, c in enumerate(coeffs)]
-        denoised_signal = pywt.waverec(denoised_coeffs, wavelet_type)[:len(Signal)]
+        threshold = lambda x: np.sqrt(2 * np.log(len(x))) * np.median(
+            np.abs(x) / 0.6745
+        )
+        denoised_coeffs = [
+            pywt.threshold(c, threshold(c), mode="soft") if i > 0 else c
+            for i, c in enumerate(coeffs)
+        ]
+        denoised_signal = pywt.waverec(denoised_coeffs, wavelet_type)[: len(Signal)]
         print(f"[BATCH] ✓ Wavelet processing: {time.time() - t1:.3f}s")
-        
+
         # 2. Denoised Signal Plot
         t1 = time.time()
-        x_down, y_down = lttb_downsample(time_data, denoised_signal, target_points=15000)
-        plots['signal_denoised'] = {
+        x_down, y_down = lttb_downsample(
+            time_data, denoised_signal, target_points=15000
+        )
+        plots["signal_denoised"] = {
             "type": "scatter",
             "data": {
                 "x": x_down.tolist(),
                 "y": y_down.tolist(),
                 "name": "Denoised Signal",
-                "color": "#ff7f0e"
+                "color": "#ff7f0e",
             },
             "layout": {
                 "xaxis_title": "Time (s)",
                 "yaxis_title": "Amplitude (V)",
-                "title": "Denoised Signal"
-            }
+                "title": "Denoised Signal",
+            },
         }
         print(f"[BATCH] ✓ Denoised signal: {time.time() - t1:.3f}s")
-        
+
         # Calculate sampling frequency from time data (matching Streamlit)
         tf = time_data[2] - time_data[1]  # Time step
         fs = 1 / tf  # Sampling frequency
@@ -1304,121 +1666,147 @@ async def generate_all_plots(
 
         # 3a. FFT of Raw Signal (with zero-padding and normalization like Streamlit)
         NFFT = 2 ** int(np.ceil(np.log2(len(Signal))))  # Next power of 2
-        fft_raw = 2*np.abs(np.fft.fft(Signal, NFFT)) / len(Signal)  # FFT with zero-padding & normalization
-        fft_freqs_raw = fs * np.arange(0, NFFT // 2 + 1) / NFFT  # Proper frequency array
+        fft_raw = (
+            2 * np.abs(np.fft.fft(Signal, NFFT)) / len(Signal)
+        )  # FFT with zero-padding & normalization
+        fft_freqs_raw = (
+            fs * np.arange(0, NFFT // 2 + 1) / NFFT
+        )  # Proper frequency array
         # Take only positive frequencies
-        fft_raw = fft_raw[:len(fft_freqs_raw)]
-        x_down_raw, y_down_raw = lttb_downsample(fft_freqs_raw, fft_raw, target_points=15000)
+        fft_raw = fft_raw[: len(fft_freqs_raw)]
+        x_down_raw, y_down_raw = lttb_downsample(
+            fft_freqs_raw, fft_raw, target_points=15000
+        )
 
-        plots['fft_raw'] = {
+        plots["fft_raw"] = {
             "type": "scatter",
             "data": {
-                "traces": [{
-                    "x": x_down_raw.tolist(),
-                    "y": y_down_raw.tolist(),
-                    "name": "FFT of Raw Signal",
-                    "color": "#1f77b4"
-                }]
+                "traces": [
+                    {
+                        "x": x_down_raw.tolist(),
+                        "y": y_down_raw.tolist(),
+                        "name": "FFT of Raw Signal",
+                        "color": "#1f77b4",
+                    }
+                ]
             },
             "layout": {
                 "xaxis_title": "Frequency (Hz)",
                 "yaxis_title": "Amplitude (V)",
-                "title": "FFT of Raw Signal"
-            }
+                "title": "FFT of Raw Signal",
+            },
         }
 
         # 3b. FFT of Denoised Signal (matching Streamlit - no normalization for denoised)
-        fft_denoised = 2*np.abs(np.fft.fft(denoised_signal))[:len(Signal) // 2]
-        fft_freqs_denoised = fs * np.arange(0, len(fft_denoised)) / len(Signal)  # Proper frequency array
-        x_down_denoised, y_down_denoised = lttb_downsample(fft_freqs_denoised, fft_denoised, target_points=15000)
+        fft_denoised = 2 * np.abs(np.fft.fft(denoised_signal))[: len(Signal) // 2]
+        fft_freqs_denoised = (
+            fs * np.arange(0, len(fft_denoised)) / len(Signal)
+        )  # Proper frequency array
+        x_down_denoised, y_down_denoised = lttb_downsample(
+            fft_freqs_denoised, fft_denoised, target_points=15000
+        )
 
-        plots['fft_denoised'] = {
+        plots["fft_denoised"] = {
             "type": "scatter",
             "data": {
-                "traces": [{
-                    "x": x_down_denoised.tolist(),
-                    "y": y_down_denoised.tolist(),
-                    "name": "FFT of Denoised Signal",
-                    "color": "#ff7f0e"
-                }]
+                "traces": [
+                    {
+                        "x": x_down_denoised.tolist(),
+                        "y": y_down_denoised.tolist(),
+                        "name": "FFT of Denoised Signal",
+                        "color": "#ff7f0e",
+                    }
+                ]
             },
             "layout": {
                 "xaxis_title": "Frequency (Hz)",
                 "yaxis_title": "Amplitude (V)",
-                "title": "FFT of Denoised Signal"
-            }
+                "title": "FFT of Denoised Signal",
+            },
         }
 
         # 3c. FFT of Approx Coefficients (matching Streamlit)
-        fft_approx = np.abs(np.fft.fft(coeffs[0]))[:len(coeffs[0]) // 2]
-        fft_freqs_approx = np.linspace(100, fs / 2, len(fft_approx))  # Streamlit uses linspace for coeffs
-        x_down_approx, y_down_approx = lttb_downsample(fft_freqs_approx, fft_approx, target_points=15000)
+        fft_approx = np.abs(np.fft.fft(coeffs[0]))[: len(coeffs[0]) // 2]
+        fft_freqs_approx = np.linspace(
+            100, fs / 2, len(fft_approx)
+        )  # Streamlit uses linspace for coeffs
+        x_down_approx, y_down_approx = lttb_downsample(
+            fft_freqs_approx, fft_approx, target_points=15000
+        )
 
-        plots['fft_approx'] = {
+        plots["fft_approx"] = {
             "type": "scatter",
             "data": {
-                "traces": [{
-                    "x": x_down_approx.tolist(),
-                    "y": y_down_approx.tolist(),
-                    "name": "FFT of Approx Coefficients",
-                    "color": "#2ca02c"
-                }]
+                "traces": [
+                    {
+                        "x": x_down_approx.tolist(),
+                        "y": y_down_approx.tolist(),
+                        "name": "FFT of Approx Coefficients",
+                        "color": "#2ca02c",
+                    }
+                ]
             },
             "layout": {
                 "xaxis_title": "Frequency (Hz)",
                 "yaxis_title": "Amplitude (V)",
-                "title": "FFT of Approx Coefficients"
-            }
+                "title": "FFT of Approx Coefficients",
+            },
         }
 
         # 3d. FFT of Detail Coefficients (matching Streamlit)
         detail_traces = []
         for i, coeff in enumerate(coeffs[1:]):
-            fft_detail = np.abs(np.fft.fft(coeff))[:len(coeff) // 2]
-            fft_freqs_detail = np.linspace(100, fs / 2, len(fft_detail))  # Streamlit uses linspace for coeffs
-            x_down_detail, y_down_detail = lttb_downsample(fft_freqs_detail, fft_detail, target_points=5000)
-            detail_traces.append({
-                "x": x_down_detail.tolist(),
-                "y": y_down_detail.tolist(),
-                "name": f"FFT Detail {i + 1}",
-                "color": None  # Let Plotly auto-assign colors
-            })
+            fft_detail = np.abs(np.fft.fft(coeff))[: len(coeff) // 2]
+            fft_freqs_detail = np.linspace(
+                100, fs / 2, len(fft_detail)
+            )  # Streamlit uses linspace for coeffs
+            x_down_detail, y_down_detail = lttb_downsample(
+                fft_freqs_detail, fft_detail, target_points=5000
+            )
+            detail_traces.append(
+                {
+                    "x": x_down_detail.tolist(),
+                    "y": y_down_detail.tolist(),
+                    "name": f"FFT Detail {i + 1}",
+                    "color": None,  # Let Plotly auto-assign colors
+                }
+            )
 
-        plots['fft_detail'] = {
+        plots["fft_detail"] = {
             "type": "scatter",
-            "data": {
-                "traces": detail_traces
-            },
+            "data": {"traces": detail_traces},
             "layout": {
                 "xaxis_title": "Frequency (Hz)",
                 "yaxis_title": "Amplitude (V)",
-                "title": "FFT of Detail Coefficients"
-            }
+                "title": "FFT of Detail Coefficients",
+            },
         }
 
         print(f"[BATCH] ✓ All 4 FFT plots: {time.time() - t1:.3f}s")
-        
+
         # 4. Wavelet Coefficients Plots - Generate all 4 types
         t1 = time.time()
 
         # 4a. Approximation Coefficients
         x_data = np.arange(len(coeffs[0]))
         x_down, y_down = lttb_downsample(x_data, coeffs[0], target_points=15000)
-        plots['wavelet_approx'] = {
+        plots["wavelet_approx"] = {
             "type": "scatter",
             "data": {
-                "traces": [{
-                    "x": x_down.tolist(),
-                    "y": y_down.tolist(),
-                    "name": "Approximation Coefficients",
-                    "color": "#2ca02c"
-                }]
+                "traces": [
+                    {
+                        "x": x_down.tolist(),
+                        "y": y_down.tolist(),
+                        "name": "Approximation Coefficients",
+                        "color": "#2ca02c",
+                    }
+                ]
             },
             "layout": {
                 "xaxis_title": "Index",
                 "yaxis_title": "Coefficient Value (V)",
-                "title": "Wavelet Approximation Coefficients"
-            }
+                "title": "Wavelet Approximation Coefficients",
+            },
         }
 
         # 4b. Detail Coefficients
@@ -1426,64 +1814,72 @@ async def generate_all_plots(
         for i, coeff in enumerate(coeffs[1:]):
             x_data = np.arange(len(coeff))
             x_down, y_down = lttb_downsample(x_data, coeff, target_points=5000)
-            detail_traces.append({
-                "x": x_down.tolist(),
-                "y": y_down.tolist(),
-                "name": f"Detail Coefficients {i + 1}",
-                "color": None
-            })
-        plots['wavelet_detail'] = {
+            detail_traces.append(
+                {
+                    "x": x_down.tolist(),
+                    "y": y_down.tolist(),
+                    "name": f"Detail Coefficients {i + 1}",
+                    "color": None,
+                }
+            )
+        plots["wavelet_detail"] = {
             "type": "scatter",
-            "data": {
-                "traces": detail_traces
-            },
+            "data": {"traces": detail_traces},
             "layout": {
                 "xaxis_title": "Index",
                 "yaxis_title": "Coefficient Value (V)",
-                "title": "Wavelet Detail Coefficients"
-            }
+                "title": "Wavelet Detail Coefficients",
+            },
         }
 
         # 4c. Pearson CC (Approximation)
-        correlation_approx = np.corrcoef(Signal[:len(coeffs[0])], coeffs[0])[0, 1]
-        plots['wavelet_pearson_approx'] = {
+        correlation_approx = np.corrcoef(Signal[: len(coeffs[0])], coeffs[0])[0, 1]
+        plots["wavelet_pearson_approx"] = {
             "type": "bar",
             "data": {
-                "traces": [{
-                    "x": ["Approx Coefficients"],
-                    "y": [float(correlation_approx)],
-                    "name": "Pearson CC",
-                    "color": "#9467bd"
-                }]
+                "traces": [
+                    {
+                        "x": ["Approx Coefficients"],
+                        "y": [float(correlation_approx)],
+                        "name": "Pearson CC",
+                        "color": "#9467bd",
+                    }
+                ]
             },
             "layout": {
                 "xaxis_title": "Coefficient Type",
                 "yaxis_title": "Correlation Coefficient",
-                "title": "Pearson CC (Approximation)"
-            }
+                "title": "Pearson CC (Approximation)",
+            },
         }
 
         # 4d. Pearson CC (Detail)
-        correlations_detail = [np.corrcoef(Signal[:len(coeff)], coeff)[0, 1] for coeff in coeffs[1:]]
-        plots['wavelet_pearson_detail'] = {
+        correlations_detail = [
+            np.corrcoef(Signal[: len(coeff)], coeff)[0, 1] for coeff in coeffs[1:]
+        ]
+        plots["wavelet_pearson_detail"] = {
             "type": "bar",
             "data": {
-                "traces": [{
-                    "x": [f"Detail {i + 1}" for i in range(len(correlations_detail))],
-                    "y": [float(c) for c in correlations_detail],
-                    "name": "Pearson CC",
-                    "color": "#9467bd"
-                }]
+                "traces": [
+                    {
+                        "x": [
+                            f"Detail {i + 1}" for i in range(len(correlations_detail))
+                        ],
+                        "y": [float(c) for c in correlations_detail],
+                        "name": "Pearson CC",
+                        "color": "#9467bd",
+                    }
+                ]
             },
             "layout": {
                 "xaxis_title": "Coefficient Type",
                 "yaxis_title": "Correlation Coefficient",
-                "title": "Pearson CC (Detail)"
-            }
+                "title": "Pearson CC (Detail)",
+            },
         }
 
         print(f"[BATCH] ✓ All 4 Wavelet plots: {time.time() - t1:.3f}s")
-        
+
         # 5. Spectrograms - Generate both raw and denoised
         t1 = time.time()
 
@@ -1511,56 +1907,60 @@ async def generate_all_plots(
                     "x": t_down.tolist(),
                     "y": f_down.tolist(),
                     "z": z_down.tolist(),
-                    "colorscale": colorscale
+                    "colorscale": colorscale,
                 },
                 "layout": {
                     "xaxis_title": "Time (s)",
                     "yaxis_title": "Frequency (Hz)",
-                    "title": f"Spectrogram ({name})"
+                    "title": f"Spectrogram ({name})",
                 },
-                "metadata": {
-                    "shape": list(z_down.shape),
-                    "data_points": z_down.size
-                }
+                "metadata": {"shape": list(z_down.shape), "data_points": z_down.size},
             }
 
         # Generate raw spectrum
-        plots['spectrum_raw'] = generate_spectrogram(Signal, "Raw", "Viridis", fs)
+        plots["spectrum_raw"] = generate_spectrogram(Signal, "Raw", "Viridis", fs)
 
         # Generate denoised spectrum
-        plots['spectrum_denoised'] = generate_spectrogram(denoised_signal, "Denoised", "Plasma", fs)
+        plots["spectrum_denoised"] = generate_spectrogram(
+            denoised_signal, "Denoised", "Plasma", fs
+        )
 
         print(f"[BATCH] ✓ Spectrograms (raw + denoised): {time.time() - t1:.3f}s")
-        
+
         total_time = time.time() - batch_start
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"[BATCH] ✅ All plots generated in {total_time:.3f}s")
-        print(f"{'='*70}\n")
-        
+        print(f"{'=' * 70}\n")
+
         return {
             "plots": plots,
             "metadata": {
                 "original_points": len(Signal),
                 "total_processing_time": f"{total_time:.3f}s",
                 "compression_ratio": f"{len(Signal) / 15000:.1f}x",
-                "plots_generated": len(plots)
-            }
+                "plots_generated": len(plots),
+            },
         }
-        
+
     except Exception as e:
         print(f"Batch plot error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Batch plot generation error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Batch plot generation error: {str(e)}"
+        )
+
 
 # ============================================================================
 # SVM CLASSIFICATION ENDPOINTS
 # ============================================================================
 
-def make_meshgrid(x, y, h=.02):
+
+def make_meshgrid(x, y, h=0.02):
     """Create mesh grid for decision boundary plotting"""
     x_min, x_max = x.min() - 1, x.max() + 1
     y_min, y_max = y.min() - 1, y.max() + 1
     xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
     return xx, yy
+
 
 def plot_contours(ax, clf, xx, yy, feature_names=None, class_mapping=None, **params):
     """Plot decision boundaries with proper feature names for DataFrame compatibility"""
@@ -1582,30 +1982,32 @@ def plot_contours(ax, clf, xx, yy, feature_names=None, class_mapping=None, **par
     out = ax.contourf(xx, yy, Z, **params)
     return out
 
+
 def plot_to_base64(fig):
     """Convert matplotlib figure to base64 string"""
     buf = BytesIO()
-    fig.savefig(buf, format='png', dpi=150, bbox_inches='tight')
+    fig.savefig(buf, format="png", dpi=150, bbox_inches="tight")
     buf.seek(0)
-    img_base64 = base64.b64encode(buf.read()).decode('utf-8')
+    img_base64 = base64.b64encode(buf.read()).decode("utf-8")
     plt.close(fig)
     return img_base64
 
-def detect_csv_has_header(content_str: str, delimiter: str = ',') -> bool:
+
+def detect_csv_has_header(content_str: str, delimiter: str = ",") -> bool:
     """
     Detect if a CSV file has a header row by checking if the first row
     contains non-numeric values while subsequent rows are mostly numeric.
     Handles ML datasets where target/class column may contain text labels.
     """
     try:
-        lines = content_str.strip().split('\n')
+        lines = content_str.strip().split("\n")
         if len(lines) < 2:
             return True  # Default to True for single-line files
-        
+
         first_row = lines[0].split(delimiter)
         second_row = lines[1].split(delimiter) if len(lines) > 1 else []
         third_row = lines[2].split(delimiter) if len(lines) > 2 else []
-        
+
         # Helper function to check if a cell is numeric
         def is_numeric(cell):
             cell = cell.strip()
@@ -1616,52 +2018,64 @@ def detect_csv_has_header(content_str: str, delimiter: str = ',') -> bool:
                 return True
             except ValueError:
                 return False
-        
+
         # Count numeric cells in each row
         first_row_numeric_count = sum(1 for cell in first_row if is_numeric(cell))
         second_row_numeric_count = sum(1 for cell in second_row if is_numeric(cell))
-        third_row_numeric_count = sum(1 for cell in third_row if is_numeric(cell)) if third_row else 0
-        
+        third_row_numeric_count = (
+            sum(1 for cell in third_row if is_numeric(cell)) if third_row else 0
+        )
+
         # Check if most columns (excluding last) are numeric in first row
         first_row_mostly_numeric_except_last = (
-            first_row_numeric_count >= len(first_row) - 1 if len(first_row) > 1 else False
+            first_row_numeric_count >= len(first_row) - 1
+            if len(first_row) > 1
+            else False
         )
-        
+
         # If first row is mostly numeric (with maybe 1 text column), likely no header
         if first_row_mostly_numeric_except_last:
             # Compare with second and third rows
             second_row_pattern_similar = (
-                second_row_numeric_count >= len(second_row) - 1 if len(second_row) > 1 else False
+                second_row_numeric_count >= len(second_row) - 1
+                if len(second_row) > 1
+                else False
             )
             third_row_pattern_similar = (
-                third_row_numeric_count >= len(third_row) - 1 if len(third_row) > 1 else False
+                third_row_numeric_count >= len(third_row) - 1
+                if len(third_row) > 1
+                else False
             )
-            
+
             # If first 2-3 rows have similar patterns (mostly numeric), no header
-            if second_row_pattern_similar and (not third_row or third_row_pattern_similar):
+            if second_row_pattern_similar and (
+                not third_row or third_row_pattern_similar
+            ):
                 return False
-        
+
         # If first row is ALL numeric, definitely no header
         if first_row_numeric_count == len(first_row):
             return False
-        
+
         # If first row has NO numeric values and second row has numeric values, likely has header
         if first_row_numeric_count == 0 and second_row_numeric_count > 0:
             return True
-        
+
         # If first row has fewer numeric cells than second row, likely has header
         if first_row_numeric_count < second_row_numeric_count:
             return True
-        
+
         # Default to True (assume header exists when uncertain)
         return True
     except Exception as e:
         print(f"[HEADER DETECTION ERROR] {e}")
         return True  # Default to True on error
 
+
 @app.options("/api/svm/upload-dataset")
 async def options_svm_upload_dataset():
     return {}
+
 
 @app.post("/api/svm/upload-dataset")
 async def upload_svm_dataset(file: UploadFile = File(...)):
@@ -1678,65 +2092,77 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
 
         # Parse based on extension (handle .gz files)
         filename_clean = file.filename.lower()
-        if filename_clean.endswith('.gz'):
+        if filename_clean.endswith(".gz"):
             filename_clean = filename_clean[:-3]  # Remove '.gz'
 
-        file_ext = filename_clean.split('.')[-1]
+        file_ext = filename_clean.split(".")[-1]
         has_header = True  # Default assumption
-        detected_delimiter = ','  # Default delimiter
+        detected_delimiter = ","  # Default delimiter
 
-        if file_ext == 'xlsx':
+        if file_ext == "xlsx":
             # Try to detect if Excel file has headers
             df_test = pd.read_excel(BytesIO(contents), nrows=2)
             if len(df_test) >= 1:
                 # Check if first row (which became column names) looks like data
                 first_col = str(df_test.columns[0])
-                if first_col.replace('.', '', 1).replace('-', '', 1).isdigit():
+                if first_col.replace(".", "", 1).replace("-", "", 1).isdigit():
                     # Likely no header, re-read without header
                     df = pd.read_excel(BytesIO(contents), header=None)
                     has_header = False
                     # Generate column names
-                    df.columns = [f"Column_{i+1}" for i in range(len(df.columns))]
-                    print(f"[SVM UPLOAD] Excel file has no header, generated column names")
+                    df.columns = [f"Column_{i + 1}" for i in range(len(df.columns))]
+                    print(
+                        f"[SVM UPLOAD] Excel file has no header, generated column names"
+                    )
                 else:
                     df = pd.read_excel(BytesIO(contents))
             else:
                 df = pd.read_excel(BytesIO(contents))
-        elif file_ext == 'csv':
+        elif file_ext == "csv":
             # Try different delimiters and detect headers
-            content_str = contents.decode('utf-8')
+            content_str = contents.decode("utf-8")
             df = None
-            
-            for delimiter in [',', '\t', ';']:
+
+            for delimiter in [",", "\t", ";"]:
                 try:
                     # Try reading with header first
-                    df_test = pd.read_csv(StringIO(content_str), delimiter=delimiter, nrows=2)
+                    df_test = pd.read_csv(
+                        StringIO(content_str), delimiter=delimiter, nrows=2
+                    )
                     if df_test.shape[1] > 1:
                         detected_delimiter = delimiter
                         # Detect if has header
                         has_header = detect_csv_has_header(content_str, delimiter)
-                        
+
                         if has_header:
                             df = pd.read_csv(StringIO(content_str), delimiter=delimiter)
                             print(f"[SVM UPLOAD] CSV has headers, using them")
                         else:
-                            df = pd.read_csv(StringIO(content_str), delimiter=delimiter, header=None)
+                            df = pd.read_csv(
+                                StringIO(content_str), delimiter=delimiter, header=None
+                            )
                             # Generate meaningful column names
-                            df.columns = [f"Column_{i+1}" for i in range(len(df.columns))]
-                            print(f"[SVM UPLOAD] CSV has no headers, generated column names")
+                            df.columns = [
+                                f"Column_{i + 1}" for i in range(len(df.columns))
+                            ]
+                            print(
+                                f"[SVM UPLOAD] CSV has no headers, generated column names"
+                            )
                         break
                 except Exception as e:
-                    print(f"[SVM UPLOAD] Failed to read with delimiter '{delimiter}': {e}")
+                    print(
+                        f"[SVM UPLOAD] Failed to read with delimiter '{delimiter}': {e}"
+                    )
                     continue
-            
+
             # If all delimiters failed, default to comma
             if df is None:
-                has_header = detect_csv_has_header(content_str, ',')
+                has_header = detect_csv_has_header(content_str, ",")
                 if has_header:
-                    df = pd.read_csv(StringIO(content_str), delimiter=',')
+                    df = pd.read_csv(StringIO(content_str), delimiter=",")
                 else:
-                    df = pd.read_csv(StringIO(content_str), delimiter=',', header=None)
-                    df.columns = [f"Column_{i+1}" for i in range(len(df.columns))]
+                    df = pd.read_csv(StringIO(content_str), delimiter=",", header=None)
+                    df.columns = [f"Column_{i + 1}" for i in range(len(df.columns))]
         else:
             raise ValueError(f"Unsupported file format: {file_ext}")
 
@@ -1747,24 +2173,25 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
 
         # Save to cache
         cache_path.write_bytes(contents)
-        
+
         # Save metadata about the file (including header info)
         metadata = {
             "has_header": has_header,
             "delimiter": detected_delimiter,
             "file_ext": file_ext,
-            "columns": df.columns.tolist()
+            "columns": df.columns.tolist(),
         }
         metadata_path = CACHE_DIR / f"{file_id}.metadata.json"
         import json
+
         metadata_path.write_text(json.dumps(metadata))
-        
+
         print(f"[SVM UPLOAD] Cached dataset: {file_id}")
         print(f"[SVM UPLOAD] Has header: {has_header}, Delimiter: {detected_delimiter}")
 
         # Get column names and sample data
         columns = df.columns.tolist()
-        sample_data = df.head(5).to_dict('records')
+        sample_data = df.head(5).to_dict("records")
 
         # Get unique values for each column (useful for target selection)
         unique_values = {}
@@ -1775,7 +2202,7 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
                 unique_values[col] = {
                     "values": uniques,
                     "count": int(df[col].nunique()),
-                    "dtype": str(df[col].dtype)
+                    "dtype": str(df[col].dtype),
                 }
             except:
                 unique_values[col] = {"values": [], "count": 0, "dtype": "unknown"}
@@ -1791,16 +2218,18 @@ async def upload_svm_dataset(file: UploadFile = File(...)):
             "sample_data": sample_data,
             "unique_values": unique_values,
             "has_header": has_header,  # NEW: indicate if original file had headers
-            "status": "success"
+            "status": "success",
         }
 
     except Exception as e:
         print(f"[SVM UPLOAD ERROR] {str(e)}")
         raise HTTPException(status_code=400, detail=f"Error parsing file: {str(e)}")
 
+
 @app.options("/api/svm/train")
 async def options_svm_train():
     return {}
+
 
 @app.post("/api/svm/train")
 async def train_svm_model(
@@ -1811,8 +2240,10 @@ async def train_svm_model(
     test_sizes: str = Form("0.2,0.3"),  # Comma-separated string
     kernels: str = Form("poly,rbf,linear,sigmoid"),  # Comma-separated string
     c_values: str = Form("1,3,5,7,9"),  # Optimized: 5 values covering the range
-    gamma_values: str = Form("0.0001,0.001,0.01"),  # Optimized: 3 key values for 2x faster training
-    cv_folds: int = Form(2)  # Reduced from 3 to 2 for faster training
+    gamma_values: str = Form(
+        "0.0001,0.001,0.01"
+    ),  # Optimized: 3 key values for 2x faster training
+    cv_folds: int = Form(2),  # Reduced from 3 to 2 for faster training
 ):
     """
     Train SVM models with multiple kernels and test sizes.
@@ -1821,15 +2252,15 @@ async def train_svm_model(
     """
     try:
         start_time = time.time()
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print(f"[SVM TRAIN] Starting SVM training")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         # Parse parameters
-        test_size_list = [float(x.strip()) for x in test_sizes.split(',')]
-        kernel_list = [x.strip() for x in kernels.split(',')]
-        c_list = [float(x.strip()) for x in c_values.split(',')]
-        gamma_list = [float(x.strip()) for x in gamma_values.split(',')]
+        test_size_list = [float(x.strip()) for x in test_sizes.split(",")]
+        kernel_list = [x.strip() for x in kernels.split(",")]
+        c_list = [float(x.strip()) for x in c_values.split(",")]
+        gamma_list = [float(x.strip()) for x in gamma_values.split(",")]
 
         print(f"[SVM TRAIN] Test sizes: {test_size_list}")
         print(f"[SVM TRAIN] Kernels: {kernel_list}")
@@ -1839,44 +2270,61 @@ async def train_svm_model(
         # Load cached file
         cache_path = CACHE_DIR / file_id
         if not cache_path.exists():
-            raise HTTPException(status_code=404, detail=f"Cached file not found: {file_id}")
+            raise HTTPException(
+                status_code=404, detail=f"Cached file not found: {file_id}"
+            )
 
         contents = cache_path.read_bytes()
-        
+
         # Load metadata to read file consistently with upload
         metadata_path = CACHE_DIR / f"{file_id}.metadata.json"
         import json
+
         if metadata_path.exists():
             metadata = json.loads(metadata_path.read_text())
             has_header = metadata.get("has_header", True)
             delimiter = metadata.get("delimiter", ",")
             file_ext = metadata.get("file_ext", "csv")
             saved_columns = metadata.get("columns", [])
-            print(f"[SVM TRAIN] Using metadata - has_header: {has_header}, delimiter: {delimiter}")
+            print(
+                f"[SVM TRAIN] Using metadata - has_header: {has_header}, delimiter: {delimiter}"
+            )
         else:
             # Fallback to old behavior if metadata doesn't exist
             file_id_clean = file_id.lower()
-            if file_id_clean.endswith('.gz'):
+            if file_id_clean.endswith(".gz"):
                 file_id_clean = file_id_clean[:-3]
-            file_ext = file_id_clean.split('.')[-1]
+            file_ext = file_id_clean.split(".")[-1]
             has_header = True
-            delimiter = ','
+            delimiter = ","
             saved_columns = []
             print(f"[SVM TRAIN] No metadata found, using defaults")
 
         # Read file based on metadata
-        if file_ext == 'xlsx':
+        if file_ext == "xlsx":
             if has_header:
                 df = pd.read_excel(BytesIO(contents))
             else:
                 df = pd.read_excel(BytesIO(contents), header=None)
-                df.columns = saved_columns if saved_columns else [f"Column_{i+1}" for i in range(len(df.columns))]
+                df.columns = (
+                    saved_columns
+                    if saved_columns
+                    else [f"Column_{i + 1}" for i in range(len(df.columns))]
+                )
         else:  # CSV
             if has_header:
-                df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter=delimiter)
+                df = pd.read_csv(
+                    StringIO(contents.decode("utf-8")), delimiter=delimiter
+                )
             else:
-                df = pd.read_csv(StringIO(contents.decode('utf-8')), delimiter=delimiter, header=None)
-                df.columns = saved_columns if saved_columns else [f"Column_{i+1}" for i in range(len(df.columns))]
+                df = pd.read_csv(
+                    StringIO(contents.decode("utf-8")), delimiter=delimiter, header=None
+                )
+                df.columns = (
+                    saved_columns
+                    if saved_columns
+                    else [f"Column_{i + 1}" for i in range(len(df.columns))]
+                )
 
         print(f"[SVM TRAIN] Loaded dataset: {df.shape}")
 
@@ -1915,18 +2363,18 @@ async def train_svm_model(
                 y_test_bin = y_test_bin.ravel()
 
             test_size_results = {
-                'kernels': {},
-                'comparison': {
-                    'Kernel': [],
-                    'Accuracy': [],
-                    'Precision': [],
-                    'Recall': [],
-                    'F1 Score': [],
-                    'AUC Score': [],
-                    'Best C': [],
-                    'Best Gamma': []
+                "kernels": {},
+                "comparison": {
+                    "Kernel": [],
+                    "Accuracy": [],
+                    "Precision": [],
+                    "Recall": [],
+                    "F1 Score": [],
+                    "AUC Score": [],
+                    "Best C": [],
+                    "Best Gamma": [],
                 },
-                'roc_data': {}
+                "roc_data": {},
             }
 
             for kernel in kernel_list:
@@ -1936,10 +2384,16 @@ async def train_svm_model(
                 # OPTIMIZATION: Use LinearSVC for linear kernel (10-100x faster)
                 if kernel == "linear":
                     # LinearSVC is optimized for linear kernels and much faster than SVC
-                    base_svm = LinearSVC(random_state=42, max_iter=5000, dual=True, tol=1e-3)
+                    base_svm = LinearSVC(
+                        random_state=42, max_iter=5000, dual=True, tol=1e-3
+                    )
                     # Wrap in CalibratedClassifierCV to get probability estimates
-                    svm = CalibratedClassifierCV(base_svm, cv=2)  # Reduced CV for faster training
-                    parameters = {"estimator__C": c_list}  # Use 'estimator' not 'base_estimator'
+                    svm = CalibratedClassifierCV(
+                        base_svm, cv=2
+                    )  # Reduced CV for faster training
+                    parameters = {
+                        "estimator__C": c_list
+                    }  # Use 'estimator' not 'base_estimator'
                 else:
                     # Setup SVM with increased cache for non-linear kernels
                     svm = SVC(
@@ -1948,19 +2402,31 @@ async def train_svm_model(
                         random_state=42,
                         cache_size=1000,  # Increased cache for faster kernel computation
                         max_iter=5000,  # Limit iterations for faster convergence
-                        tol=1e-3  # Slightly relaxed tolerance for faster convergence
+                        tol=1e-3,  # Slightly relaxed tolerance for faster convergence
                     )
-                    parameters = {"C": c_list, 'gamma': gamma_list}
+                    parameters = {"C": c_list, "gamma": gamma_list}
 
                     if kernel == "poly":
-                        parameters['degree'] = [3]
+                        parameters["degree"] = [3]
 
                 # OPTIMIZATION: Use RandomizedSearchCV for 3-5x speedup
                 # Samples 12 random combinations for faster training while maintaining good coverage
-                n_iter = min(12, len(c_list) * len(gamma_list) if kernel != "linear" else len(c_list))
+                n_iter = min(
+                    12,
+                    len(c_list) * len(gamma_list)
+                    if kernel != "linear"
+                    else len(c_list),
+                )
                 searcher = RandomizedSearchCV(
-                    svm, parameters, n_iter=n_iter, n_jobs=-1, cv=cv_folds,
-                    refit=True, verbose=0, scoring='roc_auc', random_state=42
+                    svm,
+                    parameters,
+                    n_iter=n_iter,
+                    n_jobs=-1,
+                    cv=cv_folds,
+                    refit=True,
+                    verbose=0,
+                    scoring="roc_auc",
+                    random_state=42,
                 )
                 searcher.fit(X_train, y_train)
 
@@ -1981,13 +2447,17 @@ async def train_svm_model(
                     auc_score = roc_auc_score(y_test_bin, y_pred_proba_score)
                 else:
                     # Use 'ovo' (One-vs-One) strategy for multiclass, matching pasted code
-                    auc_score = roc_auc_score(y_test_bin, y_pred_proba_score, multi_class='ovo')
+                    auc_score = roc_auc_score(
+                        y_test_bin, y_pred_proba_score, multi_class="ovo"
+                    )
 
                 accuracy = accuracy_score(y_test, y_pred)
                 # Use 'macro' averaging like pasted code (unweighted mean of per-class scores)
-                precision = precision_score(y_test, y_pred, average='macro', zero_division=0)
-                recall = recall_score(y_test, y_pred, average='macro', zero_division=0)
-                f1 = f1_score(y_test, y_pred, average='macro', zero_division=0)
+                precision = precision_score(
+                    y_test, y_pred, average="macro", zero_division=0
+                )
+                recall = recall_score(y_test, y_pred, average="macro", zero_division=0)
+                f1 = f1_score(y_test, y_pred, average="macro", zero_division=0)
 
                 # ROC curve data (matching pasted code logic for per-class curves)
                 if len(unique_classes) == 2:
@@ -1996,51 +2466,57 @@ async def train_svm_model(
                     # For multiclass, generate per-class ROC curves (like pasted code)
                     fpr, tpr = {}, {}
                     for i, cls in enumerate(unique_classes):
-                        fpr[cls], tpr[cls], _ = roc_curve(y_test_bin[:, i], y_pred_proba[:, i])
+                        fpr[cls], tpr[cls], _ = roc_curve(
+                            y_test_bin[:, i], y_pred_proba[:, i]
+                        )
 
                 # Store results
-                test_size_results['kernels'][kernel] = {
-                    'best_params': searcher.best_params_,
-                    'auc_score': float(auc_score),
-                    'accuracy': float(accuracy),
-                    'precision': float(precision),
-                    'recall': float(recall),
-                    'f1_score': float(f1),
-                    'confusion_matrix': confusion_matrix(y_test, y_pred).tolist()
+                test_size_results["kernels"][kernel] = {
+                    "best_params": searcher.best_params_,
+                    "auc_score": float(auc_score),
+                    "accuracy": float(accuracy),
+                    "precision": float(precision),
+                    "recall": float(recall),
+                    "f1_score": float(f1),
+                    "confusion_matrix": confusion_matrix(y_test, y_pred).tolist(),
                 }
 
-                test_size_results['comparison']['Kernel'].append(kernel)
-                test_size_results['comparison']['Accuracy'].append(float(accuracy))
-                test_size_results['comparison']['Precision'].append(float(precision))
-                test_size_results['comparison']['Recall'].append(float(recall))
-                test_size_results['comparison']['F1 Score'].append(float(f1))
-                test_size_results['comparison']['AUC Score'].append(float(auc_score))
+                test_size_results["comparison"]["Kernel"].append(kernel)
+                test_size_results["comparison"]["Accuracy"].append(float(accuracy))
+                test_size_results["comparison"]["Precision"].append(float(precision))
+                test_size_results["comparison"]["Recall"].append(float(recall))
+                test_size_results["comparison"]["F1 Score"].append(float(f1))
+                test_size_results["comparison"]["AUC Score"].append(float(auc_score))
 
                 # Handle parameter names for LinearSVC vs SVC
                 if kernel == "linear":
-                    best_c = searcher.best_params_.get('estimator__C', searcher.best_params_.get('C', None))
+                    best_c = searcher.best_params_.get(
+                        "estimator__C", searcher.best_params_.get("C", None)
+                    )
                     best_gamma = None  # LinearSVC doesn't have gamma
                 else:
-                    best_c = searcher.best_params_.get('C', None)
-                    best_gamma = searcher.best_params_.get('gamma', None)
+                    best_c = searcher.best_params_.get("C", None)
+                    best_gamma = searcher.best_params_.get("gamma", None)
 
-                test_size_results['comparison']['Best C'].append(best_c)
-                test_size_results['comparison']['Best Gamma'].append(best_gamma if best_gamma is not None else "N/A")
+                test_size_results["comparison"]["Best C"].append(best_c)
+                test_size_results["comparison"]["Best Gamma"].append(
+                    best_gamma if best_gamma is not None else "N/A"
+                )
 
                 # Store ROC data (handle both binary and multiclass like pasted code)
                 if len(unique_classes) == 2:
-                    test_size_results['roc_data'][kernel] = {
-                        'fpr': fpr.tolist(),
-                        'tpr': tpr.tolist(),
-                        'auc': float(auc_score)
+                    test_size_results["roc_data"][kernel] = {
+                        "fpr": fpr.tolist(),
+                        "tpr": tpr.tolist(),
+                        "auc": float(auc_score),
                     }
                 else:
                     # Store multiclass ROC data with per-class curves (matching pasted code)
-                    test_size_results['roc_data'][kernel] = {
-                        'fpr': {str(cls): fpr[cls].tolist() for cls in unique_classes},
-                        'tpr': {str(cls): tpr[cls].tolist() for cls in unique_classes},
-                        'auc': float(auc_score),
-                        'classes': [str(cls) for cls in unique_classes]
+                    test_size_results["roc_data"][kernel] = {
+                        "fpr": {str(cls): fpr[cls].tolist() for cls in unique_classes},
+                        "tpr": {str(cls): tpr[cls].tolist() for cls in unique_classes},
+                        "auc": float(auc_score),
+                        "classes": [str(cls) for cls in unique_classes],
                     }
 
                 # Track best overall model
@@ -2051,27 +2527,31 @@ async def train_svm_model(
                     # Normalize params for consistent access
                     normalized_params = {}
                     if kernel == "linear":
-                        normalized_params['C'] = searcher.best_params_.get('estimator__C')
-                        normalized_params['gamma'] = None
+                        normalized_params["C"] = searcher.best_params_.get(
+                            "estimator__C"
+                        )
+                        normalized_params["gamma"] = None
                     else:
-                        normalized_params['C'] = searcher.best_params_.get('C')
-                        normalized_params['gamma'] = searcher.best_params_.get('gamma')
+                        normalized_params["C"] = searcher.best_params_.get("C")
+                        normalized_params["gamma"] = searcher.best_params_.get("gamma")
 
                     best_overall_config = {
-                        'kernel': kernel,
-                        'test_size': test_size,
-                        'params': normalized_params,
-                        'auc': float(auc_score),
-                        'X_train': X_train,
-                        'X_test': X_test,
-                        'y_train': y_train,
-                        'y_test': y_test,
-                        'feature_col_1': feature_col_1,
-                        'feature_col_2': feature_col_2,
-                        'searcher': searcher
+                        "kernel": kernel,
+                        "test_size": test_size,
+                        "params": normalized_params,
+                        "auc": float(auc_score),
+                        "X_train": X_train,
+                        "X_test": X_test,
+                        "y_train": y_train,
+                        "y_test": y_test,
+                        "feature_col_1": feature_col_1,
+                        "feature_col_2": feature_col_2,
+                        "searcher": searcher,
                     }
 
-                print(f"    ✓ {kernel}: AUC={auc_score:.4f}, Acc={accuracy:.4f} ({time.time()-t1:.2f}s)")
+                print(
+                    f"    ✓ {kernel}: AUC={auc_score:.4f}, Acc={accuracy:.4f} ({time.time() - t1:.2f}s)"
+                )
 
             all_results[test_size] = test_size_results
 
@@ -2085,74 +2565,79 @@ async def train_svm_model(
         if len(unique_classes) == 2:
             # Binary classification - one curve per kernel/test_size
             for test_size, results in all_results.items():
-                for kernel, roc_data in results['roc_data'].items():
+                for kernel, roc_data in results["roc_data"].items():
                     ax.plot(
-                        roc_data['fpr'], roc_data['tpr'],
-                        label=f'{kernel} (TS={test_size}, AUC={roc_data["auc"]:.3f})',
-                        linewidth=2
+                        roc_data["fpr"],
+                        roc_data["tpr"],
+                        label=f"{kernel} (TS={test_size}, AUC={roc_data['auc']:.3f})",
+                        linewidth=2,
                     )
         else:
             # Multiclass - plot per-class curves like pasted code
             for test_size, results in all_results.items():
-                for kernel, roc_data in results['roc_data'].items():
+                for kernel, roc_data in results["roc_data"].items():
                     # Plot each class curve
-                    for cls in roc_data['classes']:
+                    for cls in roc_data["classes"]:
                         ax.plot(
-                            roc_data['fpr'][cls], roc_data['tpr'][cls],
-                            label=f'{kernel} (TS={test_size}, Class {cls})',
-                            linewidth=2
+                            roc_data["fpr"][cls],
+                            roc_data["tpr"][cls],
+                            label=f"{kernel} (TS={test_size}, Class {cls})",
+                            linewidth=2,
                         )
 
-        ax.plot([0, 1], [0, 1], 'k--', linewidth=1, label='Random')
-        ax.set_xlabel('False Positive Rate', fontsize=12)
-        ax.set_ylabel('True Positive Rate', fontsize=12)
-        ax.set_title('ROC Curve Comparison Across Test Sizes and Kernels', fontsize=14)
-        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), fontsize=8)
+        ax.plot([0, 1], [0, 1], "k--", linewidth=1, label="Random")
+        ax.set_xlabel("False Positive Rate", fontsize=12)
+        ax.set_ylabel("True Positive Rate", fontsize=12)
+        ax.set_title("ROC Curve Comparison Across Test Sizes and Kernels", fontsize=14)
+        ax.legend(loc="center left", bbox_to_anchor=(1, 0.5), fontsize=8)
         ax.grid(True, alpha=0.3)
-        plots['roc_comparison'] = plot_to_base64(fig)
+        plots["roc_comparison"] = plot_to_base64(fig)
         print(f"  ✓ ROC comparison plot")
 
         # 2. Metric Comparisons
-        metrics = ['Accuracy', 'Precision', 'Recall', 'F1 Score', 'AUC Score']
+        metrics = ["Accuracy", "Precision", "Recall", "F1 Score", "AUC Score"]
         for metric in metrics:
             fig, ax = plt.subplots(figsize=(10, 6))
             for kernel in kernel_list:
                 values = []
                 sizes = []
                 for test_size, results in all_results.items():
-                    comp_df = pd.DataFrame(results['comparison'])
-                    kernel_row = comp_df[comp_df['Kernel'] == kernel]
+                    comp_df = pd.DataFrame(results["comparison"])
+                    kernel_row = comp_df[comp_df["Kernel"] == kernel]
                     if not kernel_row.empty:
                         values.append(kernel_row[metric].values[0])
                         sizes.append(test_size)
-                ax.plot(sizes, values, marker='o', label=kernel, linewidth=2, markersize=8)
-            ax.set_xlabel('Test Size', fontsize=12)
+                ax.plot(
+                    sizes, values, marker="o", label=kernel, linewidth=2, markersize=8
+                )
+            ax.set_xlabel("Test Size", fontsize=12)
             ax.set_ylabel(metric, fontsize=12)
-            ax.set_title(f'{metric} Comparison Across Test Sizes', fontsize=14)
-            ax.legend(loc='best')
+            ax.set_title(f"{metric} Comparison Across Test Sizes", fontsize=14)
+            ax.legend(loc="best")
             ax.grid(True, alpha=0.3)
-            plots[f'metric_{metric.lower().replace(" ", "_")}'] = plot_to_base64(fig)
+            plots[f"metric_{metric.lower().replace(' ', '_')}"] = plot_to_base64(fig)
             print(f"  ✓ {metric} comparison plot")
 
         # 3. Confusion Matrices
         for kernel in kernel_list:
-            fig, axes = plt.subplots(1, len(test_size_list), figsize=(6*len(test_size_list), 5))
+            fig, axes = plt.subplots(
+                1, len(test_size_list), figsize=(6 * len(test_size_list), 5)
+            )
             if len(test_size_list) == 1:
                 axes = [axes]
 
             for idx, test_size in enumerate(test_size_list):
-                cm = all_results[test_size]['kernels'][kernel]['confusion_matrix']
+                cm = all_results[test_size]["kernels"][kernel]["confusion_matrix"]
                 sns.heatmap(
-                    cm, annot=True, fmt='d', cmap='Blues',
-                    ax=axes[idx], cbar=True
+                    cm, annot=True, fmt="d", cmap="Blues", ax=axes[idx], cbar=True
                 )
-                axes[idx].set_title(f'Test Size: {test_size}')
-                axes[idx].set_xlabel('Predicted')
-                axes[idx].set_ylabel('Actual')
+                axes[idx].set_title(f"Test Size: {test_size}")
+                axes[idx].set_xlabel("Predicted")
+                axes[idx].set_ylabel("Actual")
 
-            fig.suptitle(f'Confusion Matrices for {kernel} Kernel', fontsize=14)
+            fig.suptitle(f"Confusion Matrices for {kernel} Kernel", fontsize=14)
             plt.tight_layout()
-            plots[f'confusion_matrix_{kernel}'] = plot_to_base64(fig)
+            plots[f"confusion_matrix_{kernel}"] = plot_to_base64(fig)
             print(f"  ✓ Confusion matrix for {kernel}")
 
         # 4. Best Model Decision Boundary
@@ -2166,10 +2651,16 @@ async def train_svm_model(
 
             xx, yy = make_meshgrid(X_full[feature_col_1], X_full[feature_col_2])
             # Pass feature names and class mapping to fix sklearn warning and string label error
-            plot_contours(ax, best_overall_config['searcher'], xx, yy,
-                         feature_names=[feature_col_1, feature_col_2],
-                         class_mapping=class_to_num,
-                         cmap=plt.cm.coolwarm, alpha=0.3)
+            plot_contours(
+                ax,
+                best_overall_config["searcher"],
+                xx,
+                yy,
+                feature_names=[feature_col_1, feature_col_2],
+                class_mapping=class_to_num,
+                cmap=plt.cm.coolwarm,
+                alpha=0.3,
+            )
 
             # Plot points
             for class_val in unique_classes:
@@ -2177,8 +2668,10 @@ async def train_svm_model(
                 ax.scatter(
                     X_full.loc[mask, feature_col_1],
                     X_full.loc[mask, feature_col_2],
-                    label=f'Class {class_val}',
-                    s=50, edgecolor='black', linewidth=0.5
+                    label=f"Class {class_val}",
+                    s=50,
+                    edgecolor="black",
+                    linewidth=0.5,
                 )
 
             ax.set_xlabel(feature_col_1, fontsize=12)
@@ -2186,11 +2679,11 @@ async def train_svm_model(
             ax.set_title(
                 f"Best Model Decision Boundary\n"
                 f"{best_overall_config['kernel']} kernel (AUC={best_overall_config['auc']:.4f})",
-                fontsize=14
+                fontsize=14,
             )
-            ax.legend(loc='best')
+            ax.legend(loc="best")
             ax.grid(True, alpha=0.3)
-            plots['best_model_decision_boundary'] = plot_to_base64(fig)
+            plots["best_model_decision_boundary"] = plot_to_base64(fig)
             print(f"  ✓ Best model decision boundary")
 
         # Save best model
@@ -2198,34 +2691,36 @@ async def train_svm_model(
         model_path = MODEL_DIR / f"svm_model_{job_id}.pkl"
 
         model_data = {
-            'model': best_overall_model,
-            'config': best_overall_config,
-            'feature_names': [feature_col_1, feature_col_2],
-            'target_name': target_col,
-            'unique_classes': unique_classes,
-            'all_results': all_results,
-            'plots': plots  # Save plots for later download
+            "model": best_overall_model,
+            "config": best_overall_config,
+            "feature_names": [feature_col_1, feature_col_2],
+            "target_name": target_col,
+            "unique_classes": unique_classes,
+            "all_results": all_results,
+            "plots": plots,  # Save plots for later download
         }
 
-        with open(model_path, 'wb') as f:
+        with open(model_path, "wb") as f:
             pickle.dump(model_data, f)
 
         print(f"[SVM TRAIN] Saved model: {model_path}")
 
         total_time = time.time() - start_time
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
         print(f"[SVM TRAIN] ✅ Training complete in {total_time:.2f}s")
-        print(f"[SVM TRAIN] Best model: {best_overall_config['kernel']} (AUC={best_overall_auc:.4f})")
-        print(f"{'='*70}\n")
+        print(
+            f"[SVM TRAIN] Best model: {best_overall_config['kernel']} (AUC={best_overall_auc:.4f})"
+        )
+        print(f"{'=' * 70}\n")
 
         return {
             "job_id": job_id,
             "results": all_results,
             "best_model": {
-                "kernel": best_overall_config['kernel'],
-                "test_size": best_overall_config['test_size'],
-                "params": best_overall_config['params'],
-                "auc": best_overall_config['auc']
+                "kernel": best_overall_config["kernel"],
+                "test_size": best_overall_config["test_size"],
+                "params": best_overall_config["params"],
+                "auc": best_overall_config["auc"],
             },
             "plots": plots,
             "metadata": {
@@ -2233,25 +2728,26 @@ async def train_svm_model(
                 "num_test_sizes": len(test_size_list),
                 "num_kernels": len(kernel_list),
                 "feature_names": [feature_col_1, feature_col_2],
-                "target_name": target_col
-            }
+                "target_name": target_col,
+            },
         }
 
     except Exception as e:
         print(f"[SVM TRAIN ERROR] {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Training error: {str(e)}")
+
 
 @app.options("/api/svm/predict")
 async def options_svm_predict():
     return {}
 
+
 @app.post("/api/svm/predict")
 async def predict_svm(
-    job_id: str = Form(...),
-    feature_1: float = Form(...),
-    feature_2: float = Form(...)
+    job_id: str = Form(...), feature_1: float = Form(...), feature_2: float = Form(...)
 ):
     """
     Predict using trained SVM model.
@@ -2262,17 +2758,17 @@ async def predict_svm(
         if not model_path.exists():
             raise HTTPException(status_code=404, detail=f"Model not found: {job_id}")
 
-        with open(model_path, 'rb') as f:
+        with open(model_path, "rb") as f:
             model_data = pickle.load(f)
 
         # Predict
         X_new = np.array([[feature_1, feature_2]])
-        prediction = model_data['model'].predict(X_new)[0]
-        probabilities = model_data['model'].predict_proba(X_new)[0]
+        prediction = model_data["model"].predict(X_new)[0]
+        probabilities = model_data["model"].predict_proba(X_new)[0]
 
         # Convert prediction to string to handle both numeric and string labels
         prediction_str = str(prediction)
-        
+
         # Try to convert to int if it's a numeric string, otherwise keep as string
         try:
             prediction_value = int(float(prediction))
@@ -2283,24 +2779,27 @@ async def predict_svm(
             "prediction": prediction_value,
             "probabilities": {
                 str(cls): float(prob)
-                for cls, prob in zip(model_data['unique_classes'], probabilities)
+                for cls, prob in zip(model_data["unique_classes"], probabilities)
             },
-            "feature_names": model_data['feature_names'],
+            "feature_names": model_data["feature_names"],
             "model_info": {
-                "kernel": model_data['config']['kernel'],
-                "auc": model_data['config']['auc']
-            }
+                "kernel": model_data["config"]["kernel"],
+                "auc": model_data["config"]["auc"],
+            },
         }
 
     except Exception as e:
         print(f"[SVM PREDICT ERROR] {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Prediction error: {str(e)}")
+
 
 @app.options("/api/svm/download-results")
 async def options_svm_download_results():
     return {}
+
 
 @app.post("/api/svm/download-results")
 async def download_svm_results(job_id: str = Form(...)):
@@ -2313,61 +2812,68 @@ async def download_svm_results(job_id: str = Form(...)):
         if not model_path.exists():
             raise HTTPException(status_code=404, detail=f"Model not found: {job_id}")
 
-        with open(model_path, 'rb') as f:
+        with open(model_path, "rb") as f:
             model_data = pickle.load(f)
 
         # Create Excel file
         output = BytesIO()
-        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        with pd.ExcelWriter(output, engine="openpyxl") as writer:
             # Write results for each test size
-            for test_size, results in model_data['all_results'].items():
+            for test_size, results in model_data["all_results"].items():
                 # Kernel results
-                kernel_df = pd.DataFrame.from_dict(results['kernels'], orient='index')
-                kernel_df = kernel_df.drop('confusion_matrix', axis=1)
-                kernel_df.to_excel(writer, sheet_name=f'TestSize_{test_size}_Kernels')
+                kernel_df = pd.DataFrame.from_dict(results["kernels"], orient="index")
+                kernel_df = kernel_df.drop("confusion_matrix", axis=1)
+                kernel_df.to_excel(writer, sheet_name=f"TestSize_{test_size}_Kernels")
 
                 # Comparison metrics
-                comparison_df = pd.DataFrame(results['comparison'])
-                comparison_df.to_excel(writer, sheet_name=f'TestSize_{test_size}_Metrics', index=False)
+                comparison_df = pd.DataFrame(results["comparison"])
+                comparison_df.to_excel(
+                    writer, sheet_name=f"TestSize_{test_size}_Metrics", index=False
+                )
 
             # Best model summary
-            params = model_data['config']['params']
-            best_c = params.get('C', 'N/A')
-            best_gamma = params.get('gamma', 'N/A')
+            params = model_data["config"]["params"]
+            best_c = params.get("C", "N/A")
+            best_gamma = params.get("gamma", "N/A")
 
-            best_df = pd.DataFrame([{
-                'Kernel': model_data['config']['kernel'],
-                'Test Size': model_data['config']['test_size'],
-                'AUC': model_data['config']['auc'],
-                'C': best_c,
-                'Gamma': best_gamma if best_gamma is not None else 'N/A',
-                'Feature 1': model_data['feature_names'][0],
-                'Feature 2': model_data['feature_names'][1],
-                'Target': model_data['target_name']
-            }])
-            best_df.to_excel(writer, sheet_name='Best_Model', index=False)
+            best_df = pd.DataFrame(
+                [
+                    {
+                        "Kernel": model_data["config"]["kernel"],
+                        "Test Size": model_data["config"]["test_size"],
+                        "AUC": model_data["config"]["auc"],
+                        "C": best_c,
+                        "Gamma": best_gamma if best_gamma is not None else "N/A",
+                        "Feature 1": model_data["feature_names"][0],
+                        "Feature 2": model_data["feature_names"][1],
+                        "Target": model_data["target_name"],
+                    }
+                ]
+            )
+            best_df.to_excel(writer, sheet_name="Best_Model", index=False)
 
         output.seek(0)
 
         return StreamingResponse(
             output,
             media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            headers={"Content-Disposition": f"attachment; filename=svm_results_{job_id}.xlsx"}
+            headers={
+                "Content-Disposition": f"attachment; filename=svm_results_{job_id}.xlsx"
+            },
         )
 
     except Exception as e:
         print(f"[SVM DOWNLOAD ERROR] {str(e)}")
         raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
 
+
 @app.options("/api/svm/download-plot")
 async def options_svm_download_plot():
     return {}
 
+
 @app.post("/api/svm/download-plot")
-async def download_svm_plot(
-    job_id: str = Form(...),
-    plot_name: str = Form(...)
-):
+async def download_svm_plot(job_id: str = Form(...), plot_name: str = Form(...)):
     """
     Download a single SVM plot as PNG file.
     """
@@ -2377,7 +2883,7 @@ async def download_svm_plot(
         if not model_path.exists():
             raise HTTPException(status_code=404, detail=f"Model not found: {job_id}")
 
-        with open(model_path, 'rb') as f:
+        with open(model_path, "rb") as f:
             model_data = pickle.load(f)
 
         # Get the specific plot
@@ -2386,8 +2892,8 @@ async def download_svm_plot(
         plot_base64 = None
 
         # Check if plots were saved directly in model_data
-        if 'plots' in model_data:
-            plot_base64 = model_data['plots'].get(plot_name)
+        if "plots" in model_data:
+            plot_base64 = model_data["plots"].get(plot_name)
 
         if not plot_base64:
             raise HTTPException(status_code=404, detail=f"Plot not found: {plot_name}")
@@ -2400,14 +2906,14 @@ async def download_svm_plot(
         output.seek(0)
 
         # Clean filename
-        clean_name = plot_name.replace(' ', '_').lower()
+        clean_name = plot_name.replace(" ", "_").lower()
 
         print(f"[SVM PLOT DOWNLOAD] Downloading {plot_name}")
 
         return StreamingResponse(
             output,
             media_type="image/png",
-            headers={"Content-Disposition": f"attachment; filename={clean_name}.png"}
+            headers={"Content-Disposition": f"attachment; filename={clean_name}.png"},
         )
 
     except HTTPException:
@@ -2415,12 +2921,15 @@ async def download_svm_plot(
     except Exception as e:
         print(f"[SVM PLOT DOWNLOAD ERROR] {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
+
 
 @app.options("/api/svm/download-all-plots")
 async def options_svm_download_all_plots():
     return {}
+
 
 @app.post("/api/svm/download-all-plots")
 async def download_all_svm_plots(job_id: str = Form(...)):
@@ -2433,11 +2942,11 @@ async def download_all_svm_plots(job_id: str = Form(...)):
         if not model_path.exists():
             raise HTTPException(status_code=404, detail=f"Model not found: {job_id}")
 
-        with open(model_path, 'rb') as f:
+        with open(model_path, "rb") as f:
             model_data = pickle.load(f)
 
         # Get plots
-        plots = model_data.get('plots', {})
+        plots = model_data.get("plots", {})
 
         if not plots:
             raise HTTPException(status_code=404, detail="No plots found for this model")
@@ -2445,13 +2954,13 @@ async def download_all_svm_plots(job_id: str = Form(...)):
         # Create ZIP file in memory
         zip_buffer = BytesIO()
 
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
             for plot_name, plot_base64 in plots.items():
                 # Decode base64 to bytes
                 plot_bytes = base64.b64decode(plot_base64)
 
                 # Clean filename
-                clean_name = plot_name.replace(' ', '_').lower()
+                clean_name = plot_name.replace(" ", "_").lower()
 
                 # Add to ZIP
                 zip_file.writestr(f"{clean_name}.png", plot_bytes)
@@ -2463,7 +2972,9 @@ async def download_all_svm_plots(job_id: str = Form(...)):
         return StreamingResponse(
             zip_buffer,
             media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename=svm_plots_{job_id}.zip"}
+            headers={
+                "Content-Disposition": f"attachment; filename=svm_plots_{job_id}.zip"
+            },
         )
 
     except HTTPException:
@@ -2471,10 +2982,12 @@ async def download_all_svm_plots(job_id: str = Form(...)):
     except Exception as e:
         print(f"[SVM ALL PLOTS DOWNLOAD ERROR] {str(e)}")
         import traceback
+
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Download error: {str(e)}")
 
+
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
 
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -1,15 +1,33 @@
 'use client';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { TrendingUp, Upload, Activity, LineChart, ScatterChart, Zap, Target } from 'lucide-react';
 import ScrollIndicator from '../components/ScrollIndicator';
 import { API_BASE_URL } from '@/lib/api';
+import { createClient } from '@/lib/supabase/browser';
 
 type RegressionType = 'curve-fit' | 'linear' | 'logistic' | 'polynomial';
 
+const getAuthHeaders = async (): Promise<HeadersInit> => {
+    try {
+        const supabase = createClient();
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data.session?.access_token;
+        if (accessToken) {
+            return { Authorization: `Bearer ${accessToken}` };
+        }
+    } catch {
+        // no-op; backend will return 401 if unauthenticated
+    }
+
+    return {};
+};
+
 export default function RegressionPage() {
     const [activeTab, setActiveTab] = useState<RegressionType>('curve-fit');
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [file, setFile] = useState<File | null>(null);
     const [columns, setColumns] = useState<string[]>([]);
+    const [sampleData, setSampleData] = useState<Record<string, unknown>[]>([]);
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState<Record<string, unknown> | null>(null);
     const [error, setError] = useState('');
@@ -23,13 +41,17 @@ export default function RegressionPage() {
     const [customEquation, setCustomEquation] = useState('');
 
     // Linear/Polynomial specific states
-    const [xColumns, setXColumns] = useState('');
-    const [yColumns, setYColumns] = useState('');
-    const [testSize, setTestSize] = useState(0.2);
+    const [linearXColumns, setLinearXColumns] = useState<string[]>([]);
+    const [linearYColumns, setLinearYColumns] = useState<string[]>([]);
+    const [linearXSelection, setLinearXSelection] = useState('');
+    const [linearYSelection, setLinearYSelection] = useState('');
+    const [polynomialXColumns, setPolynomialXColumns] = useState<string[]>([]);
+    const [polynomialYColumns, setPolynomialYColumns] = useState<string[]>([]);
+    const [polynomialXSelection, setPolynomialXSelection] = useState('');
+    const [polynomialYSelection, setPolynomialYSelection] = useState('');
 
     // Logistic specific states
     const [targetColumn, setTargetColumn] = useState('');
-    const [testSizes, setTestSizes] = useState('0.2,0.25,0.3');
 
     const tabs = [
         { id: 'curve-fit', label: 'Curve Fit', icon: Activity, color: '#8B5CF6' },
@@ -45,6 +67,14 @@ export default function RegressionPage() {
         setFile(uploadedFile);
         setError('');
         setResults(null);
+        setLinearXColumns([]);
+        setLinearYColumns([]);
+        setLinearXSelection('');
+        setLinearYSelection('');
+        setPolynomialXColumns([]);
+        setPolynomialYColumns([]);
+        setPolynomialXSelection('');
+        setPolynomialYSelection('');
 
         const formData = new FormData();
         formData.append('file', uploadedFile);
@@ -52,16 +82,48 @@ export default function RegressionPage() {
         try {
             const response = await fetch(`${API_BASE_URL}/api/upload`, {
                 method: 'POST',
+                headers: await getAuthHeaders(),
                 body: formData,
             });
 
             if (!response.ok) throw new Error('Failed to parse file');
 
-            const data = await response.json() as { columns?: string[] };
+            const data = await response.json() as { columns?: string[]; sample_data?: Record<string, unknown>[] };
             setColumns(data.columns || []);
+            setSampleData((data.sample_data || []).slice(0, 5));
         } catch {
+            setColumns([]);
+            setSampleData([]);
             setError('Failed to parse file. Please check the format.');
         }
+    };
+
+    const addLinearXColumn = () => {
+        if (linearXSelection && !linearXColumns.includes(linearXSelection)) {
+            setLinearXColumns((prev) => [...prev, linearXSelection]);
+        }
+        setLinearXSelection('');
+    };
+
+    const addLinearYColumn = () => {
+        if (linearYSelection && !linearYColumns.includes(linearYSelection)) {
+            setLinearYColumns((prev) => [...prev, linearYSelection]);
+        }
+        setLinearYSelection('');
+    };
+
+    const addPolynomialXColumn = () => {
+        if (polynomialXSelection && !polynomialXColumns.includes(polynomialXSelection)) {
+            setPolynomialXColumns((prev) => [...prev, polynomialXSelection]);
+        }
+        setPolynomialXSelection('');
+    };
+
+    const addPolynomialYColumn = () => {
+        if (polynomialYSelection && !polynomialYColumns.includes(polynomialYSelection)) {
+            setPolynomialYColumns((prev) => [...prev, polynomialYSelection]);
+        }
+        setPolynomialYSelection('');
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -96,32 +158,31 @@ export default function RegressionPage() {
                 }
                 endpoint = `${API_BASE_URL}/api/regression/curve-fit`;
             } else if (activeTab === 'linear') {
-                if (!xColumns || !yColumns) {
+                if (linearXColumns.length === 0 || linearYColumns.length === 0) {
                     throw new Error('Please provide X and Y columns');
                 }
-                formData.append('x_columns', xColumns);
-                formData.append('y_columns', yColumns);
-                formData.append('test_size', testSize.toString());
+                formData.append('x_columns', linearXColumns.join(', '));
+                formData.append('y_columns', linearYColumns.join(', '));
                 endpoint = `${API_BASE_URL}/api/regression/linear`;
             } else if (activeTab === 'logistic') {
-                if (targetColumn) {
-                    formData.append('target_column', targetColumn);
+                if (!targetColumn) {
+                    throw new Error('Please select target column');
                 }
-                formData.append('test_sizes', testSizes);
+                formData.append('target_column', targetColumn);
                 endpoint = `${API_BASE_URL}/api/regression/logistic`;
             } else if (activeTab === 'polynomial') {
-                if (!xColumns || !yColumns) {
+                if (polynomialXColumns.length === 0 || polynomialYColumns.length === 0) {
                     throw new Error('Please provide X and Y columns');
                 }
-                formData.append('x_columns', xColumns);
-                formData.append('y_columns', yColumns);
+                formData.append('x_columns', polynomialXColumns.join(', '));
+                formData.append('y_columns', polynomialYColumns.join(', '));
                 formData.append('degree', degree.toString());
-                formData.append('test_size', testSize.toString());
                 endpoint = `${API_BASE_URL}/api/regression/polynomial`;
             }
 
             const response = await fetch(endpoint, {
                 method: 'POST',
+                headers: await getAuthHeaders(),
                 body: formData,
             });
 
@@ -142,14 +203,29 @@ export default function RegressionPage() {
     const resetForm = () => {
         setFile(null);
         setColumns([]);
+        setSampleData([]);
         setResults(null);
         setError('');
+        setLoading(false);
         setXColumn('');
         setYColumn('');
         setZColumn('');
-        setXColumns('');
-        setYColumns('');
+        setModelType('polynomial');
+        setDegree(2);
+        setCustomEquation('');
+        setLinearXColumns([]);
+        setLinearYColumns([]);
+        setLinearXSelection('');
+        setLinearYSelection('');
+        setPolynomialXColumns([]);
+        setPolynomialYColumns([]);
+        setPolynomialXSelection('');
+        setPolynomialYSelection('');
         setTargetColumn('');
+
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     const handleTabChange = (tab: RegressionType) => {
@@ -249,6 +325,7 @@ export default function RegressionPage() {
                                     </label>
                                     <div className="relative">
                                         <input
+                                            ref={fileInputRef}
                                             type="file"
                                             accept=".csv,.txt,.lvm,.xlsx,.xls"
                                             onChange={handleFileUpload}
@@ -277,6 +354,38 @@ export default function RegressionPage() {
                                         <p className="text-sm" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
                                             {columns.join(', ')}
                                         </p>
+                                    </div>
+                                )}
+
+                                {sampleData.length > 0 && (
+                                    <div className="p-4 rounded-lg" style={{ backgroundColor: '#F9F6F3', border: '1px solid #EBE5DF' }}>
+                                        <p className="text-sm font-semibold mb-3" style={{ fontFamily: 'var(--font-jakarta)', color: '#EA580C' }}>
+                                            Data Preview (First 5 Rows)
+                                        </p>
+                                        <div className="overflow-x-auto rounded-lg bg-white" style={{ border: '1px solid #EBE5DF' }}>
+                                            <table className="w-full text-sm" style={{ fontFamily: 'var(--font-jakarta)' }}>
+                                                <thead style={{ backgroundColor: '#F3EEE8', color: '#3D342B' }}>
+                                                    <tr>
+                                                        {Object.keys(sampleData[0]).map((column) => (
+                                                            <th key={column} className="px-3 py-2 text-left font-semibold whitespace-nowrap">
+                                                                {column}
+                                                            </th>
+                                                        ))}
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {sampleData.map((row, rowIdx) => (
+                                                        <tr key={rowIdx} style={{ borderTop: '1px solid #EBE5DF' }}>
+                                                            {Object.keys(sampleData[0]).map((column) => (
+                                                                <td key={`${rowIdx}-${column}`} className="px-3 py-2 whitespace-nowrap" style={{ color: '#786B61' }}>
+                                                                    {String(row[column] ?? '')}
+                                                                </td>
+                                                            ))}
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 )}
 
@@ -403,16 +512,44 @@ export default function RegressionPage() {
                                                     <label className="block text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-jakarta)', color: '#3D342B' }}>
                                                         X Columns (Input Features)
                                                     </label>
-                                                    <input
-                                                        type="text"
-                                                        value={xColumns}
-                                                        onChange={(e) => setXColumns(e.target.value)}
-                                                        placeholder="e.g., Feature1, Feature2, Feature3"
-                                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                        style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
-                                                    />
+                                                    <div className="flex gap-2">
+                                                        <select
+                                                            value={linearXSelection}
+                                                            onChange={(e) => setLinearXSelection(e.target.value)}
+                                                            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
+                                                        >
+                                                            <option value="">Select X column</option>
+                                                            {columns.map((col) => (
+                                                                <option key={col} value={col}>{col}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button
+                                                            type="button"
+                                                            onClick={addLinearXColumn}
+                                                            className="px-4 py-2 rounded-lg font-semibold text-white"
+                                                            style={{ backgroundColor: '#3B82F6', fontFamily: 'var(--font-jakarta)' }}
+                                                        >
+                                                            Add
+                                                        </button>
+                                                    </div>
+                                                    {linearXColumns.length > 0 && (
+                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                            {linearXColumns.map((col) => (
+                                                                <button
+                                                                    key={col}
+                                                                    type="button"
+                                                                    onClick={() => setLinearXColumns((prev) => prev.filter((c) => c !== col))}
+                                                                    className="px-3 py-1 rounded-full text-sm"
+                                                                    style={{ backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', fontFamily: 'var(--font-jakarta)' }}
+                                                                >
+                                                                    {col} ×
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                     <p className="text-sm mt-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
-                                                        Comma-separated column names
+                                                        Select one at a time from dropdown, then click Add
                                                     </p>
                                                 </div>
 
@@ -420,37 +557,47 @@ export default function RegressionPage() {
                                                     <label className="block text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-jakarta)', color: '#3D342B' }}>
                                                         Y Columns (Output Targets)
                                                     </label>
-                                                    <input
-                                                        type="text"
-                                                        value={yColumns}
-                                                        onChange={(e) => setYColumns(e.target.value)}
-                                                        placeholder="e.g., Target1, Target2"
-                                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                        style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
-                                                    />
+                                                    <div className="flex gap-2">
+                                                        <select
+                                                            value={linearYSelection}
+                                                            onChange={(e) => setLinearYSelection(e.target.value)}
+                                                            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                            style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
+                                                        >
+                                                            <option value="">Select Y column</option>
+                                                            {columns.map((col) => (
+                                                                <option key={col} value={col}>{col}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button
+                                                            type="button"
+                                                            onClick={addLinearYColumn}
+                                                            className="px-4 py-2 rounded-lg font-semibold text-white"
+                                                            style={{ backgroundColor: '#3B82F6', fontFamily: 'var(--font-jakarta)' }}
+                                                        >
+                                                            Add
+                                                        </button>
+                                                    </div>
+                                                    {linearYColumns.length > 0 && (
+                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                            {linearYColumns.map((col) => (
+                                                                <button
+                                                                    key={col}
+                                                                    type="button"
+                                                                    onClick={() => setLinearYColumns((prev) => prev.filter((c) => c !== col))}
+                                                                    className="px-3 py-1 rounded-full text-sm"
+                                                                    style={{ backgroundColor: '#EFF6FF', color: '#1D4ED8', border: '1px solid #BFDBFE', fontFamily: 'var(--font-jakarta)' }}
+                                                                >
+                                                                    {col} ×
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                     <p className="text-sm mt-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
-                                                        Comma-separated column names
+                                                        Select one at a time from dropdown, then click Add
                                                     </p>
                                                 </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-jakarta)', color: '#3D342B' }}>
-                                                        Test Size: {(testSize * 100).toFixed(0)}%
-                                                    </label>
-                                                    <input
-                                                        type="range"
-                                                        min="0.1"
-                                                        max="0.5"
-                                                        step="0.05"
-                                                        value={testSize}
-                                                        onChange={(e) => setTestSize(parseFloat(e.target.value))}
-                                                        className="w-full"
-                                                    />
-                                                    <div className="flex justify-between text-xs mt-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
-                                                        <span>10%</span>
-                                                        <span>50%</span>
-                                                    </div>
-                                                </div>
                                             </>
                                         )}
 
@@ -459,7 +606,7 @@ export default function RegressionPage() {
                                             <>
                                                 <div>
                                                     <label className="block text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-jakarta)', color: '#3D342B' }}>
-                                                        Target Column (Optional - Auto-detect if empty)
+                                                        Target Column
                                                     </label>
                                                     <select
                                                         value={targetColumn}
@@ -467,32 +614,16 @@ export default function RegressionPage() {
                                                         className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                                                         style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
                                                     >
-                                                        <option value="">Auto-detect target column</option>
+                                                        <option value="">Select target column</option>
                                                         {columns.map((col) => (
                                                             <option key={col} value={col}>{col}</option>
                                                         ))}
                                                     </select>
                                                     <p className="text-sm mt-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
-                                                        System will auto-detect the last column with ≤20 unique values
+                                                        This field is required
                                                     </p>
                                                 </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-jakarta)', color: '#3D342B' }}>
-                                                        Test Sizes to Try
-                                                    </label>
-                                                    <input
-                                                        type="text"
-                                                        value={testSizes}
-                                                        onChange={(e) => setTestSizes(e.target.value)}
-                                                        placeholder="e.g., 0.2, 0.25, 0.3"
-                                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                                        style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
-                                                    />
-                                                    <p className="text-sm mt-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
-                                                        Comma-separated values (system will find best split)
-                                                    </p>
-                                                </div>
                                             </>
                                         )}
 
@@ -503,16 +634,44 @@ export default function RegressionPage() {
                                                     <label className="block text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-jakarta)', color: '#3D342B' }}>
                                                         X Columns (Input Features)
                                                     </label>
-                                                    <input
-                                                        type="text"
-                                                        value={xColumns}
-                                                        onChange={(e) => setXColumns(e.target.value)}
-                                                        placeholder="e.g., Feature1, Feature2, Feature3"
-                                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                                        style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
-                                                    />
+                                                    <div className="flex gap-2">
+                                                        <select
+                                                            value={polynomialXSelection}
+                                                            onChange={(e) => setPolynomialXSelection(e.target.value)}
+                                                            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                                            style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
+                                                        >
+                                                            <option value="">Select X column</option>
+                                                            {columns.map((col) => (
+                                                                <option key={col} value={col}>{col}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button
+                                                            type="button"
+                                                            onClick={addPolynomialXColumn}
+                                                            className="px-4 py-2 rounded-lg font-semibold text-white"
+                                                            style={{ backgroundColor: '#F59E0B', fontFamily: 'var(--font-jakarta)' }}
+                                                        >
+                                                            Add
+                                                        </button>
+                                                    </div>
+                                                    {polynomialXColumns.length > 0 && (
+                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                            {polynomialXColumns.map((col) => (
+                                                                <button
+                                                                    key={col}
+                                                                    type="button"
+                                                                    onClick={() => setPolynomialXColumns((prev) => prev.filter((c) => c !== col))}
+                                                                    className="px-3 py-1 rounded-full text-sm"
+                                                                    style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D', fontFamily: 'var(--font-jakarta)' }}
+                                                                >
+                                                                    {col} ×
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                     <p className="text-sm mt-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
-                                                        Comma-separated column names
+                                                        Select one at a time from dropdown, then click Add
                                                     </p>
                                                 </div>
 
@@ -520,16 +679,44 @@ export default function RegressionPage() {
                                                     <label className="block text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-jakarta)', color: '#3D342B' }}>
                                                         Y Columns (Output Targets)
                                                     </label>
-                                                    <input
-                                                        type="text"
-                                                        value={yColumns}
-                                                        onChange={(e) => setYColumns(e.target.value)}
-                                                        placeholder="e.g., Target1, Target2"
-                                                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                                                        style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
-                                                    />
+                                                    <div className="flex gap-2">
+                                                        <select
+                                                            value={polynomialYSelection}
+                                                            onChange={(e) => setPolynomialYSelection(e.target.value)}
+                                                            className="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                                                            style={{ fontFamily: 'var(--font-jakarta)', borderColor: '#EBE5DF' }}
+                                                        >
+                                                            <option value="">Select Y column</option>
+                                                            {columns.map((col) => (
+                                                                <option key={col} value={col}>{col}</option>
+                                                            ))}
+                                                        </select>
+                                                        <button
+                                                            type="button"
+                                                            onClick={addPolynomialYColumn}
+                                                            className="px-4 py-2 rounded-lg font-semibold text-white"
+                                                            style={{ backgroundColor: '#F59E0B', fontFamily: 'var(--font-jakarta)' }}
+                                                        >
+                                                            Add
+                                                        </button>
+                                                    </div>
+                                                    {polynomialYColumns.length > 0 && (
+                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                            {polynomialYColumns.map((col) => (
+                                                                <button
+                                                                    key={col}
+                                                                    type="button"
+                                                                    onClick={() => setPolynomialYColumns((prev) => prev.filter((c) => c !== col))}
+                                                                    className="px-3 py-1 rounded-full text-sm"
+                                                                    style={{ backgroundColor: '#FEF3C7', color: '#92400E', border: '1px solid #FCD34D', fontFamily: 'var(--font-jakarta)' }}
+                                                                >
+                                                                    {col} ×
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
                                                     <p className="text-sm mt-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
-                                                        Comma-separated column names
+                                                        Select one at a time from dropdown, then click Add
                                                     </p>
                                                 </div>
 
@@ -551,24 +738,6 @@ export default function RegressionPage() {
                                                     </div>
                                                 </div>
 
-                                                <div>
-                                                    <label className="block text-sm font-semibold mb-2" style={{ fontFamily: 'var(--font-jakarta)', color: '#3D342B' }}>
-                                                        Test Size: {(testSize * 100).toFixed(0)}%
-                                                    </label>
-                                                    <input
-                                                        type="range"
-                                                        min="0.1"
-                                                        max="0.5"
-                                                        step="0.05"
-                                                        value={testSize}
-                                                        onChange={(e) => setTestSize(parseFloat(e.target.value))}
-                                                        className="w-full"
-                                                    />
-                                                    <div className="flex justify-between text-xs mt-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#786B61' }}>
-                                                        <span>10%</span>
-                                                        <span>50%</span>
-                                                    </div>
-                                                </div>
                                             </>
                                         )}
                                     </>
@@ -581,18 +750,35 @@ export default function RegressionPage() {
                                     </div>
                                 )}
 
-                                {/* Submit Button */}
-                                <button
-                                    type="submit"
-                                    disabled={loading || !file}
-                                    className="w-full px-6 py-4 rounded-xl font-semibold text-white transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                    style={{ 
-                                        backgroundColor: tabs.find(t => t.id === activeTab)?.color || '#EA580C',
-                                        fontFamily: 'var(--font-jakarta)' 
-                                    }}
-                                >
-                                    {loading ? 'Analyzing...' : 'Run Analysis'}
-                                </button>
+                                {/* Action Buttons */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <button
+                                        type="submit"
+                                        disabled={loading || !file}
+                                        className="w-full px-6 py-4 rounded-xl font-semibold text-white transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{
+                                            backgroundColor: tabs.find(t => t.id === activeTab)?.color || '#EA580C',
+                                            fontFamily: 'var(--font-jakarta)'
+                                        }}
+                                    >
+                                        {loading ? 'Analyzing...' : 'Run Analysis'}
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        onClick={resetForm}
+                                        disabled={loading}
+                                        className="w-full px-6 py-4 rounded-xl font-semibold transition-all hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                        style={{
+                                            backgroundColor: '#FFFFFF',
+                                            color: tabs.find(t => t.id === activeTab)?.color || '#EA580C',
+                                            border: `2px solid ${tabs.find(t => t.id === activeTab)?.color || '#EA580C'}`,
+                                            fontFamily: 'var(--font-jakarta)'
+                                        }}
+                                    >
+                                        Clear All & Try Again
+                                    </button>
+                                </div>
                             </form>
 
                             {/* Results Section */}
@@ -706,21 +892,13 @@ export default function RegressionPage() {
                                         {/* Logistic Results */}
                                         {activeTab === 'logistic' && (
                                             <>
-                                                <div className="grid grid-cols-3 gap-4 mb-8">
+                                                <div className="grid grid-cols-2 gap-4 mb-8">
                                                     <div className="p-6 rounded-xl" style={{ backgroundColor: '#F9F6F3', border: '1px solid #EBE5DF' }}>
                                                         <p className="text-sm font-semibold mb-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#10B981' }}>
                                                             Accuracy
                                                         </p>
                                                         <p className="text-3xl font-bold" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>
                                                             {typeof results.accuracy === 'number' ? `${(results.accuracy * 100).toFixed(2)}%` : 'N/A'}
-                                                        </p>
-                                                    </div>
-                                                    <div className="p-6 rounded-xl" style={{ backgroundColor: '#F9F6F3', border: '1px solid #EBE5DF' }}>
-                                                        <p className="text-sm font-semibold mb-1" style={{ fontFamily: 'var(--font-jakarta)', color: '#10B981' }}>
-                                                            Best Test Size
-                                                        </p>
-                                                        <p className="text-3xl font-bold" style={{ fontFamily: 'var(--font-playfair)', color: '#3D342B' }}>
-                                                            {typeof results.best_test_size === 'number' ? `${(results.best_test_size * 100).toFixed(0)}%` : 'N/A'}
                                                         </p>
                                                     </div>
                                                     <div className="p-6 rounded-xl" style={{ backgroundColor: '#F9F6F3', border: '1px solid #EBE5DF' }}>
